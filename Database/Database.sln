@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database", "Database\Database.csproj", "{084B4DEA-98F3-4BFC-B757-AD887EB80C13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseUnitTest", "DatabaseUnitTest\DatabaseUnitTest.csproj", "{E1C912D4-E1EB-44DF-9E09-A0CC91DBC172}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{084B4DEA-98F3-4BFC-B757-AD887EB80C13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{084B4DEA-98F3-4BFC-B757-AD887EB80C13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{084B4DEA-98F3-4BFC-B757-AD887EB80C13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{084B4DEA-98F3-4BFC-B757-AD887EB80C13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1C912D4-E1EB-44DF-9E09-A0CC91DBC172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1C912D4-E1EB-44DF-9E09-A0CC91DBC172}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1C912D4-E1EB-44DF-9E09-A0CC91DBC172}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1C912D4-E1EB-44DF-9E09-A0CC91DBC172}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
