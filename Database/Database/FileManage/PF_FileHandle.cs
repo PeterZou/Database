@@ -1,10 +1,12 @@
 ﻿using Database.BufferManage;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using static Database.Const.ConstProperty;
+using Database.Const;
 
 /// <summary>
 /// TODO:1.why need to PF_FileHdr?
@@ -20,13 +22,21 @@ namespace Database.FileManage
     {
         private PF_Buffermgr pf_bm;
         private bool bFileOpen;                                 // file open flag
-        private int bHdrChanged;                               // dirty flag for file hdr
+        private bool bHdrChanged;                               // dirty flag for file hdr
         private int fd;                                        // OS file descriptor
-        private PF_PageHandle pf_ph;
+
+        private PF_PageHdr pf_ph;
+        private PF_FileHdr hdr;
+        private PF_PageHandle pf_phandle;
+
+        private ILog m_log;
 
         public PF_FileHandle()
         {
             bFileOpen = false;
+            Type type = MethodBase.GetCurrentMethod().DeclaringType;
+            m_log = LogManager.GetLogger(type);
+            pf_bm = new PF_Buffermgr(ConstProperty.PF_BUFFER_SIZE);
         }
 
         //
@@ -42,15 +52,249 @@ namespace Database.FileManage
         //
         public void GetThisPage(int pageNum)
         {
-            if (IsValidPageNum(pageNum)) throw new Exception();
-
-            if (pf_bm == null) throw new Exception();
+            if (!(bFileOpen && pageNum > 0 && pageNum < hdr.numPages)) throw new Exception();
 
             string pageContent = pf_bm.GetPage(fd, pageNum, true);
 
-            // int is occupided 1B
-            pf_ph.PageNum = Convert.ToInt32(pageContent.Take(1));
-            pf_ph.PPageData = pageContent.Remove(0, 1);
+            ReadPageHandle(pageContent, pageNum);
+        }
+
+        //
+        // GetFirstPage
+        //
+        // Desc: Get the first page in a file
+        //       The file handle must refer to an open file
+        // Out:  pageHandle - becomes a handle to the first page of the file
+        //       The referenced page is pinned in the buffer pool.
+        // Ret:  PF return code
+        //
+        public void GetFirstPage(int pageNum)
+        {
+            GetFirstPage(-1);
+        }
+
+        //
+        // GetLastPage
+        //
+        // Desc: Get the last page in a file
+        //       The file handle must refer to an open file
+        // Out:  pageHandle - becomes a handle to the last page of the file
+        //       The referenced page is pinned in the buffer pool.
+        // Ret:  PF return code
+        //
+        public void GetLastPage(int pageNum)
+        {
+            GetPrevPage(hdr.numPages - 1);
+        }
+
+        //
+        // GetNextPage
+        //
+        // Desc: Get the next (valid) page after current
+        //       The file handle must refer to an open file
+        // In:   current - get the next valid page after this page number
+        //       current can refer to a page that has been disposed
+        // Out:  pageHandle - becomes a handle to the next page of the file
+        //       The referenced page is pinned in the buffer pool.
+        // Ret:  PF_EOF, or another PF return code
+        //
+        public void GetNextPage(int pageNum)
+        {
+            if (!(bFileOpen && pageNum > -1 && pageNum < hdr.numPages)) throw new Exception();
+
+            for (pageNum++; pageNum < hdr.numPages; pageNum++)
+            {
+                // If this is a valid (used) page, we're done
+                GetThisPage(pageNum);
+            }
+
+            // No valid (used) page found
+            m_log.Warn("This is the last page");
+        }
+
+        //
+        // GetPrevPage
+        //
+        // Desc: Get the prev (valid) page after current
+        //       The file handle must refer to an open file
+        // In:   current - get the prev valid page before this page number
+        //       current can refer to a page that has been disposed
+        // Out:  pageHandle - becomes a handle to the prev page of the file
+        //       The referenced page is pinned in the buffer pool.
+        // Ret:  PF_EOF, or another PF return code
+        //
+        public void GetPrevPage(int pageNum)
+        {
+            if (!(bFileOpen && pageNum > 0 && pageNum <= hdr.numPages)) throw new Exception();
+
+            for (pageNum--; pageNum >= hdr.numPages; pageNum--)
+            {
+                // If this is a valid (used) page, we're done
+                GetThisPage(pageNum);
+            }
+
+            // No valid (used) page found
+            m_log.Warn("This is the first page");
+        }
+
+        //
+        // AllocatePage
+        //
+        // Desc: Allocate a new page in the file (may get a page which was
+        //       previously disposed)
+        //       The file handle must refer to an open file
+        // Out:  pageHandle - becomes a handle to the newly-allocated page
+        //                    this function modifies local var's in pageHandle
+        // Ret:  PF return code
+        //
+        public void AllocatePage()
+        {
+            int pageNum;
+
+            //page content include the header and handle(num and data) of page
+            string content = "";
+
+            if (!bFileOpen) throw new Exception();
+
+            if (hdr.firstFree != (Int32)ConstProperty.Page_statics.PF_PAGE_LIST_END)
+            {
+                pageNum = hdr.firstFree;
+                content = pf_bm.GetPage(fd, pageNum, false);
+                Int32.TryParse(content.Take(8).ToString(), out pf_ph.nextFree);
+                hdr.firstFree = pf_ph.nextFree;
+            }
+            else
+            {
+                pageNum = hdr.numPages;
+                content = pf_bm.AllocatePage(fd, pageNum);
+                hdr.numPages++;
+            }
+
+            bHdrChanged = true;
+
+            pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_USED;
+
+            MarkDirty(pageNum);
+
+            ReadPageHandle(content, pageNum);
+        }
+
+        //
+        // MarkDirty
+        //
+        // Desc: Mark a page as being dirty
+        //       The page will then be written back to disk when it is removed from
+        //       the page buffer
+        //       The file handle must refer to an open file
+        // In:   pageNum - number of page to mark dirty
+        // Ret:  PF return code
+        //
+        public void MarkDirty(int pageNum)
+        {
+            if (!bFileOpen || !IsValidPageNum(pageNum)) throw new Exception();
+
+            pf_bm.MarkDirty(fd, pageNum);
+        }
+
+        //
+        // UnpinPage
+        //
+        // Desc: Unpin a page from the buffer manager.
+        //       The page is then free to be written back to disk when necessary.
+        //       PF_PageHandle objects referring to this page should not be used
+        //       after making this call.
+        //       The file handle must refer to an open file.
+        // In:   pageNum - number of the page to unpin
+        // Ret:  PF return code
+        //
+        public void UnpinPage(int pageNum)
+        {
+            if (!bFileOpen || !IsValidPageNum(pageNum)) throw new Exception();
+
+            pf_bm.UnpinPage(fd, pageNum);
+        }
+
+        //
+        // DisposePage
+        //
+        // Desc: Dispose of a page
+        //       The file handle must refer to an open file
+        //       PF_PageHandle objects referring to this page should not be used
+        //       after making this call.
+        // In:   pageNum - number of page to dispose
+        // Ret:  PF return code
+        //
+        public void DisposePage(int pageNum)
+        {
+            if (!bFileOpen || !IsValidPageNum(pageNum)) throw new Exception();
+
+            string content = pf_bm.GetPage(fd, pageNum, false);
+
+            Int32.TryParse(content.Take(8).ToString(), out pf_ph.nextFree);
+            if (pf_ph.nextFree == (int)ConstProperty.Page_statics.PF_PAGE_USED) throw new Exception();
+
+            pf_ph.nextFree = hdr.firstFree;
+            hdr.firstFree = pageNum;
+            bHdrChanged = true;
+
+            MarkDirty(pageNum);
+            UnpinPage(pageNum);
+        }
+
+        //
+        // FlushPages
+        //
+        // Desc: Flush all dirty unpinned pages from the buffer manager for this file
+        // In:   Nothing
+        // Ret:  PF_PAGEFIXED warning from buffer manager if pages are pinned or
+        //       other PF error
+        //
+        public void FlushPages()
+        {
+            if (!bFileOpen) throw new Exception();
+
+            if (bHdrChanged)
+            {
+                // write to the filehdr
+                // TODO
+
+                bHdrChanged = false;
+            }
+            pf_bm.FlushPages(fd);
+        }
+
+        //
+        // ForcePages
+        //
+        // Desc: If a page is dirty then force the page from the buffer pool
+        //       onto disk.  The page will not be forced out of the buffer pool.
+        // In:   The page number, a default value of ALL_PAGES will be used if
+        //       the client doesn't provide a value.  This will force all pages.
+        // Ret:  Standard PF errors
+        //
+        //
+        public void ForcePages(int pageNum)
+        {
+            if (!bFileOpen) throw new Exception();
+
+            if (bHdrChanged)
+            {
+                // write to the filehdr
+                // TODO
+
+                bHdrChanged = false;
+            }
+            pf_bm.ForcePages(fd,pageNum);
+        }
+
+        private void ReadPageHead(string pageContent)
+        {
+            
+        }
+
+        private void ReadPageHandle(string pageContent, int pageNum)
+        {
+           
         }
 
         //
@@ -63,7 +307,7 @@ namespace Database.FileManage
         //
         private bool IsValidPageNum(int pageNum)
         {
-            if (bFileOpen && pageNum > 0 && pageNum < pf_bm.NumPages)
+            if (bFileOpen && pageNum > 0 && pageNum < hdr.numPages)
                 return true;
             return false;
         }

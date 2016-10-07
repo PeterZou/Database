@@ -4,12 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Database.FileManage
+namespace Database.Model
 {
-    public class PF_PageHandle
+    class DatabaseModel
     {
-        
-
-        public string pPageData;
     }
 }
