@@ -60,10 +60,10 @@ namespace Database.BufferManage
         // Out:  ppBuffer - set *ppBuffer to point to the page in the buffer
         // Ret:  PF return code
         // TODO
-        public string GetPage(int fd, int pageNum,
+        public PF_BufPageDesc GetPage(int fd, int pageNum,
               bool bMultiplePins)
         {
-            string outputResult;
+            char[] outputResult;
             int slot = pf_h.Found(fd, pageNum);
             // If page not in buffer...
             if (slot == -1)
@@ -88,9 +88,8 @@ namespace Database.BufferManage
                 // make the most recently used
                 usedList.RemoveAt(index);
                 usedList.Insert(0, node);
-                outputResult = node.data;
             }
-            return outputResult;
+            return usedList[0];
             
         }
 
@@ -103,7 +102,7 @@ namespace Database.BufferManage
         // Out:  ppBuffer - set *ppBuffer to point to the page in the buffer
         // Ret:  PF return code
         // TODO
-        public string AllocatePage(int fd, int pageNum)
+        public PF_BufPageDesc AllocatePage(int fd, int pageNum)
         {
             int slot = pf_h.Found(fd, pageNum);
             //slot must be -1
@@ -111,7 +110,7 @@ namespace Database.BufferManage
             slot = InternalAlloc();
             pf_h.Insert(fd, pageNum, slot);
             InitPageDesc(fd, pageNum, slot);
-            return usedList[0].data;
+            return usedList[0];
         }
 
         //
@@ -159,12 +158,13 @@ namespace Database.BufferManage
             node.pinCount--;
 
             int index = usedList.IndexOf(node);
+            usedList[index] = node;
+
             if (node.pinCount == 0)
             {
                 usedList.RemoveAt(index);
                 usedList.Insert(0, node);
             }
-            usedList[index] = node;
         }
 
         //
@@ -300,9 +300,9 @@ namespace Database.BufferManage
         }
 
         // Read a page
-        public string ReadPage(int fd, int pageNum)
+        public char[] ReadPage(int fd, int pageNum)
         {
-            string dest = "";
+            char[] buffer;
             string ioPath = IOFDDic.FDMapping[fd];
             using (FileStream fs = new FileStream(ioPath, FileMode.Open))
             {
@@ -311,20 +311,19 @@ namespace Database.BufferManage
                     long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
                     sr.BaseStream.Seek(offset, SeekOrigin.Begin);
 
-                    char[] buffer = new char[pageSize];
+                    buffer = new char[pageSize];
                     sr.Read(buffer, 0, pageSize);
-                    dest = new string(buffer);
                 }
             }
             //replace enter key
-            return RelaceEnterKey(dest);
+            return RelaceEnterKey(buffer);
         }
 
         // Write a page
-        public void WritePage(int fd, int pageNum, string source)
+        public void WritePage(int fd, int pageNum, char[] source)
         {
             //replace enter key
-            string outputSource = RelaceEnterKey(source);
+            char[] outputSource = RelaceEnterKey(source);
 
             string ioPath = IOFDDic.FDMapping[fd];
             using (FileStream fs = new FileStream(ioPath, FileMode.Open))
@@ -363,10 +362,10 @@ namespace Database.BufferManage
         /// <summary>
         /// replace enter key
         /// </summary>
-        private string RelaceEnterKey(string import)
+        private char[] RelaceEnterKey(char[] import)
         {
             string pattern = @"\n"; Regex rgx = new Regex(pattern);
-            return rgx.Replace(import, "");
+            return rgx.Replace(new string(import), "").ToArray();
         }
     }
 }

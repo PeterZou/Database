@@ -56,8 +56,11 @@
     <Compile Include="BufferManage\PF_Hashtable.cs" />
     <Compile Include="BufferManage\PF_HashEntry.cs" />
     <Compile Include="Const\ConstProperty.cs" />
+    <Compile Include="Const\WindowsAPI.cs" />
+    <Compile Include="FileManage\FileManagerUtil.cs" />
     <Compile Include="FileManage\PF_FileHandle.cs" />
     <Compile Include="FileManage\PF_FileHdr.cs" />
+    <Compile Include="FileManage\PF_Manager.cs" />
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
     <Compile Include="IO\IOFDDic.cs" />

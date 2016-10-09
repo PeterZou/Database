@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Database.Const;
 
 namespace Database.BufferManage
 {
-    public struct PF_BufPageDesc
+    public class PF_BufPageDesc
     {
-        public string data;
+        public char[] data = new char[ConstProperty.PF_FILE_HDR_SIZE];
         public bool dirty; //true if has modified, false if not or with init
         public int pinCount; //whether used or not
         public int fd; //fd must start from 1;

@@ -24,21 +24,14 @@ namespace Database.Const
         // Point: sizeof(int) is equal to sizeof(PF_PageHdr)
         public const int PF_PAGE_SIZE = 4096 - sizeof(int);
 
-        //
-        // PF_PageHdr: Header structure for pages
-        //
-        public struct PF_PageHdr
-        {
-            int nextFree;       // nextFree can be any of these values:
-                                //  - the number of the next free page
-                                //  - PF_PAGE_LIST_END if this is last free page
-                                //  - PF_PAGE_USED if the page is not free
-        };
-
         public readonly static int PF_PageHdr_SIZE = sizeof(int);
 
         // Justify the file header to the length of one page
-        public readonly static int PF_FILE_HDR_SIZE = PF_PAGE_SIZE + sizeof(int);
+        public readonly static int PF_FILE_HDR_SIZE = 4096;
+
+        public const int PF_FILE_HDR_FirstFree_SIZE = sizeof(int);
+
+        public const int PF_FILE_HDR_NumPages_SIZE = sizeof(int);
 
         public enum Page_statics{ PF_PAGE_NOT_USED, PF_PAGE_LIST_END , PF_PAGE_USED };
     }

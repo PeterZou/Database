@@ -8,7 +8,8 @@ namespace Database.FileManage
 {
     public class PF_PageHandle
     {
-        
+        //Integer did not insert into the disk!
+        public int pageNum;
 
         public string pPageData;
     }

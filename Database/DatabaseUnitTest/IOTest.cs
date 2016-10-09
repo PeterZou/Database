@@ -9,6 +9,7 @@ using Database.IO;
 using System.Threading;
 using System.IO;
 using DatabaseUnitTest.IOTestFile;
+using Database.FileManage;
 
 namespace DatabaseUnitTest
 {
@@ -20,7 +21,7 @@ namespace DatabaseUnitTest
         {
             IOFDDic.FDMapping.Add(1, @"D:\orders.data");
             PF_Buffermgr pf = new PF_Buffermgr(40);
-            string s = pf.ReadPage(1,1);
+            char[] s = pf.ReadPage(1,1);
         }
 
         [TestMethod]
@@ -29,26 +30,27 @@ namespace DatabaseUnitTest
             IOFDDic.FDMapping.Add(1, @"D:\orders.data");
             PF_Buffermgr pf = new PF_Buffermgr(40);
             
-            pf.WritePage(1,1,TestConst.ss);
+            pf.WritePage(1,1,TestConst.ss.ToArray());
         }
 
         /// <summary>
         /// Read the whole integer as a string with different char but the same bytes
         /// </summary>
         [TestMethod]
-        public void ReadTheWholeInteger()
+        public void ReplaceTheNextFreeTest()
         {
-            byte[] data = new byte[1000];
-            string ioPath = @"D:\numString.txt";
-            using (FileStream fs = new FileStream(ioPath, FileMode.Open))
-            {
-                using (BinaryReader sw = new BinaryReader(fs))
-                {
-                    sw.Read(data, 0, 66);
-                }
-            }
+            int i = -1;
 
-            var entry = Util.RawDataToObject<StructType>(data);
+            PF_FileHandle f = new PF_FileHandle();
+
+            PF_BufPageDesc pf = new PF_BufPageDesc();
+            pf.data = "42  ".ToArray();
+
+            Int32.TryParse(new string(pf.data),out i);
+
+            FileManagerUtil.ReplaceTheNextFree(pf,423,0);
+
+            Int32.TryParse(new string(pf.data), out i);
         }
     }
 }
