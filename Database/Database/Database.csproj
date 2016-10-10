@@ -70,6 +70,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordManage\Bitmap.cs" />
     <Compile Include="RecordManage\RID.cs" />
+    <Compile Include="RecordManage\RM_FileHandle.cs" />
     <Compile Include="RecordManage\RM_FileHdr.cs" />
     <Compile Include="RecordManage\RM_PageHdr.cs" />
     <Compile Include="RecordManage\RM_Record.cs" />

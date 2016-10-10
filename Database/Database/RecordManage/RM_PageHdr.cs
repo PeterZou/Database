@@ -11,37 +11,69 @@ namespace Database.RecordManage
     public struct RM_PageHdr
     {
         public PF_PageHdr pf_ph;
-        // A bitmap that tracks the free slots within 
-        // the page
+
+        public int numSlots;
+        public int numFreeSlots;
+        // A bitmap that tracks the free slots within the page
         public char[] freeSlotMap;
-        private int numSlots;
-        private int numFreeSlots;
 
         public RM_PageHdr(int numSlots, PF_PageHdr pf_ph)
         {
             this.pf_ph = pf_ph;
             this.numSlots = numSlots;
             this.numFreeSlots = numSlots;
-            freeSlotMap = new char[] { };
+            int num = new Bitmap(numSlots).numChars()* sizeof(char);
+            freeSlotMap = new char[num];
         }
 
-        private int Size()
+        public int Size()
         {
-            return 3*ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + Mapsize();
+            return ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + Mapsize() * sizeof(char);
         }
 
-        private int Mapsize()
+        public int Mapsize()
         {
             var b = new Bitmap(numSlots);
-            return b.numChars()* sizeof(char);
+            return b.numChars();
+        }
+        
+        public void From_buf(char[] buf)
+        {
+            string bufStr = new string(buf);
+            Int32.TryParse(bufStr.Take(ConstProperty.PF_PageHdr_SIZE).ToString(), 
+                out pf_ph.nextFree);
+
+            Int32.TryParse(bufStr.Substring(ConstProperty.PF_PageHdr_SIZE
+                , ConstProperty.PF_PageHdr_SIZE)
+                , out numSlots);
+
+            Int32.TryParse(bufStr.Substring(2*ConstProperty.PF_PageHdr_SIZE
+                , ConstProperty.PF_PageHdr_SIZE)
+                , out numFreeSlots);
+
+            freeSlotMap = bufStr.Substring(3 * ConstProperty.PF_PageHdr_SIZE
+                , Mapsize() * sizeof(char)).ToArray();
         }
 
-        //TODO
-        public void To_buf()
-        { }
+        public char[] To_buf()
+        {
+            char[] content = new char[Size()];
+            FileManagerUtil.ReplaceTheNextFree(content
+                , pf_ph.nextFree, 0);
 
-        //TODO
-        public void From_buf()
-        { }  
+            FileManagerUtil.ReplaceTheNextFree(content
+                , numSlots, ConstProperty.PF_PageHdr_SIZE);
+
+            FileManagerUtil.ReplaceTheNextFree(content
+                , numFreeSlots, 2*ConstProperty.PF_PageHdr_SIZE);
+
+            int index = 3 * ConstProperty.PF_PageHdr_SIZE;
+            for (int i = 0; i < Mapsize() * sizeof(char); i++)
+            {
+                content[index+i] = freeSlotMap[i];
+            }
+
+            return content;
+        }
     }
 }

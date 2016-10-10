@@ -13,7 +13,7 @@ namespace Database.FileManage
     //
     public struct PF_PageHdr
     {
-        int nextFree;       // nextFree can be any of these values:
+        public int nextFree;       // nextFree can be any of these values:
                             //  - the number of the next free page
                             //  - PF_PAGE_LIST_END if this is last free page
                             //  - PF_PAGE_USED if the page is not free

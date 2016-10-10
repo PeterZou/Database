@@ -11,6 +11,6 @@ namespace Database.FileManage
         //Integer did not insert into the disk!
         public int pageNum;
 
-        public string pPageData;
+        public char[] pPageData;
     }
 }

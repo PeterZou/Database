@@ -321,7 +321,7 @@ namespace Database.FileManage
             PF_PageHandle currentPage = new PF_PageHandle();
 
             currentPage.pageNum = pageNum;
-            currentPage.pPageData = new string(pageContent.data).Substring(ConstProperty.PF_PageHdr_SIZE);
+            currentPage.pPageData = pageContent.data.Take(ConstProperty.PF_PageHdr_SIZE).ToArray();
             m_log.Warn(currentPage.pageNum + " and " + currentPage.pPageData);
             return currentPage;
         }
@@ -334,7 +334,7 @@ namespace Database.FileManage
         // In:   pageNum - page number to test
         // Ret:  TRUE or FALSE
         //
-        private bool IsValidPageNum(int pageNum)
+        public bool IsValidPageNum(int pageNum)
         {
             if (bFileOpen && pageNum >= 0 && pageNum < hdr.numPages)
                 return true;
