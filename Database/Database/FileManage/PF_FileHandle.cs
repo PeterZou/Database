@@ -246,7 +246,7 @@ namespace Database.FileManage
 
             FileManagerUtil.ReplaceTheNextFree(content.data, hdr.firstFree, 0);
             hdr.firstFree = pageNum;
-            FileManagerUtil.ReplaceTheNextFree(content, hdr.firstFree,0);
+            //FileManagerUtil.ReplaceTheNextFree(content, hdr.firstFree,0);
 
             bHdrChanged = true;
 
