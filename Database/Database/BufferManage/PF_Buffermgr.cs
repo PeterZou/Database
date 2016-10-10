@@ -10,13 +10,14 @@ using System.Threading.Tasks;
 using log4net;
 using log4net.Config;
 using System.Reflection;
+using Database.FileManage;
 
 namespace Database.BufferManage
 {
     public class PF_Buffermgr
     {
-        private List<PF_BufPageDesc> freeList;
-        private List<PF_BufPageDesc> usedList;
+        public List<PF_BufPageDesc> freeList;
+        public List<PF_BufPageDesc> usedList;
         private PF_Hashtable pf_h;
         public int NumPages { get; set; }
         private int pageSize;
@@ -28,8 +29,8 @@ namespace Database.BufferManage
         /// <param name="numPages"></param>
         public PF_Buffermgr(int numPages)
         {
-            freeList = new List<PF_BufPageDesc>();
             usedList = new List<PF_BufPageDesc>();
+            freeList = new List<PF_BufPageDesc>();
 
             pf_h = new PF_Hashtable(ConstProperty.PF_HASH_TBL_SIZE);
             this.NumPages = numPages;
@@ -68,7 +69,7 @@ namespace Database.BufferManage
             // If page not in buffer...
             if (slot == -1)
             {
-                slot = InternalAlloc();
+                slot = InternalAlloc(pageNum);
                 outputResult = ReadPage(fd, pageNum);
                 pf_h.Insert(fd, pageNum, slot);
                 InitPageDesc(fd, pageNum, slot);
@@ -107,7 +108,7 @@ namespace Database.BufferManage
             int slot = pf_h.Found(fd, pageNum);
             //slot must be -1
             if (slot != -1) throw new Exception();
-            slot = InternalAlloc();
+            slot = InternalAlloc(pageNum);
             pf_h.Insert(fd, pageNum, slot);
             InitPageDesc(fd, pageNum, slot);
             return usedList[0];
@@ -128,7 +129,7 @@ namespace Database.BufferManage
 
             var node = usedList.Find(n => n.slotSequence == slot);
 
-            if (node.fd == 0 || node.pinCount == 0) throw new Exception();
+            if (node.pinCount == 0) throw new Exception();
 
             int index = usedList.IndexOf(node);
 
@@ -179,8 +180,9 @@ namespace Database.BufferManage
         //
         public void FlushPages(int fd)
         {
+            List<int> indexArray = new List<int>();
             PF_BufPageDesc headNode;
-            foreach (var u in usedList)
+            foreach(var u in usedList)
             {
                 if (u.fd == fd)
                 {
@@ -205,11 +207,14 @@ namespace Database.BufferManage
                         }
 
                         pf_h.Delete(fd, u.pageNum);
-                        usedList.RemoveAt(index);
+                        indexArray.Add(index);
                         freeList.Insert(0, headNode);
                     }
                 }
             }
+            indexArray.Reverse();
+            foreach (var i in indexArray)
+                usedList.RemoveAt(i);
         }
 
         //
@@ -225,6 +230,7 @@ namespace Database.BufferManage
         //
         public void ForcePages(int fd, int pageNum)
         {
+            List<int> indexArray = new List<int>();
             PF_BufPageDesc headNode;
             foreach (var u in usedList)
             {
@@ -236,11 +242,14 @@ namespace Database.BufferManage
                         WritePage(u.fd, u.pageNum, u.data);
                         headNode = u;
                         headNode.dirty = false;
-                        usedList.RemoveAt(index);
+                        indexArray.Add(index);
                         usedList.Insert(index, headNode);
                     }
                 }
             }
+            indexArray.Reverse();
+            foreach (var i in indexArray)
+                usedList.RemoveAt(i);
         }
 
         //
@@ -253,7 +262,7 @@ namespace Database.BufferManage
         //       chosen (because all the pages are pinned), then return an error.
         // Out:  slot - set to newly-allocated slot
         // Ret:  PF_NOBUF if all pages are pinned, other PF return code otherwise
-        private int InternalAlloc()
+        private int InternalAlloc(int pageNum)
         {
             int slot = -1;
             PF_BufPageDesc headNode = new PF_BufPageDesc();
@@ -286,6 +295,7 @@ namespace Database.BufferManage
                 // Write out the page if it is dirty
                 if (headNode.dirty == true)
                 {
+                    FileManagerUtil.ReplaceTheNextFree(headNode.data,pageNum,0);
                     WritePage(headNode.fd, headNode.pageNum, headNode.data);
                     headNode.dirty = false;
                 }
@@ -322,6 +332,8 @@ namespace Database.BufferManage
         // Write a page
         public void WritePage(int fd, int pageNum, char[] source)
         {
+            var charReplace = new char[ConstProperty.PF_FILE_HDR_SIZE];
+            
             //replace enter key
             char[] outputSource = RelaceEnterKey(source);
 
@@ -333,9 +345,14 @@ namespace Database.BufferManage
                     long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
                     sr.BaseStream.Seek(offset, SeekOrigin.Begin);
 
+                    for (int i = 0; i < outputSource.Length; i++)
+                    {
+                        charReplace[i] = outputSource[i];
+                    }
+
                     //source is a record which had the fixed length
-                    if (outputSource.Length != pageSize) throw new Exception();
-                    sr.Write(outputSource);
+                    if (charReplace.Length != pageSize) throw new Exception();
+                    sr.Write(charReplace);
                 }
             }
         }

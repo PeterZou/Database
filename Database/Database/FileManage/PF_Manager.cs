@@ -33,21 +33,19 @@ namespace Database.FileManage
                 File.Delete(fileName);
             }
 
-            using (FileStream myFs = new FileStream(fileName, FileMode.Create))
+            PF_FileHdr hdr;
+            hdr.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
+            hdr.numPages = 0;
+
+            int num = 1;
+            if (IO.IOFDDic.FDMapping.Keys.Count != 0)
             {
-                using (StreamWriter mySw = new StreamWriter(myFs))
-                {
-                    PF_FileHdr hdr;
-                    hdr.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
-                    hdr.numPages = 0;
-
-                    int num = IO.IOFDDic.FDMapping.Keys.Max();
-                    IO.IOFDDic.FDMapping.Add(num+1, fileName);
-
-                    FileManagerUtil.WriteFileHdr(hdr, num + 1);
-                    mySw.Write(hdr);
-                }
+                num = IO.IOFDDic.FDMapping.Keys.Max() + 1;
             }
+                     
+            IO.IOFDDic.FDMapping.Add(num, fileName);
+
+            FileManagerUtil.WriteFileHdr(hdr, num);
         }
 
         //
@@ -88,12 +86,19 @@ namespace Database.FileManage
         //
         public PF_FileHandle OpenFile(string fileName)
         {
+            int num = 1;
+            if (IO.IOFDDic.FDMapping.Keys.Count != 0)
+            {
+                num = IO.IOFDDic.FDMapping.Keys.Max() + 1;
+            }
+
+            IO.IOFDDic.FDMapping.Add(num, fileName);
+
             try
             {
                 PF_FileHdr hdr = FileManagerUtil.ReadFileHdr(fileName);
 
-                PF_Buffermgr pf_bm = new PF_Buffermgr(ConstProperty.PF_BUFFER_SIZE);
-                PF_FileHandle pf_fh = new PF_FileHandle(hdr, fileName, pf_bm, true);
+                PF_FileHandle pf_fh = new PF_FileHandle(hdr, fileName, pBufferMgr, true);
                 return pf_fh;
             }
             catch (IOException e)

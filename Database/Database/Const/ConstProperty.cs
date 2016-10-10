@@ -33,6 +33,6 @@ namespace Database.Const
 
         public const int PF_FILE_HDR_NumPages_SIZE = sizeof(int);
 
-        public enum Page_statics{ PF_PAGE_NOT_USED, PF_PAGE_LIST_END , PF_PAGE_USED };
+        public enum Page_statics{ PF_PAGE_USED = -2, PF_PAGE_LIST_END=-1};
     }
 }

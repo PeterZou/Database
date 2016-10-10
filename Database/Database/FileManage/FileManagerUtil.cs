@@ -11,9 +11,9 @@ namespace Database.FileManage
 {
     public static class FileManagerUtil
     {
-        public static void WriteFileHdr(PF_FileHdr hdr,int fd)
+        public static void WriteFileHdr(PF_FileHdr hdr, int fd)
         {
-            using (FileStream fs = new FileStream(IO.IOFDDic.FDMapping[fd], FileMode.Open))
+            using (FileStream fs = new FileStream(IO.IOFDDic.FDMapping[fd], FileMode.OpenOrCreate))
             {
                 using (StreamWriter sr = new StreamWriter(fs))
                 {
@@ -35,10 +35,10 @@ namespace Database.FileManage
                     char[] firstFree = new char[ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
                     char[] numPages = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
                     sr.Read(firstFree,0, ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
-                    Int32.TryParse(firstFree.ToString(),out pf_fh.firstFree);
+                    Int32.TryParse(new string(firstFree),out pf_fh.firstFree);
 
                     sr.Read(numPages, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
-                    Int32.TryParse(numPages.ToString(), out pf_fh.firstFree);
+                    Int32.TryParse(new string(numPages), out pf_fh.numPages);
                 }
             }
             return pf_fh;
@@ -57,15 +57,16 @@ namespace Database.FileManage
         public static void ReplaceTheNextFree(char[] content, int nextFree, int start)
         {
             string str = nextFree.ToString();
-            for (int i = start; i < ConstProperty.PF_PageHdr_SIZE; i++)
+            for (int i = 0; i < ConstProperty.PF_PageHdr_SIZE; i++)
             {
+                int j = i + start;
                 if (i < str.Length)
                 {
-                    content[i] = str[i];
+                    content[j] = str[i];
                 }
                 else
                 {
-                    content[i] = ' ';
+                    content[j] = ' ';
                 }
             }
         }

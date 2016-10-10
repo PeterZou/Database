@@ -17,7 +17,7 @@ namespace DatabaseUnitTest
     public class IOTest
     {
         [TestMethod]
-        public void ReadTest()
+        public void IOReadTest()
         {
             IOFDDic.FDMapping.Add(1, @"D:\orders.data");
             PF_Buffermgr pf = new PF_Buffermgr(40);
@@ -25,7 +25,7 @@ namespace DatabaseUnitTest
         }
 
         [TestMethod]
-        public void WirteTest()
+        public void IOWirteTest()
         {
             IOFDDic.FDMapping.Add(1, @"D:\orders.data");
             PF_Buffermgr pf = new PF_Buffermgr(40);

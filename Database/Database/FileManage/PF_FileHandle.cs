@@ -21,7 +21,7 @@ namespace Database.FileManage
     /// </summary>
     public class PF_FileHandle
     {
-        private PF_Buffermgr pf_bm;
+        public PF_Buffermgr pf_bm;
         public bool bFileOpen;                                 // file open flag
         private bool bHdrChanged;                               // dirty flag for file hdr
         private int fd;                                         // OS file descriptor
@@ -32,17 +32,16 @@ namespace Database.FileManage
         public PF_FileHandle()
         { }
 
-        public PF_FileHandle(PF_FileHdr hdr,string fileName, PF_Buffermgr pf_bm,bool bHdrChanged)
+        public PF_FileHandle(PF_FileHdr hdr,string fileName, PF_Buffermgr pf_bm,bool bFileOpen)
         {
             fd = IO.IOFDDic.FDMapping.Where(node => node.Value.Equals(fileName)).Select(node =>node.Key).First();
 
-            bFileOpen = false;
             Type type = MethodBase.GetCurrentMethod().DeclaringType;
             m_log = LogManager.GetLogger(type);
 
             this.pf_bm = pf_bm;
             this.hdr = hdr;
-            this.bHdrChanged = bHdrChanged;
+            this.bFileOpen = bFileOpen;
         }
 
         //
@@ -58,7 +57,7 @@ namespace Database.FileManage
         //
         public PF_PageHandle GetThisPage(int pageNum)
         {
-            if (!(bFileOpen && pageNum > 0 && pageNum < hdr.numPages)) throw new Exception();
+            if (!(bFileOpen && pageNum >= 0 && pageNum < hdr.numPages)) throw new Exception();
 
             PF_BufPageDesc pageContent = pf_bm.GetPage(fd, pageNum, true);
 
@@ -164,6 +163,7 @@ namespace Database.FileManage
 
             if (!bFileOpen) throw new Exception();
 
+            // If the free list isn't empty...
             if (hdr.firstFree != (Int32)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
                 pageNum = hdr.firstFree;
@@ -239,14 +239,15 @@ namespace Database.FileManage
 
             PF_BufPageDesc content = pf_bm.GetPage(fd, pageNum, false);
 
-            int nextFreeTmp = 0;
+            int nextFreeTmp = -3;
 
-            Int32.TryParse(content.data.Take(ConstProperty.PF_PageHdr_SIZE).ToString(), out nextFreeTmp);
-            if (nextFreeTmp == (int)ConstProperty.Page_statics.PF_PAGE_USED) throw new Exception();
+            Int32.TryParse(new string(content.data.Take(ConstProperty.PF_PageHdr_SIZE).ToArray()), out nextFreeTmp);
+            if (nextFreeTmp != (int)ConstProperty.Page_statics.PF_PAGE_USED) throw new Exception();
 
+            FileManagerUtil.ReplaceTheNextFree(content.data, hdr.firstFree, 0);
+            hdr.firstFree = pageNum;
             FileManagerUtil.ReplaceTheNextFree(content, hdr.firstFree,0);
 
-            hdr.firstFree = pageNum;
             bHdrChanged = true;
 
             MarkDirty(pageNum);
@@ -302,9 +303,9 @@ namespace Database.FileManage
         private PF_PageHandle ReadPage(PF_BufPageDesc pageContent, int pageNum)
         {
             int pageStatics = -1;
-            Int32.TryParse(pageContent.data.ToString().Substring(0, ConstProperty.PF_PageHdr_SIZE), out pageStatics);
+            Int32.TryParse(new string(pageContent.data).Substring(0, ConstProperty.PF_PageHdr_SIZE), out pageStatics);
 
-            if (pageStatics != (int)ConstProperty.Page_statics.PF_PAGE_USED)
+            if (pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_USED)
             {
                 return ReadPageHandle(pageContent, pageNum);
             }
@@ -320,8 +321,8 @@ namespace Database.FileManage
             PF_PageHandle currentPage = new PF_PageHandle();
 
             currentPage.pageNum = pageNum;
-            currentPage.pPageData = pageContent.data.ToString().Substring(ConstProperty.PF_PageHdr_SIZE);
-
+            currentPage.pPageData = new string(pageContent.data).Substring(ConstProperty.PF_PageHdr_SIZE);
+            m_log.Warn(currentPage.pageNum + " and " + currentPage.pPageData);
             return currentPage;
         }
 
@@ -335,7 +336,7 @@ namespace Database.FileManage
         //
         private bool IsValidPageNum(int pageNum)
         {
-            if (bFileOpen && pageNum > 0 && pageNum < hdr.numPages)
+            if (bFileOpen && pageNum >= 0 && pageNum < hdr.numPages)
                 return true;
             return false;
         }

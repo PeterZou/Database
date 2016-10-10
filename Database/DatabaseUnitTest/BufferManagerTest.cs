@@ -5,7 +5,7 @@ using Database.BufferManage;
 namespace DatabaseUnitTest
 {
     [TestClass]
-    public class BufferManage
+    public class BufferManagerTest
     {
         [TestMethod]
         public void FountTest()
