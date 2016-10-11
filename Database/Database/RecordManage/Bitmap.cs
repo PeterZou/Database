@@ -17,7 +17,7 @@ namespace Database.RecordManage
             bitArray = new char[numChars()];
         }
 
-        public Bitmap(char[] formerArray,int numBitArray)
+        public Bitmap(char[] formerArray, int numBitArray)
         {
             size = numBitArray;
             bitArray = new char[numChars()];
@@ -50,6 +50,10 @@ namespace Database.RecordManage
             }
         }
 
+        /// <summary>
+        /// 1 is free and 0 is uesd
+        /// </summary>
+        /// <param name="bitNum"></param>
         public void Set(UInt32 bitNum)
         {
             int location = (int)bitNum / 8;
@@ -79,6 +83,15 @@ namespace Database.RecordManage
             else
             {
                 return true;
+            }
+        }
+
+        public void To_char_buf(char[] b, int len)
+        {
+            if (b == null || len != numChars()) throw new Exception();
+            for (int i = 0; i < len; i++)
+            {
+                b[i] = bitArray[i];
             }
         }
     }

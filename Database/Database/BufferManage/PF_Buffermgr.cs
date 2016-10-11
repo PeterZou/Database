@@ -234,7 +234,7 @@ namespace Database.BufferManage
             PF_BufPageDesc headNode;
             foreach (var u in usedList)
             {
-                if (u.fd == fd && (u.pageNum == pageNum || u.pageNum == 100000))
+                if (u.fd == fd && (u.pageNum == pageNum || u.pageNum == ConstProperty.ALL_PAGES))
                 {
                     if (u.dirty)
                     {

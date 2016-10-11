@@ -25,7 +25,6 @@ namespace Database.RecordManage
         {
             bFileOpen = false;
             bHdrChanged = false;
-
         }
 
         bool hdrChanged() { return bHdrChanged; }
@@ -59,29 +58,30 @@ namespace Database.RecordManage
             if ((pfHandle == null) || !bFileOpen || GetNumSlots() <= 0) throw new Exception();
         }
 
-        //
-        // IsValidPageNum
-        //
-        // Desc: Internal.  Return TRUE if pageNum is a valid page number
-        //       in the file, FALSE otherwise
-        // In:   pageNum - page number to test
-        // Ret:  TRUE or FALSE
-        //
-        private bool IsValidPageNum(int pageNum)
+        public void Open(PF_FileHandle pfh, int size)
         {
-            return pfHandle.IsValidPageNum(pageNum);
+            if (bFileOpen || pfHandle != null) throw new Exception();
+
+            if (pfh == null || size <= 0) throw new Exception();
+
+            bFileOpen = true;
+            pfHandle = pfh;
+
+            PF_PageHandle ph = pfHandle.GetThisPage(0);
+            pfHandle.UnpinPage(0);
+
+            GetFileHeader(ph);
+
+            bHdrChanged = true;
+
+            IsValid();
         }
 
-        //
-        // IsValidRID
-        //
-        //
-        private bool IsValidRID(RID rid)
+        public void ForcePages(int pageNum)
         {
-            int page = rid.Page;
-            int slot = rid.Slot;
-
-            return IsValidPageNum(page) && slot >= 0 && slot < GetNumSlots();
+            IsValid();
+            if (!IsValidPageNum(pageNum) && pageNum != ConstProperty.ALL_PAGES) throw new Exception();
+            pfHandle.ForcePages(pageNum);
         }
 
         /// <summary>
@@ -96,16 +96,116 @@ namespace Database.RecordManage
             RM_PageHdr pHdr = new RM_PageHdr(GetNumSlots(), new PF_PageHdr());
 
             // QA: the meaning of this branch and what is pHdr in original refer to?
+            // QA2: key point is how to define the free page? if there is still freeslot, is it a free page?
             if (hdr.pf_fh.firstFree != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
+                ph = pfHandle.GetThisPage(hdr.pf_fh.firstFree);
+                pageNum = ph.pageNum;
+                pfHandle.MarkDirty(pageNum);
+                pfHandle.UnpinPage(pageNum);
+                pHdr = GetPageHeader(ph);
 
             }
-            else if (hdr.pf_fh.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
-            { }
+            if (hdr.pf_fh.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
+            {
+                ph = pfHandle.AllocatePage();
+                pageNum = ph.pageNum;
+                pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
+                var bitmap = new Bitmap(GetNumSlots());
+                bitmap.Set(); // Initially all slots are free
+                bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
+
+                // TODO what is the use of ph.pPageData? no need to write into the disk?
+                ph.pPageData = pHdr.To_buf();
+
+                pfHandle.UnpinPage(pageNum);
+
+                // add page to the free list
+                hdr.pf_fh.firstFree = pageNum;
+                hdr.pf_fh.numPages++;
+                bHdrChanged = true;
+
+            }
             else
                 throw new Exception();
 
-            return 0;
+            return pageNum;
+        }
+
+        public Tuple<RID,PF_PageHandle> GetNextFreeSlot()
+        {
+            IsValid();
+
+            int pageNum = GetNextFreePage();
+
+            PF_PageHandle ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+
+            var pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+            for (UInt32 i = 0; i < GetNumSlots(); i++)
+            {
+                if (bitmap.Test(i))
+                {
+                    return new Tuple<RID, PF_PageHandle>(new RID(pageNum, (int)i), ph);
+                }
+            }
+
+            throw new Exception();
+        }
+
+        public RM_Record GetRec(RID rid)
+        {
+            IsValid();
+            if (!IsValidRID(rid)) throw new Exception();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+
+            PF_PageHandle ph;
+            RM_PageHdr pHdr;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] data = GetSlotPointer(ph, slotNum);
+
+            var rec = new RM_Record();
+            rec.Set(data, hdr.extRecordSize, rid);
+            return rec;
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="pData"></param>
+        /// <returns></returns>
+        public RID InsertRec(char[] pData)
+        {
+            IsValid();
+            // TODO:consider about the last '\0' of a string
+            if (pData == null || pData.Length == 0 || pData.Length > fullRecordSize()) throw new Exception();
+
+            var tuple = GetNextFreeSlot();
+
+            PF_PageHandle ph = tuple.Item2;
+            RID rid = tuple.Item1;
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+
+            RM_PageHdr pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+            char[] data = GetSlotPointer(ph, slotNum);
+
+            for (int i = 0; i < fullRecordSize(); i++)
+            {
+                
+            }
+
+            return rid;
         }
 
         private RM_PageHdr GetPageHeader(PF_PageHandle ph)
@@ -158,6 +258,31 @@ namespace Database.RecordManage
         private char[] GetSlotPointer(PF_PageHandle ph, int slot)
         {
             return null;
+        }
+
+        //
+        // IsValidPageNum
+        //
+        // Desc: Internal.  Return TRUE if pageNum is a valid page number
+        //       in the file, FALSE otherwise
+        // In:   pageNum - page number to test
+        // Ret:  TRUE or FALSE
+        //
+        private bool IsValidPageNum(int pageNum)
+        {
+            return pfHandle.IsValidPageNum(pageNum);
+        }
+
+        //
+        // IsValidRID
+        //
+        //
+        private bool IsValidRID(RID rid)
+        {
+            int page = rid.Page;
+            int slot = rid.Slot;
+
+            return IsValidPageNum(page) && slot >= 0 && slot < GetNumSlots();
         }
     }
 }

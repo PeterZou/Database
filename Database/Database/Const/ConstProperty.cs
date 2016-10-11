@@ -11,6 +11,8 @@ namespace Database.Const
         public readonly static int PF_BUFFER_SIZE = 40; // Number of pages in the buffer
         public readonly static int PF_HASH_TBL_SIZE = 20; // Size of hash table
 
+        public const int ALL_PAGES = 100000;
+
         // int is occupided 8char
         // which cs is influenced
         // PF_PageHandle
