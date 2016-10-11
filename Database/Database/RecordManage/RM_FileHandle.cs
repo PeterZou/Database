@@ -178,11 +178,6 @@ namespace Database.RecordManage
             return rec;
         }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <param name="pData"></param>
-        /// <returns></returns>
         public RID InsertRec(char[] pData)
         {
             IsValid();
@@ -198,14 +193,70 @@ namespace Database.RecordManage
 
             RM_PageHdr pHdr = GetPageHeader(ph);
             var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
-            char[] data = GetSlotPointer(ph, slotNum);
+            SetSlotPointer(ph, slotNum,ph.pPageData);
 
-            for (int i = 0; i < fullRecordSize(); i++)
+            bitmap.Reset((UInt32)slotNum); // slot s is no longer free
+            pHdr.numFreeSlots--;
+            if (pHdr.numFreeSlots == 0)
             {
-                
+                // remove from free list 
+                hdr.pf_fh.firstFree = pHdr.pf_ph.nextFree;
+                pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
             }
+            bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
 
+            SetPageHeader(ph, pHdr);
             return rid;
+        }
+
+        public void UpdateRec(RM_Record rec)
+        {
+            IsValid();
+            RID rid = rec.GetRid();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+            if (!IsValidRID(rid)) throw new Exception();
+
+            PF_PageHandle ph;
+            RM_PageHdr pHdr;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] recData = rec.GetData();
+            if (recData.Length != fullRecordSize()) throw new Exception();
+
+            SetSlotPointer(ph, slotNum, recData);
+
+            SetPageHeader(ph, pHdr);
+        }
+
+        public void DeleteRec(RID rid)
+        {
+            IsValid();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.MarkDirty(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            RM_PageHdr pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+            bitmap.Set((UInt32)slotNum);
+
+            if (pHdr.numFreeSlots == 0)
+            {
+                hdr.pf_fh.firstFree = pHdr.pf_ph.nextFree;
+                pHdr.pf_ph.nextFree = pageNum;
+            }
+            pHdr.numFreeSlots++;
+            bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
+
+            SetPageHeader(ph, pHdr);
         }
 
         public RM_PageHdr GetPageHeader(PF_PageHandle ph)
@@ -216,12 +267,13 @@ namespace Database.RecordManage
             return pHdr;
         }
 
-        public void SetPageHeader(PF_PageHandle ph, RM_PageHdr phdr)
+        public void SetPageHeader(PF_PageHandle ph, RM_PageHdr pHdr)
         {
-            var pHdr = new RM_PageHdr();
             // Just replace the head
             char[] header = pHdr.To_buf();
             for (int i = 0; i < header.Length; i++) ph.pPageData[i] = header[i];
+
+            pfHandle.SetThisPage(ph);
         }
 
         public void GetFileHeader(PF_PageHandle ph)
@@ -254,10 +306,25 @@ namespace Database.RecordManage
             ph.pPageData = content;
         }
 
-        // TODO
         private char[] GetSlotPointer(PF_PageHandle ph, int slot)
         {
-            return null;
+            IsValid();
+            var bitmap = new Bitmap(GetNumSlots());
+            int offset = (new RM_PageHdr(GetNumSlots(), new PF_PageHdr())).Size();
+            offset += slot * fullRecordSize();
+            int index = 0;
+            char[] data = new char[ph.pPageData.Length- offset];
+            for (int i = offset; i < ph.pPageData.Length; i++)
+            {
+                data[index] = ph.pPageData[i];
+                index++;
+            }
+            return data;
+        }
+
+        private void SetSlotPointer(PF_PageHandle ph, int slot, char[] data)
+        {
+            data = GetSlotPointer(ph, slot);
         }
 
         //

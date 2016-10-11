@@ -22,6 +22,7 @@ namespace Database.BufferManage
         public int NumPages { get; set; }
         private int pageSize;
         private ILog m_log;
+        public FileStream fs;
 
         /// <summary>
         /// consist of NumPages pages, and PF_HASH_TBL_SIZE hashentries
@@ -70,7 +71,7 @@ namespace Database.BufferManage
             if (slot == -1)
             {
                 slot = InternalAlloc(pageNum);
-                outputResult = ReadPage(fd, pageNum);
+                outputResult = FileManagerUtil.ReadPage(fd, pageNum,pageSize,fs);
                 pf_h.Insert(fd, pageNum, slot);
                 InitPageDesc(fd, pageNum, slot);
 
@@ -197,7 +198,7 @@ namespace Database.BufferManage
                         int index = usedList.IndexOf(u);
                         if (u.dirty)
                         {
-                            WritePage(u.fd, u.pageNum, u.data);
+                            FileManagerUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
                             headNode = u;
                             headNode.dirty = false;
                         }
@@ -239,7 +240,7 @@ namespace Database.BufferManage
                     if (u.dirty)
                     {
                         int index = usedList.IndexOf(u);
-                        WritePage(u.fd, u.pageNum, u.data);
+                        FileManagerUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
                         headNode = u;
                         headNode.dirty = false;
                         indexArray.Add(index);
@@ -296,7 +297,8 @@ namespace Database.BufferManage
                 if (headNode.dirty == true)
                 {
                     FileManagerUtil.ReplaceTheNextFree(headNode.data,pageNum,0);
-                    WritePage(headNode.fd, headNode.pageNum, headNode.data);
+                    FileManagerUtil.WritePage(headNode.fd, headNode.pageNum
+                        , headNode.data,pageSize,fs);
                     headNode.dirty = false;
                 }
 
@@ -307,54 +309,6 @@ namespace Database.BufferManage
             // Make it to the most recently usedList
             usedList.Insert(0, headNode);
             return slot;
-        }
-
-        // Read a page
-        public char[] ReadPage(int fd, int pageNum)
-        {
-            char[] buffer;
-            string ioPath = IOFDDic.FDMapping[fd];
-            using (FileStream fs = new FileStream(ioPath, FileMode.Open))
-            {
-                using (StreamReader sr = new StreamReader(fs))
-                {
-                    long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
-                    sr.BaseStream.Seek(offset, SeekOrigin.Begin);
-
-                    buffer = new char[pageSize];
-                    sr.Read(buffer, 0, pageSize);
-                }
-            }
-            //replace enter key
-            return RelaceEnterKey(buffer);
-        }
-
-        // Write a page
-        public void WritePage(int fd, int pageNum, char[] source)
-        {
-            var charReplace = new char[ConstProperty.PF_FILE_HDR_SIZE];
-            
-            //replace enter key
-            char[] outputSource = RelaceEnterKey(source);
-
-            string ioPath = IOFDDic.FDMapping[fd];
-            using (FileStream fs = new FileStream(ioPath, FileMode.Open))
-            {
-                using (StreamWriter sr = new StreamWriter(fs))
-                {
-                    long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
-                    sr.BaseStream.Seek(offset, SeekOrigin.Begin);
-
-                    for (int i = 0; i < outputSource.Length; i++)
-                    {
-                        charReplace[i] = outputSource[i];
-                    }
-
-                    //source is a record which had the fixed length
-                    if (charReplace.Length != pageSize) throw new Exception();
-                    sr.Write(charReplace);
-                }
-            }
         }
 
         /// <summary>
@@ -376,13 +330,6 @@ namespace Database.BufferManage
             usedList[0] = node;
         }
 
-        /// <summary>
-        /// replace enter key
-        /// </summary>
-        private char[] RelaceEnterKey(char[] import)
-        {
-            string pattern = @"\n"; Regex rgx = new Regex(pattern);
-            return rgx.Replace(new string(import), "").ToArray();
-        }
+        
     }
 }

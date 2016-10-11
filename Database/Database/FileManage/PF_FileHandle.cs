@@ -1,11 +1,8 @@
 ﻿using Database.BufferManage;
 using log4net;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Database.Const;
 using System.IO;
 
@@ -23,8 +20,9 @@ namespace Database.FileManage
     {
         public PF_Buffermgr pf_bm;
         public bool bFileOpen;                                 // file open flag
-        private bool bHdrChanged;                               // dirty flag for file hdr
-        private int fd;                                         // OS file descriptor
+        private bool bHdrChanged;                              // dirty flag for file hdr
+        private int fd;                                        // OS file descriptor
+        private FileStream fs;
 
         private PF_FileHdr hdr;
         private ILog m_log;
@@ -32,7 +30,8 @@ namespace Database.FileManage
         public PF_FileHandle()
         { }
 
-        public PF_FileHandle(PF_FileHdr hdr,string fileName, PF_Buffermgr pf_bm,bool bFileOpen)
+        public PF_FileHandle(PF_FileHdr hdr,string fileName
+            , PF_Buffermgr pf_bm,bool bFileOpen, FileStream fs)
         {
             fd = IO.IOFDDic.FDMapping.Where(node => node.Value.Equals(fileName)).Select(node =>node.Key).First();
 
@@ -40,8 +39,12 @@ namespace Database.FileManage
             m_log = LogManager.GetLogger(type);
 
             this.pf_bm = pf_bm;
+            // Set the FileStream fs
+            this.pf_bm.fs = fs;
+
             this.hdr = hdr;
             this.bFileOpen = bFileOpen;
+            this.fs = fs;
         }
 
         //
@@ -62,6 +65,17 @@ namespace Database.FileManage
             PF_BufPageDesc pageContent = pf_bm.GetPage(fd, pageNum, true);
 
             return ReadPage(pageContent, pageNum);
+        }
+
+        public void SetThisPage(PF_PageHandle pf_ph)
+        {
+            var node = pf_bm.usedList.Where(n=>n.pageNum == pf_ph.pageNum).First();
+
+            int index = pf_bm.usedList.IndexOf(node);
+
+            node.data = pf_ph.pPageData;
+
+            pf_bm.usedList.Insert(index, node);
         }
 
         //
@@ -269,7 +283,7 @@ namespace Database.FileManage
             if (bHdrChanged)
             {
                 // write to the filehdr
-                FileManagerUtil.WriteFileHdr(hdr,fd);
+                FileManagerUtil.WriteFileHdr(hdr,fd,fs);
 
                 bHdrChanged = false;
             }
@@ -293,7 +307,7 @@ namespace Database.FileManage
             if (bHdrChanged)
             {
                 // write to the filehdr
-                FileManagerUtil.WriteFileHdr(hdr,fd);
+                FileManagerUtil.WriteFileHdr(hdr,fd,fs);
 
                 bHdrChanged = false;
             }

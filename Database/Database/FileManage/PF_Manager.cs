@@ -13,6 +13,7 @@ namespace Database.FileManage
     public class PF_Manager
     {
         private PF_Buffermgr pBufferMgr;
+        private FileStream fs;
 
         public PF_Manager()
         {
@@ -45,7 +46,7 @@ namespace Database.FileManage
                      
             IO.IOFDDic.FDMapping.Add(num, fileName);
 
-            FileManagerUtil.WriteFileHdr(hdr, num);
+            FileManagerUtil.WriteFileHdr(hdr, num,fs);
         }
 
         //
@@ -96,13 +97,15 @@ namespace Database.FileManage
 
             try
             {
-                PF_FileHdr hdr = FileManagerUtil.ReadFileHdr(fileName);
+                fs = new FileStream(fileName, FileMode.Open);
+                PF_FileHdr hdr = FileManagerUtil.ReadFileHdr(fileName, fs);
 
-                PF_FileHandle pf_fh = new PF_FileHandle(hdr, fileName, pBufferMgr, true);
+                PF_FileHandle pf_fh = new PF_FileHandle(hdr, fileName, pBufferMgr, true,fs);
                 return pf_fh;
             }
             catch (IOException e)
             {
+                fs.Close();
                 throw new IOException(e.ToString());
             }
             
@@ -112,6 +115,7 @@ namespace Database.FileManage
         {
             if (!pf_fh.bFileOpen) throw new IOException();
             pf_fh.FlushPages();
+            fs.Close();
 
             pf_fh.bFileOpen = false;
         }

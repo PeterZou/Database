@@ -35,7 +35,14 @@ namespace Database.RecordManage
 
             pfm.CreateFile(fileName);
 
-            // TODO
+            PF_FileHandle pfh = pfm.OpenFile(fileName);
+            PF_PageHandle headerPage = pfh.AllocatePage();
+            char[] pData = headerPage.pPageData;
+
+            RM_FileHdr hdr;
+            hdr.pf_fh.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
+            hdr.pf_fh.numPages = 1; // hdr page
+            hdr.extRecordSize = recordSize;
         }
     }
 }
