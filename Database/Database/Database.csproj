@@ -63,6 +63,9 @@
     <Compile Include="FileManage\PF_Manager.cs" />
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
+    <Compile Include="RecordManage\CompOpType.cs" />
+    <Compile Include="RecordManage\Predicate.cs" />
+    <Compile Include="RecordManage\RM_FileScan.cs" />
     <Compile Include="IO\IOFDDic.cs" />
     <Compile Include="IO\Util.cs" />
     <Compile Include="Model\DatabaseModel.cs" />
@@ -72,6 +75,7 @@
     <Compile Include="RecordManage\RID.cs" />
     <Compile Include="RecordManage\RM_FileHandle.cs" />
     <Compile Include="RecordManage\RM_FileHdr.cs" />
+    <Compile Include="RecordManage\RM_Manager.cs" />
     <Compile Include="RecordManage\RM_PageHdr.cs" />
     <Compile Include="RecordManage\RM_Record.cs" />
   </ItemGroup>

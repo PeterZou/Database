@@ -10,7 +10,7 @@ namespace Database.RecordManage
 {
     public class RM_FileHandle
     {
-        private PF_FileHandle pfHandle;              // pointer to opened PF_FileHandle
+        public PF_FileHandle pfHandle;              // pointer to opened PF_FileHandle
         private RM_FileHdr hdr;                        // file header
         private bool bFileOpen;                        // file open flag
         private bool bHdrChanged;                      // dirty flag for file hdr
@@ -29,9 +29,9 @@ namespace Database.RecordManage
 
         bool hdrChanged() { return bHdrChanged; }
 
-        int fullRecordSize() { return hdr.extRecordSize; }
+        public int fullRecordSize() { return hdr.extRecordSize; }
 
-        int GetNumPages() { return hdr.pf_fh.numPages; }
+        public int GetNumPages() { return hdr.pf_fh.numPages; }
 
         public int GetNumSlots()
         {
@@ -208,7 +208,7 @@ namespace Database.RecordManage
             return rid;
         }
 
-        private RM_PageHdr GetPageHeader(PF_PageHandle ph)
+        public RM_PageHdr GetPageHeader(PF_PageHandle ph)
         {
             var pHdr = new RM_PageHdr();
             char[] buf = ph.pPageData;
@@ -216,7 +216,7 @@ namespace Database.RecordManage
             return pHdr;
         }
 
-        private void SetPageHeader(PF_PageHandle ph, RM_PageHdr phdr)
+        public void SetPageHeader(PF_PageHandle ph, RM_PageHdr phdr)
         {
             var pHdr = new RM_PageHdr();
             // Just replace the head
@@ -224,24 +224,24 @@ namespace Database.RecordManage
             for (int i = 0; i < header.Length; i++) ph.pPageData[i] = header[i];
         }
 
-        private void GetFileHeader(PF_PageHandle ph)
+        public void GetFileHeader(PF_PageHandle ph)
         {
             string str = new string(ph.pPageData);
             Int32.TryParse(str.Substring
-                (0,ConstProperty.PF_PageHdr_SIZE)
+                (0, ConstProperty.PF_PageHdr_SIZE)
                 , out hdr.pf_fh.firstFree);
             Int32.TryParse(str.Substring
                 (ConstProperty.PF_PageHdr_SIZE
-                , 2*ConstProperty.PF_PageHdr_SIZE)
+                , 2 * ConstProperty.PF_PageHdr_SIZE)
                 , out hdr.pf_fh.numPages);
             Int32.TryParse(str.Substring
-                (2*ConstProperty.PF_PageHdr_SIZE
+                (2 * ConstProperty.PF_PageHdr_SIZE
                 , 3 * ConstProperty.PF_PageHdr_SIZE), out hdr.extRecordSize);
         }
 
-        private void SetFileHeader(PF_PageHandle ph)
+        public void SetFileHeader(PF_PageHandle ph)
         {
-            char[] content = new char[3* ConstProperty.PF_PageHdr_SIZE];
+            char[] content = new char[3 * ConstProperty.PF_PageHdr_SIZE];
             FileManagerUtil.ReplaceTheNextFree(content
                 , hdr.pf_fh.firstFree, 0);
 

@@ -37,6 +37,31 @@ namespace Database.Const
 
         public const int RM_Page_Hdr_SIZE_ExceptBitMap = 3* sizeof(int);
 
+        public const int RM_Page_RID_SIZE = 2 * sizeof(int);
+        public const int MAXSTRINGLEN = 255;             // maximum length of a
+
         public enum Page_statics{ PF_PAGE_USED = -2, PF_PAGE_LIST_END=-1};
+
+        //
+        // Attribute types
+        //
+        public enum AttrType{INT,FLOAT,STRING};
+
+        //
+        // Comparison operators
+        //
+        public enum CompOp
+        {
+            NO_OP,                                      // no comparison
+            EQ_OP, NE_OP, LT_OP, GT_OP, LE_OP, GE_OP    // binary atomic operators
+        };
+
+        //
+        // Pin Strategy Hint
+        //
+        public enum ClientHint
+        {
+            NO_HINT                                     // default value
+        };
     }
 }
