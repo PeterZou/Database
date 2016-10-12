@@ -63,6 +63,8 @@
     <Compile Include="FileManage\PF_Manager.cs" />
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
+    <Compile Include="IndexManage\BPlusTree.cs" />
+    <Compile Include="IndexManage\Node.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RM_FileScan.cs" />
@@ -82,6 +84,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Data\QA.json" />
+    <None Include="Data\Reference.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

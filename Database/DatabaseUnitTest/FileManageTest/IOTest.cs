@@ -21,7 +21,7 @@ namespace DatabaseUnitTest
         {
             IOFDDic.FDMapping.Add(1, @"D:\orders.data");
             PF_Buffermgr pf = new PF_Buffermgr(40);
-            char[] s = pf.ReadPage(1,1);
+            //char[] s = pf.ReadPage(1,1);
         }
 
         [TestMethod]
@@ -30,7 +30,7 @@ namespace DatabaseUnitTest
             IOFDDic.FDMapping.Add(1, @"D:\orders.data");
             PF_Buffermgr pf = new PF_Buffermgr(40);
             
-            pf.WritePage(1,1,TestConst.ss.ToArray());
+            //pf.WritePage(1,1,TestConst.ss.ToArray());
         }
 
         /// <summary>
