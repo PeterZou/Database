@@ -64,7 +64,9 @@
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
     <Compile Include="IndexManage\BPlusTree.cs" />
+    <Compile Include="IndexManage\INode.cs" />
     <Compile Include="IndexManage\Node.cs" />
+    <Compile Include="IndexManage\NodeInt.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RM_FileScan.cs" />
