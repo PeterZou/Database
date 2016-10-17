@@ -82,7 +82,46 @@ namespace Database.IndexManage
         /// </summary>
         /// <param name="key"></param>
         public void Delete(TK key)
-        { }
+        {
+            if (Root.IsLeaf == true && Root.Values.Count == 1)
+            {
+                if (key.CompareTo(Root.Values[0].Key) == 0)
+                {
+                    Root = null;
+                }
+                return;
+            }
+
+            DeleteIntenal(key, Root);
+        }
+
+        private void DeleteIntenal(TK key, Node<TK, TV> node)
+        {
+            int i = node.Values.TakeWhile(entry => key.CompareTo(entry.Key) > 0).Count();
+
+            // found key in node, so delete if from it
+            if (i < node.Values.Count && key.CompareTo(node.Values[i].Key) == 0)
+            {
+                this.DeleteKeyFromNode(node, key, i);
+                return;
+            }
+
+            // delete key from subtree
+            if (!node.IsLeaf)
+            {
+                this.DeleteKeyFromSubtree(node, key, i);
+            }
+        }
+
+        private void DeleteKeyFromSubtree(Node<TK, TV> parentNode, TK keyToDelete, int subtreeIndexInNode)
+        {
+
+        }
+
+        private void DeleteKeyFromNode(Node<TK, TV> node, TK keyToDelete, int keyIndexInNode)
+        {
+
+        }
 
         /// <summary>
         /// Go through the tree include the nodes and leaves
@@ -116,11 +155,21 @@ namespace Database.IndexManage
             }
         }
 
-        private Node<TK, TV> Split(Node<TK,TV> node)
+        private Node<TK, TV> Split(TV value,Node<TK,TV> node)
         {
             var output = node;
-            if (node.Values.Count > Degree) throw new Exception();
-            if (node.Values.Count == Degree)
+            if (node.Values.Count > Degree-1) throw new Exception();
+
+            if (node.IsLeaf == true && node.Values.Count != Degree-1)
+            {
+                int index = GetIndex(value, node);
+
+                node.Values.Insert(index, value);
+
+                return node;
+            }
+
+            if (node.Values.Count == Degree-1)
             {
                 int valuesCount = node.Values.Count;
 
@@ -147,11 +196,11 @@ namespace Database.IndexManage
                     var leftValues = node.Values.GetRange(0, Degree / 2);
                     leftNode.Values = leftValues;
 
-                    var rightValues = node.Values.GetRange((Degree+1) / 2 , valuesCount- (Degree + 1) / 2);
+                    var rightValues = node.Values.GetRange(Degree / 2 , valuesCount- Degree / 2);
                     rightNode.Values = rightValues;
                 }
 
-                TV midNode = node.Values[Degree / 2];
+                TV midNode = node.Values[(Degree-1) / 2];
                 // create a new root node
                 if (node.Parent == null)
                 {
@@ -172,19 +221,7 @@ namespace Database.IndexManage
                     leftNode.Parent = parent;
                     rightNode.Parent = parent;
 
-                    // insert into the exsiting node
-                    int index = -1;
-                    var list = parent.Values.Where(n => midNode.Key.CompareTo(n.Key) < 0);
-
-                    if (list != null && list.ToList().Count != 0)
-                    {
-                        var v = list.First();
-                        index = parent.Values.IndexOf(v);
-                    }
-                    else
-                    {
-                        index = parent.Values.Count;
-                    }
+                    int index = GetIndex(midNode, parent);
 
                     parent.ChildrenNodes.RemoveAt(index);
                     parent.Values.Insert(index, midNode);
@@ -211,8 +248,18 @@ namespace Database.IndexManage
 
         private void Insert(TV value, Node<TK, TV> oldNode)
         {
-            var node = Split(oldNode);
+            var node = Split(value,oldNode);
 
+            int index = GetIndex(value, node);
+
+            if (node.IsLeaf != true)
+            {
+                Insert(value, node.ChildrenNodes[index]);
+            }
+        }
+
+        private int GetIndex(TV value, Node<TK, TV> node)
+        {
             var list = node.Values.Where(n => value.Key.CompareTo(n.Key) < 0);
 
             int index = -1;
@@ -227,14 +274,7 @@ namespace Database.IndexManage
                 index = node.Values.Count;
             }
 
-            if (node.IsLeaf == true)
-            {
-                node.Values.Insert(index, value);
-            }
-            else
-            {
-                Insert(value, node.ChildrenNodes[index]);
-            }
+            return index;
         }
     }
 }

@@ -20,29 +20,17 @@ namespace Database
         {
             XmlConfigurator.Configure();
 
-            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(4);
+            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(5);
 
-            Stopwatch s = new Stopwatch();
-            s.Start();
             var list = new List<NodeInt>();
 
-            for (int i = 1; i <= 1000000; i++)
+            for (int i = 1; i <= 25; i++)
             {
-                if(i != 9999)
-                    bt.Insert(new NodeInt(i));
+                bt.Insert(new NodeInt(i));
             }
-            s.Stop();
-            Console.WriteLine(s.Elapsed);
-            //bt.Traverse(bt.Root, bt.TraverseOutput);
-            s.Restart();
-            bt.Insert(new NodeInt(9999));
-            s.Stop();
-            Console.WriteLine(s.Elapsed);
-            s.Restart();
-            bt.Search(546484);
-            var v = bt.SearchNode;
-            s.Stop();
-            Console.WriteLine(s.Elapsed);
+
+            bt.Traverse(bt.Root, bt.TraverseOutput);
+
             Console.ReadKey();
         }
     }
