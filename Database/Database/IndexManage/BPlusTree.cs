@@ -469,15 +469,20 @@ namespace Database.IndexManage
             }
             else
             {
-                node.Values[0] = parentNode.Values.Last();
+                node.Values[0] = parentNode.Values[parentIndex - 1];
             }
             parentNode.Values[parentIndex - 1] = leftSib.Values.Last();
 
             if (!node.IsLeaf)
             {
-                
+                node.ChildrenNodes.RemoveAt(0);
+                node.ChildrenNodes.Insert(0, leftSib.ChildrenNodes.Last());
+
+                int index = leftSib.ChildrenNodes.Count;
+                leftSib.ChildrenNodes[index] = null;
+
+                node.ChildrenNodes[0].Parent = node;
             }
-            
         }
     }
 }
