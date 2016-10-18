@@ -385,19 +385,19 @@ namespace Database.IndexManage
                 else if (parentIndex == 0)
                 {
                     // Merge with right sibling
-                    var nextNode = MergeRight(node);
+                    var nextNode = Merge(node);
                     this.RepairAfterDelete(nextNode.Parent);
                 }
                 else
                 {
                     // Merge with left sibling
-                    var nextNode = MergeRight(parentNode.ChildrenNodes[parentIndex - 1]);
+                    var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
                     RepairAfterDelete(nextNode.Parent);
                 }
             }
         }
 
-        private Node<TK, TV> MergeRight(Node<TK, TV> node)
+        private Node<TK, TV> Merge(Node<TK, TV> node)
         {
             var parentNode = node.Parent;
             var parentIndex = 0;
@@ -429,13 +429,54 @@ namespace Database.IndexManage
             return node;
         }
 
-        private void StealFromLeft(Node<TK, TV> node, int parentIndex)
-        {
-
-        }
-
         private void StealFromRight(Node<TK, TV> node, int parentIndex)
         {
+            var parentNode = node.Parent;
+            var rightSib = parentNode.ChildrenNodes[parentIndex + 1];
+
+            if (node.IsLeaf)
+            {
+                node.Values.Add(rightSib.Values[0]);
+                parentNode.Values[parentIndex] = rightSib.Values[1];
+            }
+            else
+            {
+                node.Values.Add(rightSib.Values[parentIndex]);
+                parentNode.Values[parentIndex] = rightSib.Values[0];
+            }
+
+            if (!node.IsLeaf)
+            {
+                node.ChildrenNodes.Add(rightSib.ChildrenNodes[0]);
+                node.ChildrenNodes.Last().Parent = node;
+
+                rightSib.ChildrenNodes.RemoveAt(0);
+            }
+            rightSib.Values.RemoveAt(0);
+        }
+
+        private void StealFromLeft(Node<TK, TV> node, int parentIndex)
+        {
+            var parentNode = node.Parent;
+
+            node.Values.Insert(0, node.Values[0]);
+
+            var leftSib = parentNode.ChildrenNodes[parentIndex - 1];
+
+            if (node.IsLeaf)
+            {
+                node.Values[0] = leftSib.Values.Last();
+            }
+            else
+            {
+                node.Values[0] = parentNode.Values.Last();
+            }
+            parentNode.Values[parentIndex - 1] = leftSib.Values.Last();
+
+            if (!node.IsLeaf)
+            {
+                
+            }
             
         }
     }
