@@ -1,4 +1,32 @@
-﻿using System;
+﻿// Copyright 2011 David Galles, University of San Francisco. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification, are
+// permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice, this list of
+// conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice, this list
+// of conditions and the following disclaimer in the documentation and/or other materials
+// provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR IMPLIED
+// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+// FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+// ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// The views and conclusions contained in the software and documentation are those of the
+// authors and should not be interpreted as representing official policies, either expressed
+// or implied, of the University of San Francisco
+
+// Delete function is modified by above.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +43,16 @@ namespace Database.IndexManage
         where TV : INode<TK>
         where TK : IComparable<TK>
     {
+        public int MaxDegree
+        {
+            get { return Degree-1; }
+        }
+
+        public int MinDegree
+        {
+            get { return Degree/2; }
+        }
+
         public int Degree { set; get; }
         public Node<TK, TV> Root{ set; get; }
 
@@ -77,50 +115,14 @@ namespace Database.IndexManage
             } 
         }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <param name="key"></param>
         public void Delete(TK key)
         {
-            if (Root.IsLeaf == true && Root.Values.Count == 1)
+            DoDelete(key, Root);
+
+            if (Root.IsLeaf == true && Root.Values.Count == 0)
             {
-                if (key.CompareTo(Root.Values[0].Key) == 0)
-                {
-                    Root = null;
-                }
-                return;
+                Root = null;
             }
-
-            DeleteIntenal(key, Root);
-        }
-
-        private void DeleteIntenal(TK key, Node<TK, TV> node)
-        {
-            int i = node.Values.TakeWhile(entry => key.CompareTo(entry.Key) > 0).Count();
-
-            // found key in node, so delete if from it
-            if (i < node.Values.Count && key.CompareTo(node.Values[i].Key) == 0)
-            {
-                this.DeleteKeyFromNode(node, key, i);
-                return;
-            }
-
-            // delete key from subtree
-            if (!node.IsLeaf)
-            {
-                this.DeleteKeyFromSubtree(node, key, i);
-            }
-        }
-
-        private void DeleteKeyFromSubtree(Node<TK, TV> parentNode, TK keyToDelete, int subtreeIndexInNode)
-        {
-
-        }
-
-        private void DeleteKeyFromNode(Node<TK, TV> node, TK keyToDelete, int keyIndexInNode)
-        {
-
         }
 
         /// <summary>
@@ -158,9 +160,9 @@ namespace Database.IndexManage
         private Node<TK, TV> Split(TV value,Node<TK,TV> node)
         {
             var output = node;
-            if (node.Values.Count > Degree-1) throw new Exception();
+            if (node.Values.Count > MaxDegree) throw new Exception();
 
-            if (node.IsLeaf == true && node.Values.Count != Degree-1)
+            if (node.IsLeaf == true && node.Values.Count != MaxDegree)
             {
                 int index = GetIndex(value, node);
 
@@ -169,7 +171,7 @@ namespace Database.IndexManage
                 return node;
             }
 
-            if (node.Values.Count == Degree-1)
+            if (node.Values.Count == MaxDegree)
             {
                 int valuesCount = node.Values.Count;
 
@@ -258,9 +260,9 @@ namespace Database.IndexManage
             }
         }
 
-        private int GetIndex(TV value, Node<TK, TV> node)
+        private int GetIndex(TK key, Node<TK, TV> node)
         {
-            var list = node.Values.Where(n => value.Key.CompareTo(n.Key) < 0);
+            var list = node.Values.Where(n => key.CompareTo(n.Key) < 0);
 
             int index = -1;
 
@@ -275,6 +277,166 @@ namespace Database.IndexManage
             }
 
             return index;
+        }
+
+        private int GetIndex(TV value, Node<TK, TV> node)
+        {
+            return GetIndex(value.Key, node);
+        }
+
+        private void DoDelete(TK key, Node<TK, TV> node)
+        {
+            if (node == null) return;
+            int i = 0;
+            for (i = 0; i < node.Values.Count && key.CompareTo(node.Values[i].Key) > 0; i++) ;
+            // 满节点
+            if (i == node.Values.Count)
+            {
+                // 非子节点
+                if (!node.IsLeaf)
+                {
+                    DoDelete(key, node.ChildrenNodes[i]);
+                }
+                else
+                { }
+            }
+            else if (!node.IsLeaf && key.CompareTo(node.Values[i].Key) == 0)
+            {
+                this.DoDelete(key, node.ChildrenNodes[i + 1]);
+            }
+            else if (!node.IsLeaf)
+            {
+                this.DoDelete(key, node.ChildrenNodes[i]);
+            }
+            else if (node.IsLeaf && key.CompareTo(node.Values[i].Key) == 0)
+            {
+                node.Values.RemoveAt(i);
+
+                // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
+                //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
+                if (i == 0 && node.Parent != null)
+                {
+                    TV nextSmallest = default(TV);
+                    var parentNode = node.Parent;
+                    int parentIndex;
+                    for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
+
+                    //已经被删掉
+                    if (node.Values.Count == 0)
+                    {
+                        if (parentIndex != parentNode.Values.Count)
+                        {
+                            // 借一个
+                            nextSmallest = parentNode.ChildrenNodes[parentIndex + 1].Values[0];
+                        }
+                    }
+                    else
+                    {
+                        nextSmallest = node.Values[0];
+                    }
+
+                    // 将nextSmallest一层一层的向上替换
+                    while (parentNode != null)
+                    {
+                        if (parentIndex > 0 && key.CompareTo(parentNode.Values[parentIndex - 1].Key) == 0)
+                        {
+                            parentNode.Values[parentIndex - 1] = nextSmallest;
+                        }
+                        var grandParent = parentNode.Parent;
+                        for (parentIndex = 0; grandParent != null && grandParent.ChildrenNodes[parentIndex] != parentNode; parentIndex++) ;
+                        parentNode = grandParent;
+                    }
+                }
+
+                RepairAfterDelete(node);
+            }
+        }
+
+        private void RepairAfterDelete(Node<TK, TV> node)
+        {
+            // less than degree
+            if (node.Values.Count < MinDegree)
+            {
+                if (node.Parent == null)
+                {
+                    if (node.Values.Count == 0)
+                    {
+                        Root = node.ChildrenNodes[0];
+                        Root.Parent = null;
+                    }
+                }
+            }
+            else
+            {
+                var parentNode = node.Parent;
+                int parentIndex = 0;
+                for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++);
+
+                if (parentIndex > 0 && parentNode.ChildrenNodes[parentIndex - 1].Values.Count > MinDegree)
+                {
+                    StealFromLeft(node, parentIndex);
+
+                }
+                else if (parentIndex < parentNode.Values.Count && parentNode.ChildrenNodes[parentIndex + 1].Values.Count > MinDegree)
+                {
+                    StealFromRight(node, parentIndex);
+
+                }
+                else if (parentIndex == 0)
+                {
+                    // Merge with right sibling
+                    var nextNode = MergeRight(node);
+                    this.RepairAfterDelete(nextNode.Parent);
+                }
+                else
+                {
+                    // Merge with left sibling
+                    var nextNode = MergeRight(parentNode.ChildrenNodes[parentIndex - 1]);
+                    RepairAfterDelete(nextNode.Parent);
+                }
+            }
+        }
+
+        private Node<TK, TV> MergeRight(Node<TK, TV> node)
+        {
+            var parentNode = node.Parent;
+            var parentIndex = 0;
+            for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
+            var rightSib = parentNode.ChildrenNodes[parentIndex + 1];
+
+            if (!node.IsLeaf)
+            {
+                node.Values.Add(parentNode.Values[parentIndex]);
+                var fromParentIndex = node.Values.Count;
+                node.Values.AddRange(rightSib.Values);
+
+                node.ChildrenNodes.AddRange(rightSib.ChildrenNodes);
+
+                foreach (var c in node.ChildrenNodes)
+                {
+                    c.Parent = node;
+                }
+            }
+            else
+            {
+                var fromParentIndex = node.Values.Count;
+                node.Values.RemoveAt(fromParentIndex - 1);
+                node.Values.AddRange(rightSib.Values);
+            }
+            parentNode.ChildrenNodes.RemoveAt(parentIndex+1);
+            parentNode.Values.RemoveAt(parentIndex);
+
+            return node;
+        }
+
+        private void StealFromLeft(Node<TK, TV> node, int parentIndex)
+        {
+
+        }
+
+        private void StealFromRight(Node<TK, TV> node, int parentIndex)
+        {
+            
         }
     }
 }
