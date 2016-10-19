@@ -44,5 +44,7 @@ namespace Database.RecordManage
             hdr.pf_fh.numPages = 1; // hdr page
             hdr.extRecordSize = recordSize;
         }
+
+
     }
 }

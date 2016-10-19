@@ -24,13 +24,16 @@ namespace Database
 
             var list = new List<NodeInt>();
 
-            for (int i = 1; i <= 3; i++)
+            for (int i = 1; i <= 2; i++)
             {
                 bt.Insert(new NodeInt(i));
             }
 
             bt.Traverse(bt.Root, bt.TraverseOutput);
 
+            Console.WriteLine("------------------------");
+            bt.Delete(3);
+            bt.Delete(1);
             bt.Delete(2);
             bt.Traverse(bt.Root, bt.TraverseOutput);
 

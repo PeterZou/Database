@@ -117,12 +117,18 @@ namespace Database.IndexManage
 
         public void Delete(TK key)
         {
-            DoDelete(key, Root);
+            if (Root == null) return;
 
-            if (Root.IsLeaf == true && Root.Values.Count == 0)
+            if (Root.IsLeaf == true && Root.Values.Count == 1)
             {
-                Root = null;
+                if (key.CompareTo(Root.Values[0].Key) == 0)
+                {
+                    Root = null;
+                    return;
+                }
             }
+
+            DoDelete(key, Root);
         }
 
         /// <summary>
@@ -131,8 +137,9 @@ namespace Database.IndexManage
         /// </summary>
         public void Traverse(Node<TK, TV> node, Action<Node<TK, TV>> action)
         {
-            action(node);
+            if (node == null) return;
 
+            action(node);
             if (node.ChildrenNodes != null)
             {
                 foreach (var n in node.ChildrenNodes)
@@ -365,34 +372,34 @@ namespace Database.IndexManage
                         Root.Parent = null;
                     }
                 }
-            }
-            else
-            {
-                var parentNode = node.Parent;
-                int parentIndex = 0;
-                for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++);
-
-                if (parentIndex > 0 && parentNode.ChildrenNodes[parentIndex - 1].Values.Count > MinDegree)
-                {
-                    StealFromLeft(node, parentIndex);
-
-                }
-                else if (parentIndex < parentNode.Values.Count && parentNode.ChildrenNodes[parentIndex + 1].Values.Count > MinDegree)
-                {
-                    StealFromRight(node, parentIndex);
-
-                }
-                else if (parentIndex == 0)
-                {
-                    // Merge with right sibling
-                    var nextNode = Merge(node);
-                    this.RepairAfterDelete(nextNode.Parent);
-                }
                 else
                 {
-                    // Merge with left sibling
-                    var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
-                    RepairAfterDelete(nextNode.Parent);
+                    var parentNode = node.Parent;
+                    int parentIndex = 0;
+                    for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
+
+                    if (parentIndex > 0 && parentNode.ChildrenNodes[parentIndex - 1].Values.Count > MinDegree)
+                    {
+                        StealFromLeft(node, parentIndex);
+
+                    }
+                    else if (parentIndex < parentNode.Values.Count && parentNode.ChildrenNodes[parentIndex + 1].Values.Count > MinDegree)
+                    {
+                        StealFromRight(node, parentIndex);
+
+                    }
+                    else if (parentIndex == 0)
+                    {
+                        // Merge with right sibling
+                        var nextNode = Merge(node);
+                        this.RepairAfterDelete(nextNode.Parent);
+                    }
+                    else
+                    {
+                        // Merge with left sibling
+                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
+                        RepairAfterDelete(nextNode.Parent);
+                    }
                 }
             }
         }
@@ -420,7 +427,6 @@ namespace Database.IndexManage
             else
             {
                 var fromParentIndex = node.Values.Count;
-                node.Values.RemoveAt(fromParentIndex - 1);
                 node.Values.AddRange(rightSib.Values);
             }
             parentNode.ChildrenNodes.RemoveAt(parentIndex+1);
@@ -459,7 +465,7 @@ namespace Database.IndexManage
         {
             var parentNode = node.Parent;
 
-            node.Values.Insert(0, node.Values[0]);
+            node.Values.Insert(0, default(TV));
 
             var leftSib = parentNode.ChildrenNodes[parentIndex - 1];
 
@@ -483,6 +489,8 @@ namespace Database.IndexManage
 
                 node.ChildrenNodes[0].Parent = node;
             }
+
+            leftSib.Values.Remove(leftSib.Values.Last());
         }
     }
 }
