@@ -64,9 +64,14 @@
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
     <Compile Include="IndexManage\BPlusTree\BPlusTree.cs" />
+    <Compile Include="IndexManage\BPlusTree\BPlusTreeProvider.cs" />
     <Compile Include="IndexManage\BPlusTree\INode.cs" />
+    <Compile Include="IndexManage\BPlusTree\Iprovider.cs" />
     <Compile Include="IndexManage\BPlusTree\Node.cs" />
     <Compile Include="IndexManage\BPlusTree\NodeInt.cs" />
+    <Compile Include="IndexManage\BPlusTree\ProviderContext.cs" />
+    <Compile Include="IndexManage\IX_IndexHandle.cs" />
+    <Compile Include="IndexManage\IX_FileHdr.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RecordManagerUtil.cs" />

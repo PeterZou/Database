@@ -13,6 +13,8 @@ namespace Database.Const
 
         public const int ALL_PAGES = 100000;
 
+        public const int IX_PAGE_LIST_END = -1;
+
         // int is occupided 8char
         // which cs is influenced
         // PF_PageHandle
