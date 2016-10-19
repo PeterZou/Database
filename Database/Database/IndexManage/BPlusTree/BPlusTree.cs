@@ -32,7 +32,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Database.IndexManage
+namespace Database.IndexManage.BPlusTree
 {
     /// <summary>
     /// key in the Logic is always not the same

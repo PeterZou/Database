@@ -12,8 +12,8 @@ namespace Database.RecordManage
     {
         public PF_FileHandle pfHandle;              // pointer to opened PF_FileHandle
         private RM_FileHdr hdr;                        // file header
-        private bool bFileOpen;                        // file open flag
-        private bool bHdrChanged;                      // dirty flag for file hdr
+        public bool bFileOpen;                        // file open flag
+        public bool bHdrChanged;                      // dirty flag for file hdr
 
         // You will probably then want to copy the file header information into a
         // private variable in the file handle that refers to the open file instance. By
@@ -70,7 +70,7 @@ namespace Database.RecordManage
             PF_PageHandle ph = pfHandle.GetThisPage(0);
             pfHandle.UnpinPage(0);
 
-            GetFileHeader(ph);
+            hdr = RecordManagerUtil.GetFileHeader(ph);
 
             bHdrChanged = true;
 
@@ -276,34 +276,9 @@ namespace Database.RecordManage
             pfHandle.SetThisPage(ph);
         }
 
-        public void GetFileHeader(PF_PageHandle ph)
-        {
-            string str = new string(ph.pPageData);
-            Int32.TryParse(str.Substring
-                (0, ConstProperty.PF_PageHdr_SIZE)
-                , out hdr.pf_fh.firstFree);
-            Int32.TryParse(str.Substring
-                (ConstProperty.PF_PageHdr_SIZE
-                , 2 * ConstProperty.PF_PageHdr_SIZE)
-                , out hdr.pf_fh.numPages);
-            Int32.TryParse(str.Substring
-                (2 * ConstProperty.PF_PageHdr_SIZE
-                , 3 * ConstProperty.PF_PageHdr_SIZE), out hdr.extRecordSize);
-        }
-
         public void SetFileHeader(PF_PageHandle ph)
         {
-            char[] content = new char[3 * ConstProperty.PF_PageHdr_SIZE];
-            FileManagerUtil.ReplaceTheNextFree(content
-                , hdr.pf_fh.firstFree, 0);
-
-            FileManagerUtil.ReplaceTheNextFree(content
-                , hdr.pf_fh.numPages, ConstProperty.PF_PageHdr_SIZE);
-
-            FileManagerUtil.ReplaceTheNextFree(content
-                , hdr.extRecordSize, 2 * ConstProperty.PF_PageHdr_SIZE);
-
-            ph.pPageData = content;
+            ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
         }
 
         private char[] GetSlotPointer(PF_PageHandle ph, int slot)

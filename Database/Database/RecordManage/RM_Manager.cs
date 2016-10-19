@@ -37,14 +37,86 @@ namespace Database.RecordManage
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);
             PF_PageHandle headerPage = pfh.AllocatePage();
-            char[] pData = headerPage.pPageData;
 
             RM_FileHdr hdr;
             hdr.pf_fh.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
             hdr.pf_fh.numPages = 1; // hdr page
             hdr.extRecordSize = recordSize;
+
+            headerPage.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
+
+            pfh.MarkDirty(headerPage.pageNum);
+            pfh.UnpinPage(headerPage.pageNum);
+
+            pfm.CloseFile(pfh);
         }
 
+        //
+        // DestroyFile
+        //
+        // Desc: Delete a RM file named fileName (fileName must exist and not be open)
+        // In:   fileName - name of file to delete
+        // Ret:  RM return code
+        //
+        public void DestroyFile(string fileName)
+        {
+            pfm.DestroyFile(fileName);
+        }
 
+        //
+        // OpenFile
+        //
+        // In:   fileName - name of file to open
+        // Out:  fileHandle - refer to the open file
+        //                    this function modifies local var's in fileHandle
+        //       to point to the file data in the file table, and to point to the
+        //       buffer manager object
+        // Ret:  PF_FILEOPEN or other RM return code
+        //
+        public RM_FileHandle OpenFile(string fileName)
+        {
+            RM_FileHandle rmh = new RM_FileHandle();
+
+            PF_FileHandle pfh = pfm.OpenFile(fileName);
+
+            PF_PageHandle ph = pfh.GetThisPage(0);
+
+            RM_FileHdr hdr = RecordManagerUtil.GetFileHeader(ph);
+
+            rmh.Open(pfh,hdr.extRecordSize);
+
+            pfh.UnpinPage(0);
+
+            return rmh;
+        }
+
+        //
+        // CloseFile
+        //
+        // Desc: Close file associated with fileHandle
+        //       The file should have been opened with OpenFile().
+        // In:   fileHandle - handle of file to close
+        // Out:  fileHandle - no longer refers to an open file
+        //                    this function modifies local var's in fileHandle
+        // Ret:  RM return code
+        //
+        public void CloseFile(RM_FileHandle rfileHandle)
+        {
+            if (!rfileHandle.bFileOpen || rfileHandle.pfHandle == null) throw new Exception();
+
+            if (rfileHandle.bHdrChanged)
+            {
+                PF_PageHandle ph = rfileHandle.pfHandle.GetThisPage(0);
+                rfileHandle.SetFileHeader(ph); // write hdr into file
+                rfileHandle.pfHandle.MarkDirty(0);
+                rfileHandle.pfHandle.UnpinPage(0);
+
+                rfileHandle.ForcePages(ConstProperty.ALL_PAGES);
+            }
+
+            pfm.CloseFile(rfileHandle.pfHandle);
+            rfileHandle.pfHandle = null;
+            rfileHandle.bFileOpen = false;
+        }
     }
 }

@@ -9,8 +9,8 @@ using log4net.Config;
 using System.Reflection;
 using Database.FileManage;
 using Database.Const;
-using Database.IndexManage;
 using System.Diagnostics;
+using Database.IndexManage.BPlusTree;
 
 namespace Database
 {

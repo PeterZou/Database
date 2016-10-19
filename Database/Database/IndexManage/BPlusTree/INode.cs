@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Database.IndexManage
+namespace Database.IndexManage.BPlusTree
 {
     public abstract class INode<TK>
     {
