@@ -11,6 +11,11 @@ namespace Database.IndexManage
     {
         public RM_FileHdr rmf;
 
+        public int indexRecordSize;
+
+        // 前几层节点常驻内存，rootpage一次导入,indexRecordSize,degree,pagesize决定，取满B+树
+        public int maxRootPageRecordSize;
+
         // key:value=>indexName:pagenum
         public char[] indexInfo;
     }
