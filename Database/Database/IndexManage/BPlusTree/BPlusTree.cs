@@ -255,15 +255,95 @@ namespace Database.IndexManage.BPlusTree
             return output;
         }
 
-        private void Insert(TV value, Node<TK, TV> oldNode)
+        private void Insert(TV value, Node<TK, TV> node)
         {
-            var node = Split(value,oldNode);
-
             int index = GetIndex(value, node);
-
-            if (node.IsLeaf != true)
+            if (node.IsLeaf == true)
             {
-                Insert(value, node.ChildrenNodes[index]);
+                node.Values.Insert(index, value);
+
+                InsertRepair(node);
+            }
+            else
+            {
+                Insert(value,node.ChildrenNodes[index]);
+            }
+        }
+
+        private void InsertRepair(Node<TK, TV> node)
+        {
+            if (node.Values.Count <= MaxDegree)
+            {
+                return;
+            }
+            else if (node.Parent == null)
+            {
+                Root = Split(node);
+                return;
+            }
+            else
+            {
+                var newNode = Split(node);
+                this.InsertRepair(newNode);
+            }
+        }
+
+        private Node<TK, TV> Split(Node<TK, TV> node)
+        {
+            var rightNode = node.SetNode();
+            var risingNode = node.Values[Degree / 2];
+
+            if (node.Parent != null)
+            {
+                var currentNode = node.Parent;
+
+                int index = currentNode.ChildrenNodes.IndexOf(node);
+
+                currentNode.Values.Insert(index, risingNode);
+                currentNode.ChildrenNodes.Insert(index+1, rightNode);
+                rightNode.Parent = currentNode;
+            }
+
+            int rightSplit;
+
+            if (node.IsLeaf)
+            {
+                rightSplit = Degree / 2;
+            }
+            else
+            {
+                rightSplit = Degree / 2 + 1;
+                rightNode.ChildrenNodes.AddRange(
+                    node.ChildrenNodes.GetRange(rightSplit, node.ChildrenNodes.Count - rightSplit));
+
+                node.ChildrenNodes.RemoveRange(rightSplit, node.ChildrenNodes.Count - rightSplit);
+                foreach (var r in rightNode.ChildrenNodes)
+                {
+                    r.Parent = rightNode;
+                }
+            }
+
+            rightNode.Values.AddRange(
+                    node.Values.GetRange(rightSplit, node.Values.Count - rightSplit));
+
+            node.Values.RemoveRange(rightSplit, node.Values.Count - rightSplit);
+
+            var leftNode = node;
+
+            if (node.Parent != null)
+            {
+                return node.Parent;
+            }
+            else
+            {
+                Root = node.SetNode();
+                Root.Parent = null;
+                Root.Values.Add(risingNode);
+                Root.ChildrenNodes.AddRange(new List<Node<TK, TV>>() { leftNode, rightNode });
+                leftNode.Parent = Root;
+                rightNode.Parent = Root;
+                Root.IsLeaf = false;
+                return Root;
             }
         }
 

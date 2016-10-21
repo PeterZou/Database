@@ -18,7 +18,7 @@ namespace DatabaseUnitTest.IndexManageTest
 
             var list = new List<NodeInt>();
 
-            for (int i = 1; i <= 1000000; i++)
+            for (int i = 1; i <= 7; i++)
             {
                 if (i != 9999)
                     bt.Insert(new NodeInt(i));

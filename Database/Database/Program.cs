@@ -20,8 +20,17 @@ namespace Database
         {
             XmlConfigurator.Configure();
 
-            var bBplusTree = BPlusTreeProvider<int, NodeInt>.GetBBplusTree(3);
-  
+            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(3);
+
+            var list = new List<NodeInt>();
+
+            for (int i = 1; i <= 20; i++)
+            {
+                bt.Insert(new NodeInt(i));
+            }
+
+            bt.Traverse(bt.Root, bt.TraverseOutput);
+
             Console.ReadKey();
         }
     }
