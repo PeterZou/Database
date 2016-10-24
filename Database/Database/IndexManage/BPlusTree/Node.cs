@@ -6,23 +6,36 @@ using System.Threading.Tasks;
 
 namespace Database.IndexManage.BPlusTree
 {
-    public class Node<TK,TV> 
+    public class Node<TK,TV>
+        where TV : INode<TK>
+        where TK : IComparable<TK>
     {
+        public TV Property { get; set; }
+
         public bool IsLeaf { set; get; }
         public Node<TK, TV> Parent { set; get; }
-        public List<TV> Values { set; get; }
+        public List<TK> Values { set; get; }
         public List<Node<TK, TV>> ChildrenNodes { set; get; }
 
-        public Node()
+        private Node()
         { }
 
         // must be a leaf node or root node
-        public Node(bool isLeaf, Node<TK, TV> parent, TV value)
+        public Node(bool isLeaf, Node<TK, TV> parent, TV property)
+        {
+            this.Property = property;
+            this.IsLeaf = isLeaf;
+            this.Parent = parent;
+            Values = new List<TK>();
+            Values.Add(Property.Key);
+        }
+
+        public Node(bool isLeaf, Node<TK, TV> parent, TK Property)
         {
             this.IsLeaf = isLeaf;
             this.Parent = parent;
-            Values = new List<TV>();
-            Values.Add(value);
+            Values = new List<TK>();
+            Values.Add(Property);
         }
 
         public Node<TK, TV> SetNode()
@@ -30,7 +43,7 @@ namespace Database.IndexManage.BPlusTree
             var node = new Node<TK, TV>();
             node.IsLeaf = IsLeaf;
             node.Parent = new Node<TK, TV>();
-            node.Values = new List<TV>();
+            node.Values = new List<TK>();
             node.ChildrenNodes = new List<Node<TK, TV>>();
 
             return node;

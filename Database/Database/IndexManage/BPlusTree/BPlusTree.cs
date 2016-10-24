@@ -61,7 +61,7 @@ namespace Database.IndexManage.BPlusTree
             this.Degree = degree;
         }
 
-        public TV SearchNode { get; set; }
+        public TK SearchNode { get; set; }
 
         public void Search(TK key)
         {
@@ -70,12 +70,12 @@ namespace Database.IndexManage.BPlusTree
 
         private void Search(Node<TK, TV> node, TK key)
         {
-            SearchNode = default(TV);
+            SearchNode = default(TK);
             if (node.IsLeaf == true)
             {
                 foreach (var n in node.Values)
                 {
-                    if (n.Key.CompareTo(key) == 0)
+                    if (n.CompareTo(key) == 0)
                     {
                         SearchNode = n;
                         return;
@@ -85,7 +85,7 @@ namespace Database.IndexManage.BPlusTree
             }
             else
             {
-                var list = node.Values.Where(n => key.CompareTo(n.Key) < 0);
+                var list = node.Values.Where(n => key.CompareTo(n) < 0);
 
                 int index = -1;
 
@@ -121,7 +121,7 @@ namespace Database.IndexManage.BPlusTree
 
             if (Root.IsLeaf == true && Root.Values.Count == 1)
             {
-                if (key.CompareTo(Root.Values[0].Key) == 0)
+                if (key.CompareTo(Root.Values[0]) == 0)
                 {
                     Root = null;
                     return;
@@ -185,7 +185,7 @@ namespace Database.IndexManage.BPlusTree
             {
                 int index = GetIndex(value, node);
 
-                node.Values.Insert(index, value);
+                node.Values.Insert(index, value.Key);
 
                 return node;
             }
@@ -221,7 +221,7 @@ namespace Database.IndexManage.BPlusTree
                     rightNode.Values = rightValues;
                 }
 
-                TV midNode = node.Values[(Degree-1) / 2];
+                TK midNode = node.Values[(Degree-1) / 2];
                 // create a new root node
                 if (node.Parent == null)
                 {
@@ -272,7 +272,7 @@ namespace Database.IndexManage.BPlusTree
             int index = GetIndex(value, node);
             if (node.IsLeaf == true)
             {
-                node.Values.Insert(index, value);
+                node.Values.Insert(index, value.Key);
 
                 InsertRepair(node);
             }
@@ -361,7 +361,7 @@ namespace Database.IndexManage.BPlusTree
 
         private int GetIndex(TK key, Node<TK, TV> node)
         {
-            var list = node.Values.Where(n => key.CompareTo(n.Key) < 0);
+            var list = node.Values.Where(n => key.CompareTo(n) < 0);
 
             int index = -1;
 
@@ -387,7 +387,7 @@ namespace Database.IndexManage.BPlusTree
         {
             if (node == null) return;
             int i = 0;
-            for (i = 0; i < node.Values.Count && key.CompareTo(node.Values[i].Key) > 0; i++) ;
+            for (i = 0; i < node.Values.Count && key.CompareTo(node.Values[i]) > 0; i++) ;
             // 满节点
             if (i == node.Values.Count)
             {
@@ -399,7 +399,7 @@ namespace Database.IndexManage.BPlusTree
                 else
                 { }
             }
-            else if (!node.IsLeaf && key.CompareTo(node.Values[i].Key) == 0)
+            else if (!node.IsLeaf && key.CompareTo(node.Values[i]) == 0)
             {
                 this.DoDelete(key, node.ChildrenNodes[i + 1]);
             }
@@ -407,7 +407,7 @@ namespace Database.IndexManage.BPlusTree
             {
                 this.DoDelete(key, node.ChildrenNodes[i]);
             }
-            else if (node.IsLeaf && key.CompareTo(node.Values[i].Key) == 0)
+            else if (node.IsLeaf && key.CompareTo(node.Values[i]) == 0)
             {
                 node.Values.RemoveAt(i);
 
@@ -415,7 +415,7 @@ namespace Database.IndexManage.BPlusTree
                 //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
                 if (i == 0 && node.Parent != null)
                 {
-                    TV nextSmallest = default(TV);
+                    TK nextSmallest = default(TK);
                     var parentNode = node.Parent;
                     int parentIndex;
                     for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
@@ -437,7 +437,7 @@ namespace Database.IndexManage.BPlusTree
                     // 将nextSmallest一层一层的向上替换
                     while (parentNode != null)
                     {
-                        if (parentIndex > 0 && key.CompareTo(parentNode.Values[parentIndex - 1].Key) == 0)
+                        if (parentIndex > 0 && key.CompareTo(parentNode.Values[parentIndex - 1]) == 0)
                         {
                             parentNode.Values[parentIndex - 1] = nextSmallest;
                         }
@@ -557,7 +557,7 @@ namespace Database.IndexManage.BPlusTree
         {
             var parentNode = node.Parent;
 
-            node.Values.Insert(0, default(TV));
+            node.Values.Insert(0, default(TK));
 
             var leftSib = parentNode.ChildrenNodes[parentIndex - 1];
 

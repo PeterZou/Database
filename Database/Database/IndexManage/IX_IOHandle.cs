@@ -12,6 +12,8 @@ namespace Database.IndexManage
     // wrapper the B+tree datastructure within the IO opeartion
     // TK:ConstProperty,TV:RID,ConstProperty
     public class IX_IOHandle<TK,TV>
+        where TV : INode<TK>
+        where TK : IComparable<TK>
     {
         private ProviderContext<TK, TV> providerContext;
 
@@ -34,7 +36,7 @@ namespace Database.IndexManage
             return null;
         }
 
-        public RID InsertNodeToDisk(Node<TK, RID> node)
+        public RID InsertNodeToDisk(Node<TK, TV> node)
         {
             if (node.IsLeaf)
             {

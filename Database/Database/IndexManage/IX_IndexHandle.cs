@@ -16,6 +16,8 @@ namespace Database.IndexManage
     // 2，添加：清空缓存，重新设置内存结构，如果发现需要rebalance,递归
     // 3，删除：清空缓存，重新设置内存结构，如果发现需要rebalance,递归
     public class IX_IndexHandle<TK, TV>
+        where TV : INode<TK>
+        where TK : IComparable<TK>
     {
         private ProviderContext<TK, TV> providerContext;
 

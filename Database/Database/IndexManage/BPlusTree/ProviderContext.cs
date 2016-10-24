@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 namespace Database.IndexManage.BPlusTree
 {
     public class ProviderContext<TK, TV>
+        where TV : INode<TK>
+        where TK : IComparable<TK>
     {
         private Iprovider<TK, TV> ip;
 

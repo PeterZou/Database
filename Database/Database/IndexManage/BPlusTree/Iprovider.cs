@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 namespace Database.IndexManage.BPlusTree
 {
     public interface Iprovider<TK, TV>
+        where TV : INode<TK>
+        where TK : IComparable<TK>
     {
-        Node<TK, TV> Reset(TV value);
+        //Node<TK, TV> Reset(TV value);
 
         void Search(TK key);
 

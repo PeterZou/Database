@@ -27,7 +27,7 @@ namespace DatabaseUnitTest.IndexManageTest
             bt.Insert(new NodeInt(9999));
             bt.Search(546484);
             var v = bt.SearchNode;
-            Assert.AreEqual(v.Key, 546484);
+            Assert.AreEqual(v, 546484);
         }
     }
 }
