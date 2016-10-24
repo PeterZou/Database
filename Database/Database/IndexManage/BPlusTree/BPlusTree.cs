@@ -164,6 +164,18 @@ namespace Database.IndexManage.BPlusTree
             }
         }
 
+        public Node<TK, TV> GetParentNode(Node<TK, TV> node)
+        {
+            if (node.Parent == null) return null;
+            return node.Parent;
+        }
+
+        public List<Node<TK,TV>> GetChildrenNodes(Node<TK, TV> node)
+        {
+            if (node.IsLeaf) return null;
+            return node.ChildrenNodes;
+        }
+
         private Node<TK, TV> Split(TV value,Node<TK,TV> node)
         {
             var output = node;

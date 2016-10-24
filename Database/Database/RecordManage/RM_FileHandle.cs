@@ -287,9 +287,10 @@ namespace Database.RecordManage
             var bitmap = new Bitmap(GetNumSlots());
             int offset = (new RM_PageHdr(GetNumSlots(), new PF_PageHdr())).Size();
             offset += slot * fullRecordSize();
+            int offsetAfter = offset + fullRecordSize();
             int index = 0;
-            char[] data = new char[ph.pPageData.Length- offset];
-            for (int i = offset; i < ph.pPageData.Length; i++)
+            char[] data = new char[fullRecordSize()];
+            for (int i = offset; i < offsetAfter; i++)
             {
                 data[index] = ph.pPageData[i];
                 index++;

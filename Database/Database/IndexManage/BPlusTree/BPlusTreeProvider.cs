@@ -24,6 +24,12 @@ namespace Database.IndexManage.BPlusTree
             return bBplusTree;
         }
 
+        Node<TK, TV> Reset(TV value)
+        {
+
+            return bBplusTree.Root;
+        }
+
         public void Delete(TK key)
         {
             bBplusTree.Delete(key);

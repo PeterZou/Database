@@ -8,6 +8,8 @@ namespace Database.IndexManage.BPlusTree
 {
     public interface Iprovider<TK, TV>
     {
+        Node<TK, TV> Reset(TV value);
+
         void Search(TK key);
 
         void Insert(TV value);
