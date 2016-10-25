@@ -21,7 +21,7 @@ namespace Database.IndexManage.BPlusTree
         public List<TK> Values { set; get; }
         public List<Node<TK, TV>> ChildrenNodes { set; get; }
 
-        private Node()
+        public Node()
         { }
 
         // must be a leaf node or root node

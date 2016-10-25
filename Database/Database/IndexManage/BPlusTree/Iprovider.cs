@@ -12,6 +12,8 @@ namespace Database.IndexManage.BPlusTree
     {
         //Node<TK, TV> Reset(TV value);
 
+        Node<TK, TV> Root { get; }
+
         void Search(TK key);
 
         void Insert(TV value);

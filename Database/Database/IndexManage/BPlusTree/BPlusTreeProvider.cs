@@ -13,6 +13,11 @@ namespace Database.IndexManage.BPlusTree
 
         static BPlusTree<TK, TV> bBplusTree;
 
+        public Node<TK, TV> Root
+        {
+            get { return bBplusTree.Root; }
+        }
+
         public static BPlusTree<TK, TV> GetBBplusTree(int degree)
         {
             if (bBplusTree == null)
@@ -24,11 +29,11 @@ namespace Database.IndexManage.BPlusTree
             return bBplusTree;
         }
 
-        Node<TK, TV> Reset(TV value)
-        {
+        //Node<TK, TV> Reset(TV value)
+        //{
 
-            return bBplusTree.Root;
-        }
+        //    return bBplusTree.Root;
+        //}
 
         public void Delete(TK key)
         {

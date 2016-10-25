@@ -8,12 +8,17 @@ using System.Threading.Tasks;
 
 namespace Database.IndexManage.IndexValue
 {
-    public class LeafNode<TK>
+    public class NodeDisk<TK>
     {
-        int capacity;
+        public int length;
 
-        List<TK> keyList;
+        // leaf:0,branch:1
+        public int isLeaf;
 
-        RID recordRID;
+        public int capacity;
+
+        public List<TK> keyList;
+
+        public List<RID> childRidList;
     }
 }

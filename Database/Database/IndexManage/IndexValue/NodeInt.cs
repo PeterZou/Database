@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Database.IndexManage.BPlusTree;
 
-namespace Database.IndexManage.BPlusTree
+namespace Database.IndexManage.IndexValue
 {
     public class NodeInt : INode<int>
     {

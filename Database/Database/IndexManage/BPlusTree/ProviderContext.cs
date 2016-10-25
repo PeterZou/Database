@@ -14,6 +14,11 @@ namespace Database.IndexManage.BPlusTree
 
         public Action<Node<TK, TV>> ActionToPerform { get; set; }
 
+        public Node<TK, TV> GetERoot()
+        {
+            return ip.Root;
+        }
+
         public ProviderContext(Iprovider<TK,TV> ip)
         {
             this.ip = ip;

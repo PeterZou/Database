@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Database.IndexManage.BPlusTree;
+using Database.IndexManage.IndexValue;
 
 namespace DatabaseUnitTest.IndexManageTest
 {
