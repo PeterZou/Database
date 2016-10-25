@@ -8,13 +8,15 @@ namespace Database.IndexManage.BPlusTree
 {
     public class NodeInt : INode<int>
     {
+        private string nn = "TV";
+
         public NodeInt(int key) :base(key)
         {
         }
 
         public override string ToString()
         {
-            return base.Key.ToString();
+            return nn + "num is " + base.Key;
         }
     }
 }

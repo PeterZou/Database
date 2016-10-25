@@ -107,6 +107,7 @@ namespace Database.IndexManage.BPlusTree
             // Root is null
             if (Root == null)
             {
+                // leafNode
                 Root = new Node<TK, TV>(true, null, value);
             }
             else
@@ -158,10 +159,21 @@ namespace Database.IndexManage.BPlusTree
                     Console.Write(v);
                 Console.WriteLine();
             }
-            foreach (var n in node.Values)
+            if (node.IsLeaf)
             {
-                Console.WriteLine("key is " + n);
+                foreach (var p in node.Property)
+                {
+                    Console.WriteLine("leaf node property is " + p.ToString());
+                }
             }
+            else
+            {
+                foreach (var n in node.Values)
+                {
+                    Console.WriteLine("Branch node is " + n);
+                }
+            }
+            
         }
 
         public Node<TK, TV> GetParentNode(Node<TK, TV> node)
@@ -176,104 +188,13 @@ namespace Database.IndexManage.BPlusTree
             return node.ChildrenNodes;
         }
 
-        private Node<TK, TV> Split(TV value,Node<TK,TV> node)
-        {
-            var output = node;
-            if (node.Values.Count > MaxDegree) throw new Exception();
-
-            if (node.IsLeaf == true && node.Values.Count != MaxDegree)
-            {
-                int index = GetIndex(value, node);
-
-                node.Values.Insert(index, value.Key);
-
-                return node;
-            }
-
-            if (node.Values.Count == MaxDegree)
-            {
-                int valuesCount = node.Values.Count;
-
-                // split from the mid
-                var leftNode = node.SetNode();
-                var rightNode = node.SetNode();
-
-                if (node.IsLeaf != true)
-                {
-                    var leftValues = node.Values.GetRange(0, Degree / 2);
-                    leftNode.Values = leftValues;
-
-                    var rightValues = node.Values.GetRange(Degree / 2 + 1, Degree / 2 - 1);
-                    rightNode.Values = rightValues;
-
-                    var leftNodes = node.ChildrenNodes.GetRange(0, Degree / 2 + 1);
-                    leftNode.ChildrenNodes = leftNodes;
-
-                    var rightNodes = node.ChildrenNodes.GetRange(Degree / 2 + 1, Degree / 2);
-                    rightNode.ChildrenNodes = rightNodes;
-                }
-                else
-                {
-                    var leftValues = node.Values.GetRange(0, Degree / 2);
-                    leftNode.Values = leftValues;
-
-                    var rightValues = node.Values.GetRange(Degree / 2 , valuesCount- Degree / 2);
-                    rightNode.Values = rightValues;
-                }
-
-                TK midNode = node.Values[(Degree-1) / 2];
-                // create a new root node
-                if (node.Parent == null)
-                {
-                    var newRoot = new Node<TK, TV>(false, null, midNode);
-                    newRoot.ChildrenNodes = new List<Node<TK, TV>>();
-                    newRoot.ChildrenNodes.Add(leftNode);
-                    newRoot.ChildrenNodes.Add(rightNode);
-
-                    leftNode.Parent = newRoot;
-                    rightNode.Parent = newRoot;
-
-                    Root = newRoot;
-                    output = newRoot;
-                }
-                else
-                {
-                    var parent = node.Parent;
-                    leftNode.Parent = parent;
-                    rightNode.Parent = parent;
-
-                    int index = GetIndex(midNode, parent);
-
-                    parent.ChildrenNodes.RemoveAt(index);
-                    parent.Values.Insert(index, midNode);
-                    var nodeArray = new Node<TK, TV>[] { leftNode, rightNode };
-
-                    parent.ChildrenNodes.InsertRange(index, nodeArray);
-
-                    output = parent;
-                }
-
-                foreach (var v in leftNode.ChildrenNodes)
-                {
-                    v.Parent = leftNode;
-                }
-
-                foreach (var v in rightNode.ChildrenNodes)
-                {
-                    v.Parent = rightNode;
-                }
-            }
-
-            return output;
-        }
-
         private void Insert(TV value, Node<TK, TV> node)
         {
             int index = GetIndex(value, node);
             if (node.IsLeaf == true)
             {
                 node.Values.Insert(index, value.Key);
-
+                node.Property.Add(value);
                 InsertRepair(node);
             }
             else
@@ -302,7 +223,7 @@ namespace Database.IndexManage.BPlusTree
 
         private Node<TK, TV> Split(Node<TK, TV> node)
         {
-            var rightNode = node.SetNode();
+            var rightNode = node.SetNode(node.IsLeaf);
             var risingNode = node.Values[Degree / 2];
 
             if (node.Parent != null)
@@ -321,6 +242,17 @@ namespace Database.IndexManage.BPlusTree
             if (node.IsLeaf)
             {
                 rightSplit = Degree / 2;
+
+                // only the leaf nodes have the property of record RIDs
+                rightNode.Property.AddRange(
+                    node.Property.GetRange(rightSplit, node.Values.Count - rightSplit));
+
+                node.Property.RemoveRange(rightSplit, node.Values.Count - rightSplit);
+
+                rightNode.Values.AddRange(
+                    node.Values.GetRange(rightSplit, node.Values.Count - rightSplit));
+
+                node.Values.RemoveRange(rightSplit, node.Values.Count - rightSplit);
             }
             else
             {
@@ -333,12 +265,12 @@ namespace Database.IndexManage.BPlusTree
                 {
                     r.Parent = rightNode;
                 }
-            }
 
-            rightNode.Values.AddRange(
+                rightNode.Values.AddRange(
                     node.Values.GetRange(rightSplit, node.Values.Count - rightSplit));
 
-            node.Values.RemoveRange(rightSplit, node.Values.Count - rightSplit);
+                node.Values.RemoveRange(rightSplit-1, node.Values.Count - rightSplit+1);
+            }
 
             var leftNode = node;
 
@@ -348,7 +280,8 @@ namespace Database.IndexManage.BPlusTree
             }
             else
             {
-                Root = node.SetNode();
+                // branch node
+                Root = node.SetNode(false);
                 Root.Parent = null;
                 Root.Values.Add(risingNode);
                 Root.ChildrenNodes.AddRange(new List<Node<TK, TV>>() { leftNode, rightNode });
