@@ -10,13 +10,13 @@ namespace Database.IndexManage.BPlusTree
         where TV : INode<TK>
         where TK : IComparable<TK>
     {
-        //Node<TK, TV> Reset(TV value);
+        void Reset(TV value);
 
         Node<TK, TV> Root { get; }
 
         void Search(TK key);
 
-        void Insert(TV value);
+        void Insert(TV value, Action<Node<TK, TV>> func);
 
         void Delete(TK key);
 

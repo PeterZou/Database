@@ -95,8 +95,13 @@ namespace Database.FileManage
 
         public static void ReplaceTheNextFree(char[] content, int nextFree, int start)
         {
+            ReplaceTheNextFree(content, nextFree, start, ConstProperty.PF_PageHdr_SIZE);
+        }
+
+        public static void ReplaceTheNextFree(char[] content, int nextFree, int start,int size)
+        {
             string str = nextFree.ToString();
-            for (int i = 0; i < ConstProperty.PF_PageHdr_SIZE; i++)
+            for (int i = 0; i < size; i++)
             {
                 int j = i + start;
                 if (i < str.Length)

@@ -29,20 +29,14 @@ namespace Database.IndexManage.BPlusTree
             return bBplusTree;
         }
 
-        //Node<TK, TV> Reset(TV value)
-        //{
-
-        //    return bBplusTree.Root;
-        //}
-
         public void Delete(TK key)
         {
             bBplusTree.Delete(key);
         }
 
-        public void Insert(TV value)
+        public void Insert(TV value, Action<Node<TK, TV>> func)
         {
-            bBplusTree.Insert(value);
+            bBplusTree.Insert(value,func);
         }
 
         public void Search(TK key)
@@ -53,6 +47,12 @@ namespace Database.IndexManage.BPlusTree
         public void Traverse(Node<TK, TV> node, Action<Node<TK, TV>> action)
         {
             bBplusTree.Traverse(node,action);
+        }
+
+        // TODO
+        public void Reset(TV value)
+        {
+            
         }
 
         private BPlusTreeProvider()

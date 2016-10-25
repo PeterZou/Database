@@ -26,20 +26,22 @@ namespace Database.Const
         // Unfortunately, we cannot use sizeof(PF_PageHdr) here, but it is an
         // int and we simply use that.
         // Point: sizeof(int) is equal to sizeof(PF_PageHdr)
-        public const int PF_PAGE_SIZE = 4096 - sizeof(int);
+        public const int PF_PAGE_SIZE = 4096 - Int_Size;
 
-        public readonly static int PF_PageHdr_SIZE = sizeof(int);
+        public readonly static int PF_PageHdr_SIZE = Int_Size;
 
         // Justify the file header to the length of one page
         public readonly static int PF_FILE_HDR_SIZE = 4096;
 
-        public const int PF_FILE_HDR_FirstFree_SIZE = sizeof(int);
+        public const int PF_FILE_HDR_FirstFree_SIZE = Int_Size;
 
-        public const int PF_FILE_HDR_NumPages_SIZE = sizeof(int);
+        public const int PF_FILE_HDR_NumPages_SIZE = Int_Size;
 
-        public const int RM_Page_Hdr_SIZE_ExceptBitMap = 3* sizeof(int);
+        public const int RM_Page_Hdr_SIZE_ExceptBitMap = 3* Int_Size;
 
-        public const int RM_Page_RID_SIZE = 2 * sizeof(int);
+        public const int Int_Size = sizeof(int);
+
+        public const int RM_Page_RID_SIZE = 2 * Int_Size;
         public const int MAXSTRINGLEN = 255;             // maximum length of a
 
         public enum Page_statics{ PF_PAGE_USED = -2, PF_PAGE_LIST_END=-1};

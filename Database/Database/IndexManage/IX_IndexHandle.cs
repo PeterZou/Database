@@ -1,4 +1,5 @@
 ﻿using Database.IndexManage.BPlusTree;
+using Database.IndexManage.IndexValue;
 using Database.RecordManage;
 using System;
 using System.Collections.Generic;
@@ -15,50 +16,59 @@ namespace Database.IndexManage
     // 1，搜索：
     // 2，添加：清空缓存，重新设置内存结构，如果发现需要rebalance,递归
     // 3，删除：清空缓存，重新设置内存结构，如果发现需要rebalance,递归
-    public class IX_IndexHandle<TK, TV>
-        where TV : INode<TK>
+    // ！！！Attention,导入到memory的B+tree是部分的！！！
+    // TODO:CURSOR
+    public class IX_IndexHandle<TK>
         where TK : IComparable<TK>
     {
-        private ProviderContext<TK, TV> providerContext;
+        private ProviderContext<TK, RIDKey<TK>> providerContext;
 
-        
+        private IX_IOHandle<TK> iX_IOHandle;
 
-        public IX_IndexHandle(Iprovider<TK, TV> ip)
+        public IX_IndexHandle(Iprovider<TK, RIDKey<TK>> ip, IX_IOHandle<TK> iX_IOHandle)
         {
             providerContext = new ProviderContext<TK, TV>(ip);
+            this.iX_IOHandle = iX_IOHandle;
         }
 
-        public void InsertEntry(List<TV> values)
-        {
-            foreach (var v in values)
-            {
-                InsertEntry(v);
-            }
-        }
 
-        public void DeleteEntry(List<TK> key)
-        {
-            foreach (var k in key)
-            {
-                providerContext.Delete(k);
-            }
-        }
+        #region Import disk to memory
+        #endregion
 
+        #region Export memory to disk
         public void ForcePages()
         {
-
+            iX_IOHandle.ForcePages();
         }
 
-        private void InsertEntry(TV value)
+        public void InsertEntry(RIDKey<TK> value)
         {
-            // 清空内存中的B+tree
+            // get the deepest tree and insert
+            // add a action<> into insert in order to create a record to make the new insert node rid
 
-            // 重新设置内存B+tree
+            // combing through it
+            // 1.首先确定能够容纳几层的node在memory
+            // 2.如果root一直在内存，不需要懂，直接开始操作
+            // 3.如果root不在内存，需要判断，当前树及其子树是不是能够保证insert
+            // 4.如果可以，一直往下循环
+            // 5.如果不可以，重新选择一颗新的树
 
-            //内存中
-            providerContext.Insert(value);
+            // insert的回溯处理
+            // 1.如果出现分割，需要InsertExportToDisk的Action
+            // 2.向上回溯，发现已经到了树的fate Root,重新导入上面的树，直到最后找到真正的Root
 
-
+            // 应该是一个递归函数
+            providerContext.Insert(value, iX_IOHandle.InsertExportToDisk);
         }
+
+        public void DeleteEntry(TK key)
+        {
+            // combing through it
+            // the same as above
+
+            // delete的回溯处理
+            // the same as above
+        }
+        #endregion
     }
 }

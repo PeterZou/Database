@@ -102,7 +102,7 @@ namespace Database.IndexManage.BPlusTree
             }
         }
 
-        public void Insert(TV value)
+        public void Insert(TV value, Action<Node<TK, TV>> func)
         {
             // Root is null
             if (Root == null)
@@ -112,7 +112,7 @@ namespace Database.IndexManage.BPlusTree
             }
             else
             {
-                Insert(value, Root);
+                Insert(value, Root, func);
             } 
         }
 
@@ -188,22 +188,22 @@ namespace Database.IndexManage.BPlusTree
             return node.ChildrenNodes;
         }
 
-        private void Insert(TV value, Node<TK, TV> node)
+        private void Insert(TV value, Node<TK, TV> node, Action<Node<TK, TV>> func)
         {
             int index = GetIndex(value, node);
             if (node.IsLeaf == true)
             {
                 node.Values.Insert(index, value.Key);
                 node.Property.Add(value);
-                InsertRepair(node);
+                InsertRepair(node,func);
             }
             else
             {
-                Insert(value,node.ChildrenNodes[index]);
+                Insert(value,node.ChildrenNodes[index], func);
             }
         }
 
-        private void InsertRepair(Node<TK, TV> node)
+        private void InsertRepair(Node<TK, TV> node,Action<Node<TK, TV>> func)
         {
             if (node.Values.Count <= MaxDegree)
             {
@@ -211,17 +211,18 @@ namespace Database.IndexManage.BPlusTree
             }
             else if (node.Parent == null)
             {
-                Root = Split(node);
+                Root = Split(node,func);
                 return;
             }
             else
             {
-                var newNode = Split(node);
-                this.InsertRepair(newNode);
+                var newNode = Split(node,func);
+                this.InsertRepair(newNode,func);
             }
         }
 
-        private Node<TK, TV> Split(Node<TK, TV> node)
+        // implete func
+        private Node<TK, TV> Split(Node<TK, TV> node, Action<Node<TK, TV>> func)
         {
             var rightNode = node.SetNode(node.IsLeaf);
             var risingNode = node.Values[Degree / 2];
