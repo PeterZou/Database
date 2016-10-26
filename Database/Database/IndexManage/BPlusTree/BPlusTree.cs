@@ -108,7 +108,7 @@ namespace Database.IndexManage.BPlusTree
             if (Root == null)
             {
                 // leafNode
-                Root = new Node<TK, TV>(true, null, value);
+                Root = new Node<TK, TV>(true, null, value, 1);
             }
             else
             {
@@ -159,6 +159,7 @@ namespace Database.IndexManage.BPlusTree
                     Console.Write(v);
                 Console.WriteLine();
             }
+            Console.WriteLine("node height is " + node.Height);
             if (node.IsLeaf)
             {
                 foreach (var p in node.Property)
@@ -289,6 +290,7 @@ namespace Database.IndexManage.BPlusTree
                 leftNode.Parent = Root;
                 rightNode.Parent = Root;
                 Root.IsLeaf = false;
+                Root.Height++;
                 return Root;
             }
         }
@@ -473,7 +475,7 @@ namespace Database.IndexManage.BPlusTree
             }
             else
             {
-                node.Values.Add(rightSib.Values[parentIndex]);
+                node.Values.Add(parentNode.Values[parentIndex]);
                 parentNode.Values[parentIndex] = rightSib.Values[0];
             }
 

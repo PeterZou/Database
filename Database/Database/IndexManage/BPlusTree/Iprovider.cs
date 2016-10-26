@@ -12,7 +12,7 @@ namespace Database.IndexManage.BPlusTree
     {
         void Reset(TV value);
 
-        Node<TK, TV> Root { get; }
+        Node<TK, TV> Root { get; set; }
 
         void Search(TK key);
 

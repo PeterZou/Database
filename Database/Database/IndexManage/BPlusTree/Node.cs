@@ -10,8 +10,10 @@ namespace Database.IndexManage.BPlusTree
         where TV : INode<TK>
         where TK : IComparable<TK>
     {
+        public int Height { get; set; }
+
         // once get, will not change
-        public TV CurrentRID;
+        public TV CurrentRID { get; set; }
 
         // Record RID only the leaf node has this property
         public List<TV> Property { get; set; }
@@ -25,8 +27,9 @@ namespace Database.IndexManage.BPlusTree
         { }
 
         // must be a leaf node or root node
-        public Node(bool isLeaf, Node<TK, TV> parent, TV property)
+        public Node(bool isLeaf, Node<TK, TV> parent, TV property,int height)
         {
+            this.Height = height;
             this.Property = new List<TV>();
             this.Property.Add(property);
             this.IsLeaf = isLeaf;
@@ -39,6 +42,7 @@ namespace Database.IndexManage.BPlusTree
         public Node<TK, TV> SetNode(bool leafOrNot)
         {
             var node = new Node<TK, TV>();
+            node.Height = Height;
             node.IsLeaf = IsLeaf;
             node.Parent = new Node<TK, TV>();
             node.Values = new List<TK>();

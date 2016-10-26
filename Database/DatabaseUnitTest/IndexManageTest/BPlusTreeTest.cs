@@ -21,11 +21,11 @@ namespace DatabaseUnitTest.IndexManageTest
 
             for (int i = 1; i <= 7; i++)
             {
-                if (i != 9999)
-                    bt.Insert(new NodeInt(i));
+                //if (i != 9999)
+                    //bt.Insert(new NodeInt(i));
             }
             //bt.Traverse(bt.Root, bt.TraverseOutput);
-            bt.Insert(new NodeInt(9999));
+            //bt.Insert(new NodeInt(9999));
             bt.Search(546484);
             var v = bt.SearchNode;
             Assert.AreEqual(v, 546484);

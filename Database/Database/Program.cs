@@ -24,23 +24,24 @@ namespace Database
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(10);
+            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(3);
 
             var list = new List<NodeInt>();
 
-            for (int i = 1; i <= 1000000; i++)
+            for (int i = 1; i <= 6; i++)
             {
                 if (i != 9999)
-                    bt.Insert(new NodeInt(i));
+                    bt.Insert(new NodeInt(i), Program.InsertExportToDisk);
             }
-            //bt.Traverse(bt.Root, bt.TraverseOutput);
+            bt.Traverse(bt.Root, bt.TraverseOutput);
             sw.Stop();
             Console.WriteLine(sw.Elapsed);
-            //bt.Traverse(bt.Root, bt.TraverseOutput);
-            bt.Insert(new NodeInt(9999));
-            bt.Search(546484);
-
+            bt.Delete(1);
+            bt.Traverse(bt.Root, bt.TraverseOutput);
             Console.ReadKey();
         }
+
+        public static void InsertExportToDisk(Node<int, NodeInt> node)
+        { }
     }
 }

@@ -16,6 +16,7 @@ namespace Database.IndexManage.BPlusTree
         public Node<TK, TV> Root
         {
             get { return bBplusTree.Root; }
+            set { bBplusTree.Root = value; }
         }
 
         public static BPlusTree<TK, TV> GetBBplusTree(int degree)

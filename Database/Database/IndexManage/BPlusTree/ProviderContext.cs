@@ -14,9 +14,14 @@ namespace Database.IndexManage.BPlusTree
 
         public Action<Node<TK, TV>> ActionToPerform { get; set; }
 
-        public Node<TK, TV> GetERoot()
+        public Node<TK, TV> GetRoot()
         {
             return ip.Root;
+        }
+
+        public void SetRoot(Node<TK, TV> root)
+        {
+            ip.Root = root;
         }
 
         // false:not reset,true:reset

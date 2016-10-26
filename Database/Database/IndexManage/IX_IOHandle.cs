@@ -34,14 +34,7 @@ namespace Database.IndexManage
             this.CreatNewTK = creatNewTK;
         }
 
-        // root rid located in the first page
-        public void InsertImportToMemory(RID rid)
-        {
-            InsertImportToMemory(rid, null);
-        }
-
-        // location of the orignal node may not set in right 
-        public void InsertImportToMemory(RID rid, Node<TK, RIDKey<TK>> parent)
+        public Node<TK, RIDKey<TK>> InsertImportToMemoryRoot(RID rid)
         {
             RM_Record record = rmp.GetRec(rid);
 
@@ -51,9 +44,20 @@ namespace Database.IndexManage
             NodeDisk<TK> nodeDisk = ConvertToNodeDisk(data);
 
             // set the node link to the parent
-            Node<TK, RIDKey<TK>> node = ConvertNodeDiskToNode(nodeDisk, parent,rid);
+            Node<TK, RIDKey<TK>> node = ConvertNodeDiskToNode(nodeDisk, rid);
+
+            return node;
+        }
+
+        // root rid located in the first page
+        // location of the orignal node may not set in right 
+        public Node<TK, RIDKey<TK>> InsertImportToMemory(RID rid, Node<TK, RIDKey<TK>> parent)
+        {
+            var node = InsertImportToMemoryRoot(rid);
+            node.Parent = parent;
 
             parent.ChildrenNodes.Add(node);
+            return node;
         }
 
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
@@ -64,14 +68,12 @@ namespace Database.IndexManage
             rmp.InsertRec(data);
         }
 
-        
-
         public void DeleteExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             rmp.DeleteRec(node.CurrentRID.Rid);
         }
 
-        private Node<TK, RIDKey<TK>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, Node<TK, RIDKey<TK>> parent, RID rid)
+        private Node<TK, RIDKey<TK>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
         {
             Node<TK, RIDKey<TK>> node = new Node<TK, RIDKey<TK>>();
             node.CurrentRID = new RIDKey<TK>(rid, CreatNewTK());
