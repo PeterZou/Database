@@ -50,6 +50,11 @@ namespace Database.IndexManage.BPlusTree
             bBplusTree.Traverse(node,action);
         }
 
+        public Node<TK, TV> SearchInTimes(int times, TV value, List<TV> ridList)
+        {
+            return bBplusTree.SearchInTimes(times, value, ridList);
+        }
+
         // TODO
         public void Reset(TV value)
         {

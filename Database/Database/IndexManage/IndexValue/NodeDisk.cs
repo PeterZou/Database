@@ -17,6 +17,8 @@ namespace Database.IndexManage.IndexValue
 
         public int capacity;
 
+        public int height;
+
         public List<TK> keyList;
 
         public List<RID> childRidList;

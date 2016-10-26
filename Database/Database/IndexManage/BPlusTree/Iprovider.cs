@@ -21,5 +21,7 @@ namespace Database.IndexManage.BPlusTree
         void Delete(TK key);
 
         void Traverse(Node<TK, TV> node, Action<Node<TK, TV>> action);
+
+        Node<TK, TV> SearchInTimes(int times, TV value, List<TV> ridList);
     }
 }

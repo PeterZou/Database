@@ -54,5 +54,10 @@ namespace Database.IndexManage.BPlusTree
         {
             ip.Traverse(node, ActionToPerform);
         }
+
+        public Node<TK, TV> SearchInTimes(int times, TV value, List<TV> ridList)
+        {
+            return ip.SearchInTimes(times, value,ridList);
+        }
     }
 }

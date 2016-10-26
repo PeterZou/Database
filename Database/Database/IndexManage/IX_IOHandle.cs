@@ -34,7 +34,24 @@ namespace Database.IndexManage
             this.CreatNewTK = creatNewTK;
         }
 
-        public Node<TK, RIDKey<TK>> InsertImportToMemoryRoot(RID rid)
+        /// <summary>
+        /// 在内存中展开一棵子树
+        /// </summary>
+        /// <param name="height"></param>
+        /// <param name="rid">当前结点的RID</param>
+        /// <param name="parent">父节点</param>
+        public void GetSubTreeImportToMemory(int height, RID rid, Node<TK, RIDKey<TK>> parent)
+        {
+            if (height == 0) return;
+
+            var node = InsertImportToMemory(rid, parent);
+            foreach (var n in node.Item2)
+            {
+                GetSubTreeImportToMemory(height - 1, n, node.Item1);
+            }
+        }
+
+        public Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemoryRoot(RID rid)
         {
             RM_Record record = rmp.GetRec(rid);
 
@@ -44,19 +61,19 @@ namespace Database.IndexManage
             NodeDisk<TK> nodeDisk = ConvertToNodeDisk(data);
 
             // set the node link to the parent
-            Node<TK, RIDKey<TK>> node = ConvertNodeDiskToNode(nodeDisk, rid);
+            var node = ConvertNodeDiskToNode(nodeDisk, rid);
 
             return node;
         }
 
         // root rid located in the first page
         // location of the orignal node may not set in right 
-        public Node<TK, RIDKey<TK>> InsertImportToMemory(RID rid, Node<TK, RIDKey<TK>> parent)
+        public Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemory(RID rid, Node<TK, RIDKey<TK>> parent)
         {
             var node = InsertImportToMemoryRoot(rid);
-            node.Parent = parent;
+            node.Item1.Parent = parent;
 
-            parent.ChildrenNodes.Add(node);
+            parent.ChildrenNodes.Add(node.Item1);
             return node;
         }
 
@@ -73,10 +90,13 @@ namespace Database.IndexManage
             rmp.DeleteRec(node.CurrentRID.Rid);
         }
 
-        private Node<TK, RIDKey<TK>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
+        private Tuple<Node<TK, RIDKey<TK>>,List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
         {
+            List<RID> ridlist = null;
             Node<TK, RIDKey<TK>> node = new Node<TK, RIDKey<TK>>();
             node.CurrentRID = new RIDKey<TK>(rid, CreatNewTK());
+            node.Height = nodeDisk.height;
+
             // leaf:0,branch:1
             if (nodeDisk.isLeaf == 0)
             {
@@ -91,10 +111,15 @@ namespace Database.IndexManage
             else
             {
                 node.IsLeaf = false;
+                ridlist = new List<RID>();
+                foreach (var v in nodeDisk.childRidList)
+                {
+                    ridlist.Add(v);
+                }
             }
             foreach (var v in nodeDisk.keyList)
                 node.Values.Add(v);
-            return node;
+            return new Tuple<Node<TK, RIDKey<TK>>, List<RID>>(node,ridlist);
         }
 
         private NodeDisk<TK> ConvertNodeToNodeDisk(Node<TK, RIDKey<TK>> node)
@@ -104,6 +129,8 @@ namespace Database.IndexManage
             nl.isLeaf = node.IsLeaf == true ? 0 : 1;
             nl.capacity = node.Values.Count;
             nl.keyList = node.Values.ToList();
+            nl.height = node.Height;
+
             foreach (var v in node.Property)
             {
                 nl.childRidList.Add(v.Rid);
@@ -117,11 +144,11 @@ namespace Database.IndexManage
         {
             int length = 0;
 
-            length += 2 * ConstProperty.Int_Size+1;
+            length += 3 * ConstProperty.Int_Size+1;
 
             // TODO Set TK is int
             length += nl.capacity* ConstProperty.Int_Size;
-            length += nl.capacity * ConstProperty.RM_Page_RID_SIZE;
+            length += nl.capacity * ConstProperty.RM_Page_RID_SIZE+ ConstProperty.RM_Page_RID_SIZE;
             return length;
         }
 
@@ -132,9 +159,11 @@ namespace Database.IndexManage
             node.length = Convert.ToInt32(dataStr.Substring(0, ConstProperty.Int_Size));
             node.isLeaf = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size, 1));
             node.capacity = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+            node.height = Convert.ToInt32(dataStr.Substring(2*ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+
             for (int i = 0; i < node.capacity; i++)
             {
-                TK tmp = ConverStringToTK(dataStr.Substring((2 + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                TK tmp = ConverStringToTK(dataStr.Substring((3 + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
                 // TODO
                 node.keyList[i] = tmp;
             }
@@ -142,9 +171,9 @@ namespace Database.IndexManage
             {
                 // TODO
                 int pageNum = Convert.ToInt32(dataStr.Substring(
-                    (2 + node.capacity+i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                    (3 + node.capacity+i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
                 int slotNum = Convert.ToInt32(dataStr.Substring(
-                    (2 + node.capacity+i+1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                    (3 + node.capacity+i+1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
                 node.childRidList[i] = new RID(pageNum,slotNum);
             }
             return node;
@@ -159,17 +188,20 @@ namespace Database.IndexManage
             data[ConstProperty.Int_Size] = Convert.ToChar(nl.isLeaf);
             // capacity
             FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, ConstProperty.Int_Size+1);
+            // height
+            FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, 2*ConstProperty.Int_Size + 1);
+
             // keyList
             // TODO Set TK is int
             for (int i = 0; i < nl.capacity; i++)
             {
-                FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, (2 + i) *ConstProperty.Int_Size + 1);
+                FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, (3 + i) *ConstProperty.Int_Size + 1);
             }
             // childRidList
             for (int i = 0; i < nl.capacity; i++)
             {
                 FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, 
-                    (2 + nl.capacity+i) * ConstProperty.Int_Size + 1,ConstProperty.RM_Page_RID_SIZE);
+                    (3 + nl.capacity+i) * ConstProperty.Int_Size + 1,ConstProperty.RM_Page_RID_SIZE);
             }
             return data;
         } 
