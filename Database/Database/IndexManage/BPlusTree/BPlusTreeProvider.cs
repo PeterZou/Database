@@ -6,11 +6,17 @@ using System.Threading.Tasks;
 
 namespace Database.IndexManage.BPlusTree
 {
-    public class BPlusTreeProvider<TK, TV> : Iprovider<TK, TV> 
+    public class BPlusTreeProvider<TK, TV>
         where TV : INode<TK>
         where TK : IComparable<TK>
     {
         public BPlusTree<TK, TV> bBplusTree;
+
+        public Node<TK, TV> SearchNode
+        {
+            get { return bBplusTree.SearchNode; }
+            set { bBplusTree.SearchNode = value; }
+        }
 
         public Node<TK, TV> Root
         {
@@ -40,9 +46,9 @@ namespace Database.IndexManage.BPlusTree
             bBplusTree.Traverse(node,action);
         }
 
-        public Node<TK, TV> SearchInTimes(int times, TV value, List<TV> ridList)
+        public Node<TK, TV> SearchInTimes(int times,TK key, List<TV> ridList)
         {
-            return bBplusTree.SearchInTimes(times, value, ridList);
+            return bBplusTree.SearchInTimes(times, key, ridList);
         }
 
         // TODO
@@ -60,6 +66,11 @@ namespace Database.IndexManage.BPlusTree
         public void InsertRepair(Node<TK, TV> node)
         {
             bBplusTree.InsertRepair(node);
+        }
+
+        public void RepairAfterDelete(Node<TK, TV> node)
+        {
+            bBplusTree.RepairAfterDelete(node);
         }
     }
 }

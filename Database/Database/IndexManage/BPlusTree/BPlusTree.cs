@@ -65,26 +65,26 @@ namespace Database.IndexManage.BPlusTree
             this.Degree = degree;
         }
 
-        public TK SearchNode { get; set; }
+        public Node<TK, TV> SearchNode { get; set; }
 
         public void Search(TK key)
         {
             Search(Root, key);
         }
 
-        public Node<TK, TV> SearchInTimes(int times,TV value,List<TV> list)
+        public Node<TK, TV> SearchInTimes(int times,TK key,List<TV> list)
         {
             if (times < Root.Height) throw new Exception();
-            SearchInTimes(times,value,Root,list);
+            SearchInTimes(times, key, Root,list);
             return SeachNode;
         }
 
-        private void SearchInTimes(int times, TV value, Node<TK, TV> node, List<TV> list)
+        private void SearchInTimes(int times, TK key, Node<TK, TV> node, List<TV> list)
         {
             if (times != 0)
             {
-                int index = GetIndex(value.Key, node);
-                SearchInTimes(times - 1, value, node.ChildrenNodes[index],list);
+                int index = GetIndex(key, node);
+                SearchInTimes(times - 1, key, node.ChildrenNodes[index],list);
                 list.Add(node.ChildrenNodes[index].CurrentRID);
                 if (times == 1)
                 {
@@ -95,14 +95,13 @@ namespace Database.IndexManage.BPlusTree
 
         private void Search(Node<TK, TV> node, TK key)
         {
-            SearchNode = default(TK);
             if (node.IsLeaf == true)
             {
                 foreach (var n in node.Values)
                 {
                     if (n.CompareTo(key) == 0)
                     {
-                        SearchNode = n;
+                        SearchNode = node;
                         return;
                     }
                 }
