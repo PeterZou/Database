@@ -33,6 +33,7 @@ namespace Database.IndexManage
         private List<RIDKey<TK>> ridkeyList = new List<RIDKey<TK>>();
 
         private Node<TK, RIDKey<TK>> SubRoot { set; get; }
+        private Node<TK, RIDKey<TK>> LeafNode { set; get; }
         private List<RID> ridList = new List<RID>();
 
         public IX_IndexHandle(BPlusTreeProvider<TK, RIDKey<TK>> ip, IX_IOHandle<TK> iX_IOHandle, int treeHeight, RID rootRid)
@@ -42,7 +43,6 @@ namespace Database.IndexManage
             this.treeHeight = treeHeight;
             this.RootRid = rootRid;
         }
-
 
         #region Import disk to memory
         // 向上回溯用
@@ -58,15 +58,17 @@ namespace Database.IndexManage
             // 1.判断当前子节点前面还有多少parent节点，如果数目少于treeHeight，以ridList[0]为节点构造树
             if (ridList.Count - index + 1 <= treeHeight)
             {
-                return iX_IOHandle.InsertImportToMemoryRoot(RootRid).Item1;
+                SubRoot = iX_IOHandle.InsertImportToMemoryRoot(RootRid).Item1;
             }
             else
             {
                 //通过leafRid，获取上两层的root,从而重构subtree
-                return iX_IOHandle.InsertImportToMemoryRoot(ridList[index+treeHeight]).Item1;
+                SubRoot = iX_IOHandle.InsertImportToMemoryRoot(ridList[index+treeHeight]).Item1;
             }
-
-            throw new Exception();
+            iX_IOHandle.SelectNode = null;
+            int tmpHeight = ridList.Count - index + 1 <= treeHeight ? ridList.Count - index + 1 : treeHeight;
+            iX_IOHandle.GetSubTreeImportToMemory(tmpHeight, SubRoot.CurrentRID.Rid, null,true, leafRid);
+            return iX_IOHandle.SelectNode;
         }
 
         public void GetSubTreeFromDisk(TK key)
@@ -87,7 +89,7 @@ namespace Database.IndexManage
 
             // Get the real Root
             SubRoot = iX_IOHandle.InsertImportToMemoryRoot(rootRid).Item1;
-            iX_IOHandle.GetSubTreeImportToMemory(treeHeight, rootRid, SubRoot);
+            iX_IOHandle.GetSubTreeImportToMemory(treeHeight, rootRid, SubRoot, false, default(RID));
             // 获取部分树的root节点
             // 能够一次性完整的放入整棵树
             if (treeHeight >= bPlusTreeProvider.Root.Height || treeHeight >= bPlusTreeProvider.Root.Height - treeHeight)
@@ -99,7 +101,7 @@ namespace Database.IndexManage
                     SubRoot = GetRootNode(SubRoot.Height - treeHeight + 1, key);
 
                     iX_IOHandle.GetSubTreeImportToMemory(treeHeight,
-                        bPlusTreeProvider.Root.CurrentRID.Rid, SubRoot);
+                        bPlusTreeProvider.Root.CurrentRID.Rid, SubRoot,false,default(RID));
                 }
                 bPlusTreeProvider.Root = SubRoot;
                 ridkeyList.Add(new RIDKey<TK>(rootRid, key));
@@ -146,19 +148,19 @@ namespace Database.IndexManage
             GetSubTreeFromDisk(value.Key);
 
             bPlusTreeProvider.Insert(value);
-            // 当前节点还是当前树？持久化到本地硬盘(TODO)
-            iX_IOHandle.InsertExportToDisk(SubRoot);
+            // 持久化到本地硬盘
+            bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.InsertExportToDisk);
 
             // 回溯处理
             // 回溯停止条件：1.根节点values>=MaxDegree,2.不是真正的根节点
             while ((SubRoot.Values.Count>= bPlusTreeProvider.bBplusTree.MaxDegree) && 
-                (SubRoot.CurrentRID.Rid.Page != RootRid.Page || SubRoot.CurrentRID.Rid.Slot != RootRid.Slot))
+                (SubRoot.CurrentRID.Rid.CompareTo(RootRid) !=0))
             {
                 // 向上重新构建子树，获取新的SubRoot
-                SubRoot = GetSubTreeFromDisk(SubRoot.CurrentRID.Rid);
+                GetSubTreeFromDisk(SubRoot.CurrentRID.Rid);
                 bPlusTreeProvider.InsertRepair(SubRoot);
-                // 当前节点还是当前树？持久化到本地硬盘(TODO)
-                iX_IOHandle.InsertExportToDisk(SubRoot);
+                // 持久化到本地硬盘
+                bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.InsertExportToDisk);
             }
 
         }
@@ -171,22 +173,19 @@ namespace Database.IndexManage
             bPlusTreeProvider.Delete(key);
 
             // 持久化到本地硬盘
-            // TODO
-            //iX_IOHandle.DeleteExportToDisk();
+            bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.DeleteExportToDisk);
 
             // 回溯处理
             // 回溯停止条件：1.不是真正的根节点,2.根节点values<MinDegree
             while ((SubRoot.Values.Count < bPlusTreeProvider.bBplusTree.MinDegree) &&
                 (SubRoot.CurrentRID.Rid.Page != RootRid.Page || SubRoot.CurrentRID.Rid.Slot != RootRid.Slot))
             {
-                // 向上重新构建子树，获取新的SubRoot
-                SubRoot = GetSubTreeFromDisk(SubRoot.CurrentRID.Rid);
-                // 获取当前子树的叶节点(TODO)
-                var tmpNode = SubRoot;
-                bPlusTreeProvider.RepairAfterDelete(tmpNode);
-                // 当前节点还是当前树？持久化到本地硬盘(TODO)
-                // TODO
-                //iX_IOHandle.DeleteExportToDisk();
+                // 向上重新构建子树，获取新的SubRoot，并将刚才的subRoot对应新的子树叶节点返回给RepairAfterDelete使用
+                // 获取当前子树的叶节点
+                var node = GetSubTreeFromDisk(SubRoot.CurrentRID.Rid);
+                bPlusTreeProvider.RepairAfterDelete(node);
+                // 持久化到本地硬盘
+                bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.DeleteExportToDisk);
             }
         }
         #endregion

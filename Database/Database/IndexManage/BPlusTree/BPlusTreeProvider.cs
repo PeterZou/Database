@@ -51,12 +51,6 @@ namespace Database.IndexManage.BPlusTree
             return bBplusTree.SearchInTimes(times, key, ridList);
         }
 
-        // TODO
-        public void Reset(TV value)
-        {
-            
-        }
-
         // TODO 单例
         public BPlusTreeProvider(int degree)
         {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Database.RecordManage
 {
-    public struct RID
+    public struct RID:IComparable<RID>
     {
         const int NULL_PAGE = -1;
         const int NULL_SLOT = -1;
@@ -22,6 +22,12 @@ namespace Database.RecordManage
         public override string ToString()
         {
             return "RID page is :" + Page + ", slot is " + Slot;
+        }
+
+        public int CompareTo(RID other)
+        {
+            if (this.Page == other.Page && this.Slot == other.Slot) return 0;
+            return -1;
         }
     }
 }

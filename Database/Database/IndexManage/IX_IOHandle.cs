@@ -22,6 +22,8 @@ namespace Database.IndexManage
 
         private Func<TK> CreatNewTK;
 
+        public Node<TK, RIDKey<TK>> SelectNode {set;get;}
+
         public void ForcePages()
         {
             rmp.ForcePages(ConstProperty.ALL_PAGES);
@@ -40,14 +42,20 @@ namespace Database.IndexManage
         /// <param name="height"></param>
         /// <param name="rid">当前结点的RID</param>
         /// <param name="parent">父节点</param>
-        public void GetSubTreeImportToMemory(int height, RID rid, Node<TK, RIDKey<TK>> parent)
+        public void GetSubTreeImportToMemory(int height, RID rid, Node<TK, RIDKey<TK>> parent,bool useBehind, RID leafRid)
         {
             if (height == 0) return;
-
+            
             var node = InsertImportToMemory(rid, parent);
+
+            if (useBehind && node.Item1.CurrentRID.Rid.CompareTo(leafRid) == 0)
+            {
+                SelectNode = node.Item1;
+            }
+
             foreach (var n in node.Item2)
             {
-                GetSubTreeImportToMemory(height - 1, n, node.Item1);
+                GetSubTreeImportToMemory(height - 1, n, node.Item1, useBehind, leafRid);
             }
         }
 
@@ -77,6 +85,7 @@ namespace Database.IndexManage
             return node;
         }
 
+        // 添加单个node到硬盘
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             var nodeDisk = ConvertNodeToNodeDisk(node);
@@ -85,6 +94,7 @@ namespace Database.IndexManage
             rmp.InsertRec(data);
         }
 
+        // 从硬盘删除单个node
         public void DeleteExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             rmp.DeleteRec(node.CurrentRID.Rid);
