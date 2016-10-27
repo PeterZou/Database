@@ -58,6 +58,8 @@ namespace Database.IndexManage.BPlusTree
         public int Degree { set; get; }
         public Node<TK, TV> Root{ set; get; }
 
+        private Node<TK, TV> tmpNode;
+
         public BPlusTree(int degree)
         {
             this.Degree = degree;
@@ -125,8 +127,9 @@ namespace Database.IndexManage.BPlusTree
             }
         }
 
-        public void Insert(TV value, Action<Node<TK, TV>> func)
+        public void Insert(TV value)
         {
+            tmpNode = null;
             // Root is null
             if (Root == null)
             {
@@ -135,12 +138,13 @@ namespace Database.IndexManage.BPlusTree
             }
             else
             {
-                Insert(value, Root, func);
+                Insert(value, Root);
             } 
         }
 
         public void Delete(TK key)
         {
+            tmpNode = null;
             if (Root == null) return;
 
             if (Root.IsLeaf == true && Root.Values.Count == 1)
@@ -212,22 +216,22 @@ namespace Database.IndexManage.BPlusTree
             return node.ChildrenNodes;
         }
 
-        private void Insert(TV value, Node<TK, TV> node, Action<Node<TK, TV>> func)
+        // 反向调用接口方法
+        public void InsertRepair()
         {
-            int index = GetIndex(value, node);
-            if (node.IsLeaf == true)
-            {
-                node.Values.Insert(index, value.Key);
-                node.Property.Add(value);
-                InsertRepair(node,func);
-            }
-            else
-            {
-                Insert(value,node.ChildrenNodes[index], func);
-            }
+            if(tmpNode != null)
+                InsertRepair(tmpNode);
         }
 
-        private void InsertRepair(Node<TK, TV> node,Action<Node<TK, TV>> func)
+        // 反向调用接口方法
+        // StealFromLeft，StealFromRight，Merge都需要重新判断向上的子树
+        public void RepairAfterDelete()
+        {
+            if (tmpNode != null)
+                RepairAfterDelete(tmpNode);
+        }
+
+        public void InsertRepair(Node<TK, TV> node)
         {
             if (node.Values.Count <= MaxDegree)
             {
@@ -235,18 +239,78 @@ namespace Database.IndexManage.BPlusTree
             }
             else if (node.Parent == null)
             {
-                Root = Split(node,func);
+                Root = Split(node);
                 return;
             }
             else
             {
-                var newNode = Split(node,func);
-                this.InsertRepair(newNode,func);
+                var newNode = Split(node);
+                this.InsertRepair(newNode);
+            }
+        }
+
+        public void RepairAfterDelete(Node<TK, TV> node)
+        {
+            // less than degree
+            if (node.Values.Count < MinDegree)
+            {
+                if (node.Parent == null)
+                {
+                    if (node.Values.Count == 0)
+                    {
+                        Root = node.ChildrenNodes[0];
+                        Root.Parent = null;
+                    }
+                }
+                else
+                {
+                    var parentNode = node.Parent;
+                    int parentIndex = 0;
+                    for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
+
+                    if (parentIndex > 0 && parentNode.ChildrenNodes[parentIndex - 1].Values.Count > MinDegree)
+                    {
+                        StealFromLeft(node, parentIndex);
+
+                    }
+                    else if (parentIndex < parentNode.Values.Count && parentNode.ChildrenNodes[parentIndex + 1].Values.Count > MinDegree)
+                    {
+                        StealFromRight(node, parentIndex);
+
+                    }
+                    else if (parentIndex == 0)
+                    {
+                        // Merge with right sibling
+                        var nextNode = Merge(node);
+                        RepairAfterDelete(nextNode.Parent);
+                    }
+                    else
+                    {
+                        // Merge with left sibling
+                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
+                        RepairAfterDelete(nextNode.Parent);
+                    }
+                }
+            }
+        }
+
+        private void Insert(TV value, Node<TK, TV> node)
+        {
+            int index = GetIndex(value, node);
+            if (node.IsLeaf == true)
+            {
+                node.Values.Insert(index, value.Key);
+                node.Property.Add(value);
+                tmpNode = node;
+            }
+            else
+            {
+                Insert(value,node.ChildrenNodes[index]);
             }
         }
 
         // implete func
-        public Node<TK, TV> Split(Node<TK, TV> node, Action<Node<TK, TV>> func)
+        private Node<TK, TV> Split(Node<TK, TV> node)
         {
             var rightNode = node.SetNode(node.IsLeaf);
             var risingNode = node.Values[Degree / 2];
@@ -315,51 +379,6 @@ namespace Database.IndexManage.BPlusTree
                 Root.IsLeaf = false;
                 Root.Height++;
                 return Root;
-            }
-        }
-
-        public void RepairAfterDelete(Node<TK, TV> node)
-        {
-            // less than degree
-            if (node.Values.Count < MinDegree)
-            {
-                if (node.Parent == null)
-                {
-                    if (node.Values.Count == 0)
-                    {
-                        Root = node.ChildrenNodes[0];
-                        Root.Parent = null;
-                    }
-                }
-                else
-                {
-                    var parentNode = node.Parent;
-                    int parentIndex = 0;
-                    for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
-
-                    if (parentIndex > 0 && parentNode.ChildrenNodes[parentIndex - 1].Values.Count > MinDegree)
-                    {
-                        StealFromLeft(node, parentIndex);
-
-                    }
-                    else if (parentIndex < parentNode.Values.Count && parentNode.ChildrenNodes[parentIndex + 1].Values.Count > MinDegree)
-                    {
-                        StealFromRight(node, parentIndex);
-
-                    }
-                    else if (parentIndex == 0)
-                    {
-                        // Merge with right sibling
-                        var nextNode = Merge(node);
-                        this.RepairAfterDelete(nextNode.Parent);
-                    }
-                    else
-                    {
-                        // Merge with left sibling
-                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
-                        RepairAfterDelete(nextNode.Parent);
-                    }
-                }
             }
         }
 
@@ -451,7 +470,7 @@ namespace Database.IndexManage.BPlusTree
                     }
                 }
 
-                RepairAfterDelete(node);
+                tmpNode = node;
             }
         }
 

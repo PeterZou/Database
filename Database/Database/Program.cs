@@ -30,13 +30,15 @@ namespace Database
 
             for (int i = 1; i <= 6; i++)
             {
-                if (i != 9999)
-                    bt.Insert(new NodeInt(i), Program.InsertExportToDisk);
+                bt.Insert(new NodeInt(i));
+                bt.InsertRepair();
+
             }
             bt.Traverse(bt.Root, bt.TraverseOutput);
             sw.Stop();
             Console.WriteLine(sw.Elapsed);
             bt.Delete(1);
+            bt.RepairAfterDelete();
             bt.Traverse(bt.Root, bt.TraverseOutput);
             Console.ReadKey();
         }

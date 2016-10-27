@@ -69,7 +69,6 @@
     <Compile Include="IndexManage\BPlusTree\Iprovider.cs" />
     <Compile Include="IndexManage\BPlusTree\Node.cs" />
     <Compile Include="IndexManage\IndexValue\NodeInt.cs" />
-    <Compile Include="IndexManage\BPlusTree\ProviderContext.cs" />
     <Compile Include="IndexManage\IndexValue\NodeDisk.cs" />
     <Compile Include="IndexManage\IndexValue\RIDKey.cs" />
     <Compile Include="IndexManage\IX_IOHandle.cs" />

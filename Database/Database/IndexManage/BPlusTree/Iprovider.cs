@@ -16,7 +16,7 @@ namespace Database.IndexManage.BPlusTree
 
         void Search(TK key);
 
-        void Insert(TV value, Action<Node<TK, TV>> func);
+        void Insert(TV value);
 
         void Delete(TK key);
 

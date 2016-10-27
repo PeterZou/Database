@@ -10,8 +10,7 @@ namespace Database.IndexManage.BPlusTree
         where TV : INode<TK>
         where TK : IComparable<TK>
     {
-
-        static BPlusTree<TK, TV> bBplusTree;
+        public BPlusTree<TK, TV> bBplusTree;
 
         public Node<TK, TV> Root
         {
@@ -19,25 +18,16 @@ namespace Database.IndexManage.BPlusTree
             set { bBplusTree.Root = value; }
         }
 
-        public static BPlusTree<TK, TV> GetBBplusTree(int degree)
-        {
-            if (bBplusTree == null)
-            {
-                bBplusTree = new BPlusTree<TK, TV>(degree);
-            }
-            else if (bBplusTree.Degree != degree) throw new Exception();
-
-            return bBplusTree;
-        }
-
         public void Delete(TK key)
         {
             bBplusTree.Delete(key);
+            bBplusTree.RepairAfterDelete();
         }
 
-        public void Insert(TV value, Action<Node<TK, TV>> func)
+        public void Insert(TV value)
         {
-            bBplusTree.Insert(value,func);
+            bBplusTree.Insert(value);
+            bBplusTree.InsertRepair();
         }
 
         public void Search(TK key)
@@ -61,8 +51,15 @@ namespace Database.IndexManage.BPlusTree
             
         }
 
-        private BPlusTreeProvider()
+        // TODO 单例
+        public BPlusTreeProvider(int degree)
         {
+            bBplusTree = new BPlusTree<TK, TV>(degree);
+        }
+
+        public void InsertRepair(Node<TK, TV> node)
+        {
+            bBplusTree.InsertRepair(node);
         }
     }
 }
