@@ -73,6 +73,7 @@
     <Compile Include="IndexManage\IX_IOHandle.cs" />
     <Compile Include="IndexManage\IX_IndexHandle.cs" />
     <Compile Include="IndexManage\IX_FileHdr.cs" />
+    <Compile Include="IndexManage\IX_Manager.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RecordManagerUtil.cs" />

@@ -16,24 +16,26 @@ namespace Database.IndexManage
     public class IX_IOHandle<TK>
         where TK : IComparable<TK>
     {
-        private RM_FileHandle rmp;
+        #region init
+        public RM_FileHandle rmp;
 
         private Func<string, TK> ConverStringToTK;
 
         private Func<TK> CreatNewTK;
+        #endregion
+
+        public IX_IOHandle(RM_FileHandle rmp, Func<string, TK> converStringToTK, Func<TK> creatNewTK)
+        {
+            this.rmp = rmp;
+            this.ConverStringToTK = converStringToTK;
+            this.CreatNewTK = creatNewTK;
+        }
 
         public Node<TK, RIDKey<TK>> SelectNode {set;get;}
 
         public void ForcePages()
         {
             rmp.ForcePages(ConstProperty.ALL_PAGES);
-        }
-
-        public IX_IOHandle(RM_FileHandle rmp,Func<string,TK> converStringToTK,Func<TK> creatNewTK)
-        {
-            this.rmp = rmp;
-            this.ConverStringToTK = converStringToTK;
-            this.CreatNewTK = creatNewTK;
         }
 
         /// <summary>

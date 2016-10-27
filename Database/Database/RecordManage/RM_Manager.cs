@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
+using Database.IndexManage.IndexValue;
 
 namespace Database.RecordManage
 {
@@ -26,7 +27,7 @@ namespace Database.RecordManage
         // In:   recordSize
         // Ret:  RM return code
         //
-        public void CreateFile(string fileName, int recordSize)
+        public void CreateFile(string fileName, int recordSize,char[] data)
         {
             if ((recordSize >= ConstProperty.PF_PAGE_SIZE
                 - ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap)
@@ -38,11 +39,19 @@ namespace Database.RecordManage
             PF_FileHandle pfh = pfm.OpenFile(fileName);
             PF_PageHandle headerPage = pfh.AllocatePage();
 
-            RM_FileHdr hdr;
+            RM_FileHdr hdr = new RM_FileHdr();
             hdr.pf_fh.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
             hdr.pf_fh.numPages = 1; // hdr page
             hdr.extRecordSize = recordSize;
+            // For index
+            if (data != null && data.Length != 0)
+            {
+                hdr.dataNum = data.Length;
+                hdr.data = new char[hdr.dataNum];
+                hdr.data = data;
+            }
 
+            // For index
             headerPage.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
 
             pfh.MarkDirty(headerPage.pageNum);

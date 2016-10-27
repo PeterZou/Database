@@ -4,19 +4,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Database.Const;
+using Database.FileManage;
+using Database.IndexManage.IndexValue;
 
 namespace Database.IndexManage
 {
     public struct IX_FileHdr
     {
-        public RM_FileHdr rmf;
+        public PF_FileHdr pf_fh;
+        public int extRecordSize;
 
-        public int indexRecordSize;
+        // RM_FileHdr.data 作为结点常驻内存
+        public int height;
 
-        // 前几层节点常驻内存，rootpage一次导入,indexRecordSize,degree,pagesize决定，取满B+树
-        public int maxRootPageRecordSize;
-
-        // key:value=>indexName:RID
-        public char[] indexInfo;
+        public ConstProperty.AttrType indexType;
     }
 }

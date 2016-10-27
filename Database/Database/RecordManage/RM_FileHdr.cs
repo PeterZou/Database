@@ -11,5 +11,7 @@ namespace Database.RecordManage
     {
         public PF_FileHdr pf_fh;
         public int extRecordSize;
+        public int dataNum;
+        public char[] data;
     }
 }

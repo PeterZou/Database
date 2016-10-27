@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
 using Database.FileManage;
+using Database.IndexManage;
 
 namespace Database.RecordManage
 {
@@ -28,6 +29,14 @@ namespace Database.RecordManage
             return hdr;
         }
 
+        // TODO
+        public static IX_FileHdr GetIndexHeader(PF_PageHandle ph)
+        {
+            return default(IX_FileHdr);
+        }
+
+        // For index=> convert to IX_FileHdr
+        // TODO
         public static char[] SetFileHeaderToChar(RM_FileHdr hdr)
         {
             char[] content = new char[3 * ConstProperty.PF_PageHdr_SIZE];

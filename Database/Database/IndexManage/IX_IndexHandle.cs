@@ -23,7 +23,7 @@ namespace Database.IndexManage
     {
         private BPlusTreeProvider<TK, RIDKey<TK>> bPlusTreeProvider;
 
-        private IX_IOHandle<TK> iX_IOHandle;
+        public IX_IOHandle<TK> iX_IOHandle;
 
         private int treeHeight;
 
@@ -36,12 +36,12 @@ namespace Database.IndexManage
         private Node<TK, RIDKey<TK>> LeafNode { set; get; }
         private List<RID> ridList = new List<RID>();
 
-        public IX_IndexHandle(BPlusTreeProvider<TK, RIDKey<TK>> ip, IX_IOHandle<TK> iX_IOHandle, int treeHeight, RID rootRid)
+        public IX_IndexHandle(IX_IOHandle<TK> iX_IOHandle, int treeHeight, RID rootRid)
         {
-            bPlusTreeProvider = ip;
             this.iX_IOHandle = iX_IOHandle;
             this.treeHeight = treeHeight;
             this.RootRid = rootRid;
+            bPlusTreeProvider = new BPlusTreeProvider<TK, RIDKey<TK>>(treeHeight);
         }
 
         #region Import disk to memory
