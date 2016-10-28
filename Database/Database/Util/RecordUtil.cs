@@ -6,10 +6,13 @@ using System.Threading.Tasks;
 using Database.Const;
 using Database.FileManage;
 using Database.IndexManage;
+using Database.RecordManage;
+using Database.IndexManage.IndexValue;
+using Database.IndexManage.BPlusTree;
 
-namespace Database.RecordManage
+namespace Database.Util
 {
-    public static class RecordManagerUtil
+    public static class RecordUtil
     {
         public static RM_FileHdr GetFileHeader(PF_PageHandle ph)
         {
@@ -29,24 +32,18 @@ namespace Database.RecordManage
             return hdr;
         }
 
-        // TODO
-        public static IX_FileHdr GetIndexHeader(PF_PageHandle ph)
-        {
-            return default(IX_FileHdr);
-        }
-
         // For index=> convert to IX_FileHdr
         // TODO
         public static char[] SetFileHeaderToChar(RM_FileHdr hdr)
         {
             char[] content = new char[3 * ConstProperty.PF_PageHdr_SIZE];
-            FileManagerUtil.ReplaceTheNextFree(content
+            FileUtil.ReplaceTheNextFree(content
                 , hdr.pf_fh.firstFree, 0);
 
-            FileManagerUtil.ReplaceTheNextFree(content
+            FileUtil.ReplaceTheNextFree(content
                 , hdr.pf_fh.numPages, ConstProperty.PF_PageHdr_SIZE);
 
-            FileManagerUtil.ReplaceTheNextFree(content
+            FileUtil.ReplaceTheNextFree(content
                 , hdr.extRecordSize, 2 * ConstProperty.PF_PageHdr_SIZE);
 
             return content;

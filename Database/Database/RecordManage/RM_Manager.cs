@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
 using Database.IndexManage.IndexValue;
+using Database.Util;
 
 namespace Database.RecordManage
 {
@@ -52,7 +53,7 @@ namespace Database.RecordManage
             }
 
             // For index
-            headerPage.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
+            headerPage.pPageData = RecordUtil.SetFileHeaderToChar(hdr);
 
             pfh.MarkDirty(headerPage.pageNum);
             pfh.UnpinPage(headerPage.pageNum);
@@ -90,7 +91,7 @@ namespace Database.RecordManage
 
             PF_PageHandle ph = pfh.GetThisPage(0);
 
-            RM_FileHdr hdr = RecordManagerUtil.GetFileHeader(ph);
+            RM_FileHdr hdr = RecordUtil.GetFileHeader(ph);
 
             rmh.Open(pfh,hdr.extRecordSize);
 

@@ -1,5 +1,6 @@
 ﻿using Database.BufferManage;
 using Database.Const;
+using Database.FileManage;
 using Database.IO;
 using System;
 using System.Collections.Generic;
@@ -9,9 +10,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Database.FileManage
+namespace Database.Util
 {
-    public static class FileManagerUtil
+    public static class FileUtil
     {
         public static void WriteFileHdr(PF_FileHdr hdr, int fd, FileStream fs)
         {

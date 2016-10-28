@@ -11,6 +11,7 @@ using log4net;
 using log4net.Config;
 using System.Reflection;
 using Database.FileManage;
+using Database.Util;
 
 namespace Database.BufferManage
 {
@@ -71,7 +72,7 @@ namespace Database.BufferManage
             if (slot == -1)
             {
                 slot = InternalAlloc(pageNum);
-                outputResult = FileManagerUtil.ReadPage(fd, pageNum,pageSize,fs);
+                outputResult = FileUtil.ReadPage(fd, pageNum,pageSize,fs);
                 pf_h.Insert(fd, pageNum, slot);
                 InitPageDesc(fd, pageNum, slot);
 
@@ -198,7 +199,7 @@ namespace Database.BufferManage
                         int index = usedList.IndexOf(u);
                         if (u.dirty)
                         {
-                            FileManagerUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
+                            FileUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
                             headNode = u;
                             headNode.dirty = false;
                         }
@@ -240,7 +241,7 @@ namespace Database.BufferManage
                     if (u.dirty)
                     {
                         int index = usedList.IndexOf(u);
-                        FileManagerUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
+                        FileUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
                         headNode = u;
                         headNode.dirty = false;
                         indexArray.Add(index);
@@ -296,8 +297,8 @@ namespace Database.BufferManage
                 // Write out the page if it is dirty
                 if (headNode.dirty == true)
                 {
-                    FileManagerUtil.ReplaceTheNextFree(headNode.data,pageNum,0);
-                    FileManagerUtil.WritePage(headNode.fd, headNode.pageNum
+                    FileUtil.ReplaceTheNextFree(headNode.data,pageNum,0);
+                    FileUtil.WritePage(headNode.fd, headNode.pageNum
                         , headNode.data,pageSize,fs);
                     headNode.dirty = false;
                 }
