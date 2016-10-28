@@ -57,7 +57,7 @@
     <Compile Include="BufferManage\PF_HashEntry.cs" />
     <Compile Include="Const\ConstProperty.cs" />
     <Compile Include="Const\WindowsAPI.cs" />
-    <Compile Include="Util\FileUtil.cs" />
+    <Compile Include="FileManage\FileManagerUtil.cs" />
     <Compile Include="FileManage\PF_FileHandle.cs" />
     <Compile Include="FileManage\PF_FileHdr.cs" />
     <Compile Include="FileManage\PF_Manager.cs" />
@@ -76,8 +76,7 @@
     <Compile Include="IndexManage\IX_Manager.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
-    <Compile Include="Util\IndexUtil.cs" />
-    <Compile Include="Util\RecordUtil.cs" />
+    <Compile Include="RecordManage\RecordManagerUtil.cs" />
     <Compile Include="RecordManage\RM_FileScan.cs" />
     <Compile Include="IO\IOFDDic.cs" />
     <Compile Include="IO\Util.cs" />

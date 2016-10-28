@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
-using Database.Util;
 
 namespace Database.RecordManage
 {
@@ -71,7 +70,7 @@ namespace Database.RecordManage
             PF_PageHandle ph = pfHandle.GetThisPage(0);
             pfHandle.UnpinPage(0);
 
-            hdr = RecordUtil.GetFileHeader(ph);
+            hdr = RecordManagerUtil.GetFileHeader(ph);
 
             bHdrChanged = true;
 
@@ -279,7 +278,7 @@ namespace Database.RecordManage
 
         public void SetFileHeader(PF_PageHandle ph)
         {
-            ph.pPageData = RecordUtil.SetFileHeaderToChar(hdr);
+            ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
         }
 
         private char[] GetSlotPointer(PF_PageHandle ph, int slot)

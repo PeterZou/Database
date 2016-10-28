@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using Database.Const;
 using System.IO;
-using Database.Util;
 
 /// <summary>
 /// TODO:1.why need to PF_FileHdr?
@@ -195,7 +194,7 @@ namespace Database.FileManage
             bHdrChanged = true;
 
             // replace the pf_ph.nextFree of PF_PAGE_USED in ConstProperty.PF_PageHdr_SIZE chars
-            FileUtil.ReplaceTheNextFree(content, (int)ConstProperty.Page_statics.PF_PAGE_USED,0);
+            FileManagerUtil.ReplaceTheNextFree(content, (int)ConstProperty.Page_statics.PF_PAGE_USED,0);
 
             //Is it the same the put the content to the head of the usedlist?
             MarkDirty(pageNum);
@@ -259,7 +258,7 @@ namespace Database.FileManage
             Int32.TryParse(new string(content.data.Take(ConstProperty.PF_PageHdr_SIZE).ToArray()), out nextFreeTmp);
             if (nextFreeTmp != (int)ConstProperty.Page_statics.PF_PAGE_USED) throw new Exception();
 
-            FileUtil.ReplaceTheNextFree(content.data, hdr.firstFree, 0);
+            FileManagerUtil.ReplaceTheNextFree(content.data, hdr.firstFree, 0);
             hdr.firstFree = pageNum;
             //FileManagerUtil.ReplaceTheNextFree(content, hdr.firstFree,0);
 
@@ -284,7 +283,7 @@ namespace Database.FileManage
             if (bHdrChanged)
             {
                 // write to the filehdr
-                FileUtil.WriteFileHdr(hdr,fd,fs);
+                FileManagerUtil.WriteFileHdr(hdr,fd,fs);
 
                 bHdrChanged = false;
             }
@@ -308,7 +307,7 @@ namespace Database.FileManage
             if (bHdrChanged)
             {
                 // write to the filehdr
-                FileUtil.WriteFileHdr(hdr,fd,fs);
+                FileManagerUtil.WriteFileHdr(hdr,fd,fs);
 
                 bHdrChanged = false;
             }

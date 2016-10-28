@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Database.IndexManage.IndexValue;
 using Database.Const;
 using Database.FileManage;
-using Database.Util;
 
 namespace Database.IndexManage
 {
@@ -69,10 +68,10 @@ namespace Database.IndexManage
             char[] data = record.GetData();
 
             // leaf or not
-            NodeDisk<TK> nodeDisk = IndexUtil<TK>.ConvertToNodeDisk(data, ConverStringToTK);
+            NodeDisk<TK> nodeDisk = ConvertToNodeDisk(data);
 
             // set the node link to the parent
-            var node = IndexUtil<TK>.ConvertNodeDiskToNode(nodeDisk, rid, CreatNewTK);
+            var node = ConvertNodeDiskToNode(nodeDisk, rid);
 
             return node;
         }
@@ -91,8 +90,8 @@ namespace Database.IndexManage
         // 添加单个node到硬盘
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
-            var nodeDisk = IndexUtil<TK>.ConvertNodeToNodeDisk(node);
-            char[] data = IndexUtil<TK>.ConvertToArray(nodeDisk);
+            var nodeDisk = ConvertNodeToNodeDisk(node);
+            char[] data = ConvertToArray(nodeDisk);
             // set the nl to the disk
             rmp.InsertRec(data);
         }
@@ -103,6 +102,120 @@ namespace Database.IndexManage
             rmp.DeleteRec(node.CurrentRID.Rid);
         }
 
-        
+        private Tuple<Node<TK, RIDKey<TK>>,List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
+        {
+            List<RID> ridlist = null;
+            Node<TK, RIDKey<TK>> node = new Node<TK, RIDKey<TK>>();
+            node.CurrentRID = new RIDKey<TK>(rid, CreatNewTK());
+            node.Height = nodeDisk.height;
+
+            // leaf:0,branch:1
+            if (nodeDisk.isLeaf == 0)
+            {
+                node.IsLeaf = true;
+
+                // put the property to the leaf
+                for (int i = 0; i < nodeDisk.capacity; i++)
+                {
+                    node.Property.Add(new RIDKey<TK>(nodeDisk.childRidList[i],nodeDisk.keyList[i]));
+                }
+            }
+            else
+            {
+                node.IsLeaf = false;
+                ridlist = new List<RID>();
+                foreach (var v in nodeDisk.childRidList)
+                {
+                    ridlist.Add(v);
+                }
+            }
+            foreach (var v in nodeDisk.keyList)
+                node.Values.Add(v);
+            return new Tuple<Node<TK, RIDKey<TK>>, List<RID>>(node,ridlist);
+        }
+
+        private NodeDisk<TK> ConvertNodeToNodeDisk(Node<TK, RIDKey<TK>> node)
+        {
+            NodeDisk<TK> nl = new NodeDisk<TK>();
+            // leaf:0,branch:1
+            nl.isLeaf = node.IsLeaf == true ? 0 : 1;
+            nl.capacity = node.Values.Count;
+            nl.keyList = node.Values.ToList();
+            nl.height = node.Height;
+
+            foreach (var v in node.Property)
+            {
+                nl.childRidList.Add(v.Rid);
+            }
+            nl.length = GetLength(nl);
+
+            return nl;
+        }
+
+        private int GetLength(NodeDisk<TK> nl)
+        {
+            int length = 0;
+
+            length += 3 * ConstProperty.Int_Size+1;
+
+            // TODO Set TK is int
+            length += nl.capacity* ConstProperty.Int_Size;
+            length += nl.capacity * ConstProperty.RM_Page_RID_SIZE+ ConstProperty.RM_Page_RID_SIZE;
+            return length;
+        }
+
+        private NodeDisk<TK> ConvertToNodeDisk(char[] data)
+        {
+            string dataStr = new string(data);
+            NodeDisk<TK> node = new NodeDisk<TK>();
+            node.length = Convert.ToInt32(dataStr.Substring(0, ConstProperty.Int_Size));
+            node.isLeaf = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size, 1));
+            node.capacity = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+            node.height = Convert.ToInt32(dataStr.Substring(2*ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+
+            for (int i = 0; i < node.capacity; i++)
+            {
+                TK tmp = ConverStringToTK(dataStr.Substring((3 + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                // TODO
+                node.keyList[i] = tmp;
+            }
+            for (int i = 0; i < node.capacity; i++)
+            {
+                // TODO
+                int pageNum = Convert.ToInt32(dataStr.Substring(
+                    (3 + node.capacity+i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                int slotNum = Convert.ToInt32(dataStr.Substring(
+                    (3 + node.capacity+i+1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                node.childRidList[i] = new RID(pageNum,slotNum);
+            }
+            return node;
+        }
+
+        private char[] ConvertToArray(NodeDisk<TK> nl)
+        {
+            char[] data = new char[nl.length];
+            // length
+            FileManagerUtil.ReplaceTheNextFree(data,nl.length,0);
+            // isLeaf
+            data[ConstProperty.Int_Size] = Convert.ToChar(nl.isLeaf);
+            // capacity
+            FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, ConstProperty.Int_Size+1);
+            // height
+            FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, 2*ConstProperty.Int_Size + 1);
+
+            // keyList
+            // TODO Set TK is int
+            for (int i = 0; i < nl.capacity; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, (3 + i) *ConstProperty.Int_Size + 1);
+            }
+            // childRidList
+            for (int i = 0; i < nl.capacity; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, 
+                    (3 + nl.capacity+i) * ConstProperty.Int_Size + 1,ConstProperty.RM_Page_RID_SIZE);
+            }
+            return data;
+        } 
     }
 }

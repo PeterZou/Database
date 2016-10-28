@@ -7,7 +7,6 @@ using Database.BufferManage;
 using Database.Const;
 using System.Runtime.InteropServices;
 using System.IO;
-using Database.Util;
 
 namespace Database.FileManage
 {
@@ -47,7 +46,7 @@ namespace Database.FileManage
                      
             IO.IOFDDic.FDMapping.Add(num, fileName);
 
-            FileUtil.WriteFileHdr(hdr, num,fs);
+            FileManagerUtil.WriteFileHdr(hdr, num,fs);
         }
 
         //
@@ -99,7 +98,7 @@ namespace Database.FileManage
             try
             {
                 fs = new FileStream(fileName, FileMode.Open);
-                PF_FileHdr hdr = FileUtil.ReadFileHdr(fileName, fs);
+                PF_FileHdr hdr = FileManagerUtil.ReadFileHdr(fileName, fs);
 
                 PF_FileHandle pf_fh = new PF_FileHandle(hdr, fileName, pBufferMgr, true,fs);
                 return pf_fh;

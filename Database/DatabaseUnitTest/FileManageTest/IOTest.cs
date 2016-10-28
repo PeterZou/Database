@@ -10,7 +10,6 @@ using System.Threading;
 using System.IO;
 using DatabaseUnitTest.IOTestFile;
 using Database.FileManage;
-using Database.Util;
 
 namespace DatabaseUnitTest
 {
@@ -49,7 +48,7 @@ namespace DatabaseUnitTest
 
             Int32.TryParse(new string(pf.data),out i);
 
-            FileUtil.ReplaceTheNextFree(pf,423,0);
+            FileManagerUtil.ReplaceTheNextFree(pf,423,0);
 
             Int32.TryParse(new string(pf.data), out i);
         }

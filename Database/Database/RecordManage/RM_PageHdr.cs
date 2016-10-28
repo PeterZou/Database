@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
-using Database.Util;
 
 namespace Database.RecordManage
 {
@@ -59,13 +58,13 @@ namespace Database.RecordManage
         public char[] To_buf()
         {
             char[] content = new char[Size()];
-            FileUtil.ReplaceTheNextFree(content
+            FileManagerUtil.ReplaceTheNextFree(content
                 , pf_ph.nextFree, 0);
 
-            FileUtil.ReplaceTheNextFree(content
+            FileManagerUtil.ReplaceTheNextFree(content
                 , numSlots, ConstProperty.PF_PageHdr_SIZE);
 
-            FileUtil.ReplaceTheNextFree(content
+            FileManagerUtil.ReplaceTheNextFree(content
                 , numFreeSlots, 2*ConstProperty.PF_PageHdr_SIZE);
 
             int index = 3 * ConstProperty.PF_PageHdr_SIZE;
