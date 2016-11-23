@@ -45,8 +45,10 @@ namespace Database.FileManage
             }
                      
             IO.IOFDDic.FDMapping.Add(num, fileName);
-
-            FileManagerUtil.WriteFileHdr(hdr, num,fs);
+            using (fs = new FileStream(fileName, FileMode.Create))
+            {
+                FileManagerUtil.WriteFileHdr(hdr, num, fs);
+            }
         }
 
         //

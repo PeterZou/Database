@@ -15,19 +15,31 @@ namespace Database.FileManage
     {
         public static void WriteFileHdr(PF_FileHdr hdr, int fd, FileStream fs)
         {
-            using (StreamWriter sr = new StreamWriter(fs))
+            fs.Position = 0;
+            StreamWriter sr = new StreamWriter(fs);
+            try
             {
                 char[] contentHdr = new char[ConstProperty.PF_FILE_HDR_SIZE];
                 ReplaceTheNextFree(contentHdr, hdr.firstFree, 0);
                 ReplaceTheNextFree(contentHdr, hdr.numPages, ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
                 sr.Write(contentHdr);
             }
+            catch (IOException e)
+            {
+                throw new IOException(e.ToString());
+            }
+            finally
+            {
+                //sr.Close();
+            }
         }
 
         public static PF_FileHdr ReadFileHdr(string fileName, FileStream fs)
         {
             PF_FileHdr pf_fh = new PF_FileHdr();
-            using (StreamReader sr = new StreamReader(fs))
+            fs.Position = 0;
+            StreamReader sr = new StreamReader(fs);
+            try
             {
                 char[] firstFree = new char[ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
                 char[] numPages = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
@@ -37,6 +49,14 @@ namespace Database.FileManage
                 sr.Read(numPages, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
                 Int32.TryParse(new string(numPages), out pf_fh.numPages);
             }
+            catch (IOException e)
+            {
+                throw new IOException(e.ToString());
+            }
+            finally
+            {
+                //sr.Close();
+            }
             return pf_fh;
         }
 
@@ -45,13 +65,22 @@ namespace Database.FileManage
         {
             char[] buffer;
             string ioPath = IOFDDic.FDMapping[fd];
-            using (StreamReader sr = new StreamReader(fs))
+            StreamReader sr = new StreamReader(fs);
+            try
             {
                 long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
                 sr.BaseStream.Seek(offset, SeekOrigin.Begin);
 
                 buffer = new char[pageSize];
                 sr.Read(buffer, 0, pageSize);
+            }
+            catch (IOException e)
+            {
+                throw new IOException(e.ToString());
+            }
+            finally
+            {
+                //sr.Close();
             }
             //replace enter key
             return RelaceEnterKey(buffer);
@@ -67,7 +96,8 @@ namespace Database.FileManage
             char[] outputSource = RelaceEnterKey(source);
 
             string ioPath = IOFDDic.FDMapping[fd];
-            using (StreamWriter sr = new StreamWriter(fs))
+            StreamWriter sr = new StreamWriter(fs);
+            try
             {
                 long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
                 sr.BaseStream.Seek(offset, SeekOrigin.Begin);
@@ -80,6 +110,14 @@ namespace Database.FileManage
                 //source is a record which had the fixed length
                 if (charReplace.Length != pageSize) throw new Exception();
                 sr.Write(charReplace);
+            }
+            catch (IOException e)
+            {
+                throw new IOException(e.ToString());
+            }
+            finally
+            {
+                //sr.Close();
             }
         }
 
@@ -100,7 +138,11 @@ namespace Database.FileManage
 
         public static void ReplaceTheNextFree(char[] content, int nextFree, int start,int size)
         {
-            string str = nextFree.ToString();
+            ReplaceTheNextFree(content, nextFree.ToString(), start, size);
+        }
+
+        public static void ReplaceTheNextFree(char[] content, string str, int start, int size)
+        {
             for (int i = 0; i < size; i++)
             {
                 int j = i + start;
@@ -122,6 +164,20 @@ namespace Database.FileManage
         {
             string pattern = @"\n"; Regex rgx = new Regex(pattern);
             return rgx.Replace(new string(import), "").ToArray();
+        }
+
+        public static char[] ModifiedPageData(PF_PageHandle ph,string data)
+        {
+            char[] temp = new char[ConstProperty.PF_PAGE_SIZE];
+            int num;
+            string str = new string(ph.pPageData.Take(ConstProperty.PF_PageHdr_SIZE).ToArray());
+            Int32.TryParse(str, out num);
+
+            ReplaceTheNextFree(temp, num, 0);
+            ReplaceTheNextFree(temp, ph.pageNum, ConstProperty.PF_PageHdr_SIZE
+                , ConstProperty.PF_PageHdr_SIZE);
+            ReplaceTheNextFree(temp, data, 2 * ConstProperty.PF_PageHdr_SIZE, data.Length);
+            return temp;
         }
     }
 }

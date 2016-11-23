@@ -26,22 +26,57 @@ namespace DatabaseUnitTest
 
             var fh = pf_m.OpenFile(filePath);
 
-            // Write to the disk
-            int length = 0;
-            for (int i = 0; i < 2 * ConstProperty.PF_BUFFER_SIZE; i++)
+            // 1.Less than ConstProperty.PF_BUFFER_SIZE
+            for (int i = 0; i < ConstProperty.PF_BUFFER_SIZE-1; i++)
             {
-                length++;
-                if (length % ConstProperty.PF_BUFFER_SIZE == 0)
-                {
-                    fh.FlushPages();
-                }
                 var ph = fh.AllocatePage();
+                ph.pPageData = FileManagerUtil.ModifiedPageData(ph,"zoujia");
 
-                // Put only the page number into the page
-                // TODO:Put the content into the page
-                var note = fh.pf_bm.usedList.Where(node => node.pageNum == ph.pageNum).First();
-                fh.UnpinPage(i);
+                fh.SetThisPage(ph);
+                fh.UnpinPage(i); 
             }
+            fh.FlushPages();
+
+            // 2.Dispose some pages
+            fh.DisposePage(5);
+            fh.DisposePage(38);
+            fh.FlushPages();
+
+            // 3.Reuse the dispose pages
+            var ph1 = fh.AllocatePage();
+            ph1.pPageData = FileManagerUtil.ModifiedPageData(ph1, "zoujiaReuseDispose0");
+            fh.SetThisPage(ph1);
+            fh.UnpinPage(ph1.pageNum);
+            fh.FlushPages();
+
+            ph1 = fh.AllocatePage();
+            ph1.pPageData = FileManagerUtil.ModifiedPageData(ph1, "zoujiaReuseDispose1");
+            fh.SetThisPage(ph1);
+            fh.UnpinPage(ph1.pageNum);
+            fh.FlushPages();
+
+            ph1 = fh.AllocatePage();
+            ph1.pPageData = FileManagerUtil.ModifiedPageData(ph1, "zoujiaReuseDispose2");
+            fh.SetThisPage(ph1);
+            fh.UnpinPage(ph1.pageNum);
+            fh.FlushPages();
+
+            // 4.More than ConstProperty.PF_BUFFER_SIZE
+            ph1 = fh.AllocatePage();
+            ph1.pPageData = FileManagerUtil.ModifiedPageData(ph1, "zoujiaReuseExceed0");
+            fh.SetThisPage(ph1);
+            fh.UnpinPage(ph1.pageNum);
+            fh.FlushPages();
+
+            ph1 = fh.AllocatePage();
+            ph1.pPageData = FileManagerUtil.ModifiedPageData(ph1, "zoujiaReuseExceed1");
+            fh.SetThisPage(ph1);
+            fh.UnpinPage(ph1.pageNum);
+            fh.FlushPages();
+
+            fh.DisposePage(39);
+            fh.DisposePage(8);
+            
             fh.FlushPages();
         }
 
@@ -58,14 +93,16 @@ namespace DatabaseUnitTest
             var fh = pf_m.OpenFile(filePath);
 
             // Write to the disk
-            for (int i = 0; i < 2*ConstProperty.PF_BUFFER_SIZE; i++)
-            {
-                if (i == 56 || i ==54)
-                {
-                    fh.DisposePage(i);
-                }
-            }
-            fh.FlushPages();
+            char[] s = fh.GetThisPage(10).pPageData;
+            string data = new string(s);
+
+            data = new string(fh.GetNextPage(40).pPageData);
+
+            data = new string(fh.GetPrevPage(1).pPageData);
+
+            data = new string(fh.GetFirstPage().pPageData);
+
+            data = new string(fh.GetLastPage().pPageData);
         }
     }
 }

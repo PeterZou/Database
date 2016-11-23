@@ -71,11 +71,7 @@ namespace Database.FileManage
         {
             var node = pf_bm.usedList.Where(n=>n.pageNum == pf_ph.pageNum).First();
 
-            int index = pf_bm.usedList.IndexOf(node);
-
             node.data = pf_ph.pPageData;
-
-            pf_bm.usedList.Insert(index, node);
         }
 
         //
@@ -87,9 +83,9 @@ namespace Database.FileManage
         //       The referenced page is pinned in the buffer pool.
         // Ret:  PF return code
         //
-        public PF_PageHandle GetFirstPage(int pageNum)
+        public PF_PageHandle GetFirstPage()
         {
-            return GetFirstPage(-1);
+            return GetNextPage(-1);
         }
 
         //
@@ -101,7 +97,7 @@ namespace Database.FileManage
         //       The referenced page is pinned in the buffer pool.
         // Ret:  PF return code
         //
-        public PF_PageHandle GetLastPage(int pageNum)
+        public PF_PageHandle GetLastPage()
         {
             return GetPrevPage(hdr.numPages - 1);
         }
@@ -119,7 +115,8 @@ namespace Database.FileManage
         //
         public PF_PageHandle GetNextPage(int pageNum)
         {
-            if (!(bFileOpen && pageNum > -1 && pageNum < hdr.numPages)) throw new Exception();
+            int pageNumThis = pageNum + 1;
+            if (!(bFileOpen && pageNumThis >= 0 && pageNumThis < hdr.numPages)) throw new Exception();
 
             for (pageNum++; pageNum < hdr.numPages; pageNum++)
             {
@@ -145,7 +142,8 @@ namespace Database.FileManage
         //
         public PF_PageHandle GetPrevPage(int pageNum)
         {
-            if (!(bFileOpen && pageNum > 0 && pageNum <= hdr.numPages)) throw new Exception();
+            int pageNumThis = pageNum - 1;
+            if (!(bFileOpen && pageNumThis >= 0 && pageNumThis < hdr.numPages)) throw new Exception();
 
             for (pageNum--; pageNum >= 0; pageNum--)
             {
@@ -182,7 +180,8 @@ namespace Database.FileManage
             {
                 pageNum = hdr.firstFree;
                 content = pf_bm.GetPage(fd, pageNum, false);
-                Int32.TryParse(content.data.Take(ConstProperty.PF_PageHdr_SIZE).ToString(), out hdr.firstFree);
+                string str = new string(content.data.Take(ConstProperty.PF_PageHdr_SIZE).ToArray());
+                Int32.TryParse(str, out hdr.firstFree);
             }
             else
             {
@@ -199,7 +198,7 @@ namespace Database.FileManage
             //Is it the same the put the content to the head of the usedlist?
             MarkDirty(pageNum);
 
-            return ReadPageHandle(content, pageNum);
+            return ReadPageHandleData(content, pageNum);
         }
 
         //
@@ -255,7 +254,8 @@ namespace Database.FileManage
 
             int nextFreeTmp = -3;
 
-            Int32.TryParse(new string(content.data.Take(ConstProperty.PF_PageHdr_SIZE).ToArray()), out nextFreeTmp);
+            var str = new string(content.data.Take(ConstProperty.PF_PageHdr_SIZE-1).ToArray());
+            Int32.TryParse(str, out nextFreeTmp);
             if (nextFreeTmp != (int)ConstProperty.Page_statics.PF_PAGE_USED) throw new Exception();
 
             FileManagerUtil.ReplaceTheNextFree(content.data, hdr.firstFree, 0);
@@ -317,11 +317,12 @@ namespace Database.FileManage
         private PF_PageHandle ReadPage(PF_BufPageDesc pageContent, int pageNum)
         {
             int pageStatics = -1;
-            Int32.TryParse(new string(pageContent.data).Substring(0, ConstProperty.PF_PageHdr_SIZE), out pageStatics);
+            string str = new string(pageContent.data).Substring(0, ConstProperty.PF_PageHdr_SIZE);
+            Int32.TryParse(str, out pageStatics);
 
             if (pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_USED)
             {
-                return ReadPageHandle(pageContent, pageNum);
+                return ReadPageHandleData(pageContent, pageNum);
             }
             else
             {
@@ -330,12 +331,12 @@ namespace Database.FileManage
             }
         }
 
-        private PF_PageHandle ReadPageHandle(PF_BufPageDesc pageContent, int pageNum)
+        private PF_PageHandle ReadPageHandleData(PF_BufPageDesc pageContent, int pageNum)
         {
             PF_PageHandle currentPage = new PF_PageHandle();
 
             currentPage.pageNum = pageNum;
-            currentPage.pPageData = pageContent.data.Take(ConstProperty.PF_PageHdr_SIZE).ToArray();
+            currentPage.pPageData = new string(pageContent.data.Take(ConstProperty.PF_FILE_HDR_SIZE).ToArray()).ToArray();
             m_log.Warn(currentPage.pageNum + " and " + currentPage.pPageData);
             return currentPage;
         }
