@@ -22,7 +22,7 @@ namespace Database.RecordManage
             this.pf_ph = pf_ph;
             this.numSlots = numSlots;
             this.numFreeSlots = numSlots;
-            int num = new Bitmap(numSlots).numChars()* sizeof(char);
+            int num = new Bitmap(numSlots).numChars();
             freeSlotMap = new char[num];
         }
 
@@ -68,7 +68,7 @@ namespace Database.RecordManage
                 , numFreeSlots, 2*ConstProperty.PF_PageHdr_SIZE);
 
             int index = 3 * ConstProperty.PF_PageHdr_SIZE;
-            for (int i = 0; i < Mapsize() * sizeof(char); i++)
+            for (int i = 0; i < Mapsize(); i++)
             {
                 content[index+i] = freeSlotMap[i];
             }

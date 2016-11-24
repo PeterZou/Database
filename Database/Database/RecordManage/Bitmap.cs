@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Database.Const;
 
 namespace Database.RecordManage
 {
@@ -27,16 +28,16 @@ namespace Database.RecordManage
 
         public int numChars()
         {
-            int numChars = (size / 8);
-            if ((size % 8) != 0)
+            int numChars = (size / ConstProperty.Char_Num);
+            if ((size % ConstProperty.Char_Num) != 0)
                 numChars++;
             return numChars;
         }
 
         public void Reset(UInt32 bitNum)
         {
-            int location = (int)bitNum / 8;
-            int offset = (int)bitNum % 8;
+            int location = (int)bitNum / ConstProperty.Char_Num;
+            int offset = (int)bitNum % ConstProperty.Char_Num;
 
             int num = bitArray[location];
             bitArray[location] = (char)(num & ~(1 << offset));
@@ -56,8 +57,8 @@ namespace Database.RecordManage
         /// <param name="bitNum"></param>
         public void Set(UInt32 bitNum)
         {
-            int location = (int)bitNum / 8;
-            int offset = (int)bitNum % 8;
+            int location = (int)bitNum / ConstProperty.Char_Num;
+            int offset = (int)bitNum % ConstProperty.Char_Num;
 
             int num = bitArray[location];
             bitArray[location] = (char)(num | (1 << offset));
@@ -71,19 +72,13 @@ namespace Database.RecordManage
             }
         }
 
+        // true if Empty
         public bool Test(UInt32 bitNum)
         {
-            int location = (int)bitNum / 8;
-            int offset = (int)bitNum % 8;
+            int location = (int)bitNum / ConstProperty.Char_Num;
+            int offset = (int)bitNum % ConstProperty.Char_Num;
             int num = bitArray[location];
-            if ((num & (1 << offset)) == 0)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return ((num & (1 << offset)) == 0);
         }
 
         public void To_char_buf(char[] b, int len)

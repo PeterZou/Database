@@ -14,6 +14,7 @@ namespace Database.RecordManage
         public RM_FileHdr hdr;                        // file header
         public bool bFileOpen;                        // file open flag
         public bool bHdrChanged;                      // dirty flag for file hdr
+        public RM_PageHdr pHdr;
 
         // You will probably then want to copy the file header information into a
         // private variable in the file handle that refers to the open file instance. By
@@ -87,12 +88,13 @@ namespace Database.RecordManage
         /// TODO
         /// </summary>
         /// <returns></returns>
-        public int GetNextFreePage()
+        public Tuple<int, RM_PageHdr> GetNextFreePage()
         {
             int pageNum = -3;
             IsValid();
             PF_PageHandle ph;
-            RM_PageHdr pHdr = new RM_PageHdr(GetNumSlots(), new PF_PageHdr());
+            int slotNum = GetNumSlots();
+            pHdr = new RM_PageHdr(slotNum, new PF_PageHdr());
 
             // QA: the meaning of this branch and what is pHdr in original refer to?
             // QA2: key point is how to define the free page? if there is still freeslot, is it a free page?
@@ -111,7 +113,7 @@ namespace Database.RecordManage
                 pageNum = ph.pageNum;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
                 var bitmap = new Bitmap(GetNumSlots());
-                bitmap.Set(); // Initially all slots are free
+                bitmap.Reset(); // Initially all slots are free
                 bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
 
                 // TODO what is the use of ph.pPageData? no need to write into the disk?
@@ -128,21 +130,24 @@ namespace Database.RecordManage
             else
                 throw new Exception();
 
-            return pageNum;
+            return new Tuple<int, RM_PageHdr>(pageNum, pHdr);
         }
 
         public Tuple<RID,PF_PageHandle> GetNextFreeSlot()
         {
             IsValid();
 
-            int pageNum = GetNextFreePage();
+            var tmp = GetNextFreePage();
+            int pageNum = tmp.Item1;
+            pHdr = tmp.Item2;
 
             PF_PageHandle ph = pfHandle.GetThisPage(pageNum);
             pfHandle.UnpinPage(pageNum);
 
-            var pHdr = GetPageHeader(ph);
-            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
-            for (UInt32 i = 0; i < GetNumSlots(); i++)
+            int slotNum = GetNumSlots();
+            var bitmap = new Bitmap(pHdr.freeSlotMap, slotNum);
+            
+            for (UInt32 i = 0; i < slotNum; i++)
             {
                 if (bitmap.Test(i))
                 {
@@ -161,7 +166,6 @@ namespace Database.RecordManage
             int slotNum = rid.Slot;
 
             PF_PageHandle ph;
-            RM_PageHdr pHdr;
             ph = pfHandle.GetThisPage(pageNum);
             pfHandle.UnpinPage(pageNum);
             pHdr = GetPageHeader(ph);
@@ -190,11 +194,11 @@ namespace Database.RecordManage
             int pageNum = rid.Page;
             int slotNum = rid.Slot;
 
-            RM_PageHdr pHdr = GetPageHeader(ph);
             var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
-            SetSlotPointer(ph, slotNum,ph.pPageData);
 
-            bitmap.Reset((UInt32)slotNum); // slot s is no longer free
+            SetSlotPointer(ph, slotNum, pData);
+
+            bitmap.Set((UInt32)slotNum); // slot s is no longer free
             pHdr.numFreeSlots--;
             if (pHdr.numFreeSlots == 0)
             {
@@ -203,8 +207,9 @@ namespace Database.RecordManage
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
             }
             bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
-
+            
             SetPageHeader(ph, pHdr);
+            
             return rid;
         }
 
@@ -217,7 +222,6 @@ namespace Database.RecordManage
             if (!IsValidRID(rid)) throw new Exception();
 
             PF_PageHandle ph;
-            RM_PageHdr pHdr;
             ph = pfHandle.GetThisPage(pageNum);
             pfHandle.UnpinPage(pageNum);
             pHdr = GetPageHeader(ph);
@@ -243,9 +247,9 @@ namespace Database.RecordManage
             ph = pfHandle.GetThisPage(pageNum);
             pfHandle.MarkDirty(pageNum);
             pfHandle.UnpinPage(pageNum);
-            RM_PageHdr pHdr = GetPageHeader(ph);
+            pHdr = GetPageHeader(ph);
             var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
-            bitmap.Set((UInt32)slotNum);
+            bitmap.Reset((UInt32)slotNum);
 
             if (pHdr.numFreeSlots == 0)
             {
@@ -260,7 +264,6 @@ namespace Database.RecordManage
 
         public RM_PageHdr GetPageHeader(PF_PageHandle ph)
         {
-            var pHdr = new RM_PageHdr();
             char[] buf = ph.pPageData;
             pHdr.From_buf(buf);
             return pHdr;
@@ -282,10 +285,7 @@ namespace Database.RecordManage
 
         private char[] GetSlotPointer(PF_PageHandle ph, int slot)
         {
-            IsValid();
-            var bitmap = new Bitmap(GetNumSlots());
-            int offset = (new RM_PageHdr(GetNumSlots(), new PF_PageHdr())).Size();
-            offset += slot * fullRecordSize();
+            int offset = CalcOffset(slot);
             int offsetAfter = offset + fullRecordSize();
             int index = 0;
             char[] data = new char[fullRecordSize()];
@@ -299,7 +299,23 @@ namespace Database.RecordManage
 
         private void SetSlotPointer(PF_PageHandle ph, int slot, char[] data)
         {
-            data = GetSlotPointer(ph, slot);
+            int offset = CalcOffset(slot);
+
+            // Replace
+            for (int i = 0; i < data.Length; i++)
+            {
+                ph.pPageData[offset + i] = data[i];
+            }
+        }
+
+        private int CalcOffset(int slot)
+        {
+            IsValid();
+            var bitmap = new Bitmap(GetNumSlots());
+            int offset = (new RM_PageHdr(GetNumSlots(), new PF_PageHdr())).Size();
+            offset += slot * fullRecordSize();
+
+            return offset;
         }
 
         //

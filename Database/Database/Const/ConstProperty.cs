@@ -15,6 +15,8 @@ namespace Database.Const
 
         public const int IX_PAGE_LIST_END = -1;
 
+        public const int Char_Num = 16;
+
         // int is occupided 8char
         // which cs is influenced
         // PF_PageHandle
