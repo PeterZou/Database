@@ -46,6 +46,8 @@ namespace Database.Const
 
         public enum Page_statics{ PF_PAGE_USED = -2, PF_PAGE_LIST_END=-1};
 
+        public enum FileType {File,Record,Index }
+
         //
         // Attribute types
         //

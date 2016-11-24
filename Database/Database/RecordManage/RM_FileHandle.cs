@@ -11,7 +11,7 @@ namespace Database.RecordManage
     public class RM_FileHandle
     {
         public PF_FileHandle pfHandle;              // pointer to opened PF_FileHandle
-        private RM_FileHdr hdr;                        // file header
+        public RM_FileHdr hdr;                        // file header
         public bool bFileOpen;                        // file open flag
         public bool bHdrChanged;                      // dirty flag for file hdr
 
@@ -31,7 +31,7 @@ namespace Database.RecordManage
 
         public int fullRecordSize() { return hdr.extRecordSize; }
 
-        public int GetNumPages() { return hdr.pf_fh.numPages; }
+        public int GetNumPages() { return hdr.numPages; }
 
         public int GetNumSlots()
         {
@@ -58,19 +58,18 @@ namespace Database.RecordManage
             if ((pfHandle == null) || !bFileOpen || GetNumSlots() <= 0) throw new Exception();
         }
 
-        public void Open(PF_FileHandle pfh, int size)
+        public void Open(PF_FileHandle pfh, RM_FileHdr hdr_tmp)
         {
             if (bFileOpen || pfHandle != null) throw new Exception();
 
-            if (pfh == null || size <= 0) throw new Exception();
+            if (pfh == null) throw new Exception();
 
             bFileOpen = true;
             pfHandle = pfh;
 
-            PF_PageHandle ph = pfHandle.GetThisPage(0);
-            pfHandle.UnpinPage(0);
+            hdr = hdr_tmp;
 
-            hdr = RecordManagerUtil.GetFileHeader(ph);
+            if (hdr.extRecordSize <= 0) throw new Exception();
 
             bHdrChanged = true;
 
@@ -97,16 +96,16 @@ namespace Database.RecordManage
 
             // QA: the meaning of this branch and what is pHdr in original refer to?
             // QA2: key point is how to define the free page? if there is still freeslot, is it a free page?
-            if (hdr.pf_fh.firstFree != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
+            if (hdr.firstFree != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
-                ph = pfHandle.GetThisPage(hdr.pf_fh.firstFree);
+                ph = pfHandle.GetThisPage(hdr.firstFree);
                 pageNum = ph.pageNum;
                 pfHandle.MarkDirty(pageNum);
                 pfHandle.UnpinPage(pageNum);
                 pHdr = GetPageHeader(ph);
 
             }
-            if (hdr.pf_fh.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
+            if (hdr.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
             {
                 ph = pfHandle.AllocatePage();
                 pageNum = ph.pageNum;
@@ -121,8 +120,8 @@ namespace Database.RecordManage
                 pfHandle.UnpinPage(pageNum);
 
                 // add page to the free list
-                hdr.pf_fh.firstFree = pageNum;
-                hdr.pf_fh.numPages++;
+                hdr.firstFree = pageNum;
+                hdr.numPages++;
                 bHdrChanged = true;
 
             }
@@ -200,7 +199,7 @@ namespace Database.RecordManage
             if (pHdr.numFreeSlots == 0)
             {
                 // remove from free list 
-                hdr.pf_fh.firstFree = pHdr.pf_ph.nextFree;
+                hdr.firstFree = pHdr.pf_ph.nextFree;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
             }
             bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
@@ -250,7 +249,7 @@ namespace Database.RecordManage
 
             if (pHdr.numFreeSlots == 0)
             {
-                hdr.pf_fh.firstFree = pHdr.pf_ph.nextFree;
+                hdr.firstFree = pHdr.pf_ph.nextFree;
                 pHdr.pf_ph.nextFree = pageNum;
             }
             pHdr.numFreeSlots++;

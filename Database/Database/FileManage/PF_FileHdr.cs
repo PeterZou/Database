@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Database.FileManage
 {
-    public struct PF_FileHdr
+    public class PF_FileHdr:interfaceFileHdr
     {
         public int firstFree;     // first free page in the linked list
         public int numPages;      // # of pages in the file

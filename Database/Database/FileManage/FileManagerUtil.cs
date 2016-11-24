@@ -1,6 +1,7 @@
 ﻿using Database.BufferManage;
 using Database.Const;
 using Database.IO;
+using Database.RecordManage;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,14 +16,26 @@ namespace Database.FileManage
     {
         public static void WriteFileHdr(PF_FileHdr hdr, int fd, FileStream fs)
         {
+            char[] contentHdr = new char[ConstProperty.PF_FILE_HDR_SIZE];
+            ReplaceTheNextFree(contentHdr, hdr.firstFree, 0);
+            ReplaceTheNextFree(contentHdr, hdr.numPages, ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
+            WriteFileHdr(contentHdr, fd, fs);
+        }
+
+        public static void WriteRecordHdr(RM_FileHdr hdr, int fd, FileStream fs)
+        {
+            char[] contentHdr = RecordManagerUtil.SetFileHeaderToChar(hdr);
+
+            WriteFileHdr(contentHdr, fd, fs);
+        }
+
+        public static void WriteFileHdr(char[] hdr, int fd, FileStream fs)
+        {
             fs.Position = 0;
             StreamWriter sr = new StreamWriter(fs);
             try
             {
-                char[] contentHdr = new char[ConstProperty.PF_FILE_HDR_SIZE];
-                ReplaceTheNextFree(contentHdr, hdr.firstFree, 0);
-                ReplaceTheNextFree(contentHdr, hdr.numPages, ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
-                sr.Write(contentHdr);
+                sr.Write(hdr);
             }
             catch (IOException e)
             {
@@ -34,20 +47,32 @@ namespace Database.FileManage
             }
         }
 
-        public static PF_FileHdr ReadFileHdr(string fileName, FileStream fs)
+        public static interfaceFileHdr ReadFileHdr(string fileName, FileStream fs,ConstProperty.FileType fileType)
         {
-            PF_FileHdr pf_fh = new PF_FileHdr();
+            
             fs.Position = 0;
             StreamReader sr = new StreamReader(fs);
+            
             try
             {
-                char[] firstFree = new char[ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
-                char[] numPages = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
-                sr.Read(firstFree,0, ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
-                Int32.TryParse(new string(firstFree),out pf_fh.firstFree);
-
-                sr.Read(numPages, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
-                Int32.TryParse(new string(numPages), out pf_fh.numPages);
+                if (fileType == ConstProperty.FileType.File)
+                {
+                    var pf_fh = new PF_FileHdr();
+                    ExtractFile(sr, pf_fh);
+                    return pf_fh;
+                }
+                else if (fileType == ConstProperty.FileType.Record)
+                {
+                    var pf_fh = new RM_FileHdr();
+                    ExtractFile(sr, pf_fh);
+                    ExtractRefactor(sr, pf_fh);
+                    return pf_fh;
+                }
+                else
+                {
+                    throw new IOException();
+                }
+                
             }
             catch (IOException e)
             {
@@ -57,7 +82,28 @@ namespace Database.FileManage
             {
                 //sr.Close();
             }
-            return pf_fh;
+        }
+
+        private static void ExtractRefactor(StreamReader sr, RM_FileHdr pf_fh)
+        {
+            char[] extRecordSize = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
+            char[] data = new char[ConstProperty.PF_FILE_HDR_SIZE - 3 * ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
+            sr.Read(extRecordSize, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
+            Int32.TryParse(new string(extRecordSize), out pf_fh.extRecordSize);
+
+            sr.Read(data, 0, ConstProperty.PF_FILE_HDR_SIZE - 3 * ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
+            pf_fh.data = data;
+        }
+
+        private static void ExtractFile(StreamReader sr, PF_FileHdr pf_fh)
+        {
+            char[] firstFree = new char[ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
+            char[] numPages = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
+            sr.Read(firstFree, 0, ConstProperty.PF_FILE_HDR_FirstFree_SIZE);
+            Int32.TryParse(new string(firstFree), out pf_fh.firstFree);
+
+            sr.Read(numPages, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
+            Int32.TryParse(new string(numPages), out pf_fh.numPages);
         }
 
         // Read a page
@@ -138,10 +184,10 @@ namespace Database.FileManage
 
         public static void ReplaceTheNextFree(char[] content, int nextFree, int start,int size)
         {
-            ReplaceTheNextFree(content, nextFree.ToString(), start, size);
+            ReplaceTheNextFree(content, nextFree.ToString().ToArray(), start, size);
         }
 
-        public static void ReplaceTheNextFree(char[] content, string str, int start, int size)
+        public static void ReplaceTheNextFree(char[] content, char[] str, int start, int size)
         {
             for (int i = 0; i < size; i++)
             {
@@ -176,7 +222,7 @@ namespace Database.FileManage
             ReplaceTheNextFree(temp, num, 0);
             ReplaceTheNextFree(temp, ph.pageNum, ConstProperty.PF_PageHdr_SIZE
                 , ConstProperty.PF_PageHdr_SIZE);
-            ReplaceTheNextFree(temp, data, 2 * ConstProperty.PF_PageHdr_SIZE, data.Length);
+            ReplaceTheNextFree(temp, data.ToArray(), 2 * ConstProperty.PF_PageHdr_SIZE, data.Length);
             return temp;
         }
     }

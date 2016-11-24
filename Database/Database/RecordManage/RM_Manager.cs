@@ -37,27 +37,18 @@ namespace Database.RecordManage
             pfm.CreateFile(fileName);
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);
-            PF_PageHandle headerPage = pfh.AllocatePage();
 
-            RM_FileHdr hdr = new RM_FileHdr();
-            hdr.pf_fh.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
-            hdr.pf_fh.numPages = 1; // hdr page
-            hdr.extRecordSize = recordSize;
-            // For index
-            if (data != null && data.Length != 0)
-            {
-                hdr.dataNum = data.Length;
-                hdr.data = new char[hdr.dataNum];
-                hdr.data = data;
-            }
+            RM_FileHdr rmf = new RM_FileHdr();
+            rmf.firstFree = pfh.hdr.firstFree;
+            rmf.numPages = pfh.hdr.numPages;
+            rmf.extRecordSize = recordSize;
+            rmf.data = data;
 
-            // For index
-            headerPage.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
+            int num = IO.IOFDDic.FDMapping.Keys.Max() + 1;
 
-            pfh.MarkDirty(headerPage.pageNum);
-            pfh.UnpinPage(headerPage.pageNum);
-
-            pfm.CloseFile(pfh);
+            FileManagerUtil.WriteRecordHdr(rmf, num, pfm.fs);
+            pfm.fs.Close();
+            pfm.fs.Dispose();
         }
 
         //
@@ -87,14 +78,10 @@ namespace Database.RecordManage
             RM_FileHandle rmh = new RM_FileHandle();
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);
-
-            PF_PageHandle ph = pfh.GetThisPage(0);
-
-            RM_FileHdr hdr = RecordManagerUtil.GetFileHeader(ph);
-
-            rmh.Open(pfh,hdr.extRecordSize);
-
-            pfh.UnpinPage(0);
+            var hdr = FileManagerUtil.ReadFileHdr(fileName, pfm.fs, ConstProperty.FileType.Record);
+            var hdrTmp = hdr as RM_FileHdr;
+            if (hdrTmp == null) throw new Exception();
+            rmh.Open(pfh, hdrTmp);
 
             return rmh;
         }
@@ -115,12 +102,10 @@ namespace Database.RecordManage
 
             if (rfileHandle.bHdrChanged)
             {
-                PF_PageHandle ph = rfileHandle.pfHandle.GetThisPage(0);
-                rfileHandle.SetFileHeader(ph); // write hdr into file
-                rfileHandle.pfHandle.MarkDirty(0);
-                rfileHandle.pfHandle.UnpinPage(0);
+                int num = IO.IOFDDic.FDMapping.Keys.Max() + 1;
+                FileManagerUtil.WriteRecordHdr(rfileHandle.hdr, num, pfm.fs);
 
-                rfileHandle.ForcePages(ConstProperty.ALL_PAGES);
+                rfileHandle.bHdrChanged = false;
             }
 
             pfm.CloseFile(rfileHandle.pfHandle);

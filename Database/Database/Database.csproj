@@ -58,6 +58,7 @@
     <Compile Include="Const\ConstProperty.cs" />
     <Compile Include="Const\WindowsAPI.cs" />
     <Compile Include="FileManage\FileManagerUtil.cs" />
+    <Compile Include="FileManage\interfaceFileHdr.cs" />
     <Compile Include="FileManage\PF_FileHandle.cs" />
     <Compile Include="FileManage\PF_FileHdr.cs" />
     <Compile Include="FileManage\PF_Manager.cs" />

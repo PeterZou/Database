@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace Database.RecordManage
 {
-    public struct RM_FileHdr
+    public class RM_FileHdr: PF_FileHdr
     {
-        public PF_FileHdr pf_fh;
         public int extRecordSize;
-        public int dataNum;
+
         public char[] data;
     }
 }

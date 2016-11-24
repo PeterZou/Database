@@ -24,7 +24,7 @@ namespace Database.FileManage
         private int fd;                                        // OS file descriptor
         private FileStream fs;
 
-        private PF_FileHdr hdr;
+        public PF_FileHdr hdr;
         private ILog m_log;
 
         public PF_FileHandle()

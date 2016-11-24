@@ -13,7 +13,7 @@ namespace Database.FileManage
     public class PF_Manager
     {
         private PF_Buffermgr pBufferMgr;
-        private FileStream fs;
+        public FileStream fs;
 
         public PF_Manager()
         {
@@ -34,7 +34,7 @@ namespace Database.FileManage
                 File.Delete(fileName);
             }
 
-            PF_FileHdr hdr;
+            PF_FileHdr hdr = new PF_FileHdr();
             hdr.firstFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
             hdr.numPages = 0;
 
@@ -100,9 +100,12 @@ namespace Database.FileManage
             try
             {
                 fs = new FileStream(fileName, FileMode.Open);
-                PF_FileHdr hdr = FileManagerUtil.ReadFileHdr(fileName, fs);
 
-                PF_FileHandle pf_fh = new PF_FileHandle(hdr, fileName, pBufferMgr, true,fs);
+                var hdr = FileManagerUtil.ReadFileHdr(fileName, fs,ConstProperty.FileType.File);
+                var hdrTmp = hdr as PF_FileHdr;
+                if (hdrTmp == null) throw new Exception();
+
+                PF_FileHandle pf_fh = new PF_FileHandle(hdrTmp, fileName, pBufferMgr, true,fs);
                 return pf_fh;
             }
             catch (IOException e)

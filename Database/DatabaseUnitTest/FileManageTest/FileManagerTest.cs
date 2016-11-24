@@ -78,6 +78,10 @@ namespace DatabaseUnitTest
             fh.DisposePage(8);
             
             fh.FlushPages();
+
+            pf_m.CloseFile(fh);
+
+            //pf_m.DestroyFile(filePath);
         }
 
         /// <summary>
@@ -103,6 +107,8 @@ namespace DatabaseUnitTest
             data = new string(fh.GetFirstPage().pPageData);
 
             data = new string(fh.GetLastPage().pPageData);
+
+            pf_m.CloseFile(fh);
         }
     }
 }
