@@ -17,6 +17,30 @@ namespace DatabaseUnitTest
         /// Write to the disk
         /// </summary>
         [TestMethod]
+        public void WriteTestBase()
+        {
+            string filePath = @"D:\test.txt";
+
+            PF_Manager pf_m = new PF_Manager();
+            pf_m.CreateFile(filePath);
+
+            var fh = pf_m.OpenFile(filePath);
+
+            var ph = fh.AllocatePage();
+            ph.pPageData = FileManagerUtil.ModifiedPageData(ph, "zoujia");
+
+            fh.SetThisPage(ph);
+            fh.UnpinPage(0);
+
+            fh.FlushPages();
+
+            pf_m.CloseFile(fh);
+        }
+
+        /// <summary>
+        /// Write to the disk
+        /// </summary>
+        [TestMethod]
         public void WriteTest()
         {
             string filePath = @"D:\test.txt";

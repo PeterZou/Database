@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
 using Database.IndexManage.IndexValue;
+using System.IO;
 
 namespace Database.RecordManage
 {
@@ -108,7 +109,12 @@ namespace Database.RecordManage
                 rfileHandle.bHdrChanged = false;
             }
 
-            pfm.CloseFile(rfileHandle.pfHandle);
+            if (!rfileHandle.pfHandle.bFileOpen) throw new IOException();
+            rfileHandle.pfHandle.pf_bm.FlushPages(rfileHandle.pfHandle.fd);
+            pfm.fs.Close();
+
+            rfileHandle.pfHandle.bFileOpen = false;
+
             rfileHandle.pfHandle = null;
             rfileHandle.bFileOpen = false;
         }

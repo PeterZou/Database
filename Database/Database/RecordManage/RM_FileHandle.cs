@@ -94,8 +94,14 @@ namespace Database.RecordManage
             IsValid();
             PF_PageHandle ph;
             int slotNum = GetNumSlots();
-            pHdr = new RM_PageHdr(slotNum, new PF_PageHdr());
 
+            if (pHdr == null)
+            {
+                pHdr = new RM_PageHdr(slotNum, new PF_PageHdr());
+            }
+            
+
+            // 如果有页面内部还剩余slot没有满的，该页应该做为freepage留给系统可以继续分配
             // QA: the meaning of this branch and what is pHdr in original refer to?
             // QA2: key point is how to define the free page? if there is still freeslot, is it a free page?
             if (hdr.firstFree != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
@@ -104,10 +110,8 @@ namespace Database.RecordManage
                 pageNum = ph.pageNum;
                 pfHandle.MarkDirty(pageNum);
                 pfHandle.UnpinPage(pageNum);
-                pHdr = GetPageHeader(ph);
-
             }
-            if (hdr.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
+            else if (hdr.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
             {
                 ph = pfHandle.AllocatePage();
                 pageNum = ph.pageNum;
@@ -183,6 +187,8 @@ namespace Database.RecordManage
 
         public RID InsertRec(char[] pData)
         {
+            
+
             IsValid();
             // TODO:consider about the last '\0' of a string
             if (pData == null || pData.Length == 0 || pData.Length > fullRecordSize()) throw new Exception();
@@ -196,6 +202,11 @@ namespace Database.RecordManage
 
             var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
 
+            if (pHdr.numFreeSlots == 0)
+            {
+                pHdr.numFreeSlots = GetNumSlots();
+            }
+
             SetSlotPointer(ph, slotNum, pData);
 
             bitmap.Set((UInt32)slotNum); // slot s is no longer free
@@ -204,7 +215,7 @@ namespace Database.RecordManage
             {
                 // remove from free list 
                 hdr.firstFree = pHdr.pf_ph.nextFree;
-                pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
+                pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_USED;
             }
             bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
             

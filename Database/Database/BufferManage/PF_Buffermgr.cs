@@ -183,7 +183,8 @@ namespace Database.BufferManage
         {
             List<int> indexArray = new List<int>();
             PF_BufPageDesc headNode;
-            foreach(var u in usedList)
+            usedList = usedList.OrderBy(p => p.pageNum).ToList();
+            foreach (var u in usedList)
             {
                 if (u.fd == fd)
                 {
@@ -198,6 +199,7 @@ namespace Database.BufferManage
                         int index = usedList.IndexOf(u);
                         if (u.dirty)
                         {
+                            // Bug:bitmap char code
                             FileManagerUtil.WritePage(u.fd, u.pageNum, u.data,pageSize,fs);
                             headNode = u;
                             headNode.dirty = false;

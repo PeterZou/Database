@@ -320,7 +320,8 @@ namespace Database.FileManage
             string str = new string(pageContent.data).Substring(0, ConstProperty.PF_PageHdr_SIZE);
             Int32.TryParse(str, out pageStatics);
 
-            if (pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_USED)
+            // ConstProperty.Page_statics.PF_PAGE_USED is the situation of the slot be not full
+            if (pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_USED || pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
                 return ReadPageHandleData(pageContent, pageNum);
             }

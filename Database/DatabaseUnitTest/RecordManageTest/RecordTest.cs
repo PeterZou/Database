@@ -21,11 +21,37 @@ namespace DatabaseUnitTest.RecordManageTest
             rmm.CreateFile(filePath,10,"Record file data, use for metadata".ToArray());
             var rh = rmm.OpenFile(filePath);
 
-            // TODO
-            //char[] chars = new char[10];
-            //FileManagerUtil.ReplaceTheNextFree(chars, 10, 0, 10);
-            string str = "123456789";
-            rh.InsertRec(str.ToArray());
+            // 1.one page insert
+            char[] chars = new char[10];
+            for (int i = 0; i < 405; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i, 0, 10);
+                rh.InsertRec(chars);
+            }
+
+            for (int i = 0; i < 404; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i*10, 0, 10);
+                rh.InsertRec(chars);
+            }
+
+            rmm.CloseFile(rh);
+
+            rh = rmm.OpenFile(filePath);
+
+            // 2.Mul pages insert
+            chars = new char[10];
+            for (int i = 0; i < 405; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i*100, 0, 10);
+                rh.InsertRec(chars);
+            }
+
+            for (int i = 0; i < 405; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i*1000, 0, 10);
+                rh.InsertRec(chars);
+            }
 
             rmm.CloseFile(rh);
         }

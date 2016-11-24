@@ -8,7 +8,7 @@ using Database.Const;
 
 namespace Database.RecordManage
 {
-    public struct RM_PageHdr
+    public class RM_PageHdr
     {
         public PF_PageHdr pf_ph;
 
@@ -28,7 +28,7 @@ namespace Database.RecordManage
 
         public int Size()
         {
-            return ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + Mapsize() * sizeof(char);
+            return ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + Mapsize();
         }
 
         public int Mapsize()
@@ -52,7 +52,7 @@ namespace Database.RecordManage
                 , out numFreeSlots);
 
             freeSlotMap = bufStr.Substring(3 * ConstProperty.PF_PageHdr_SIZE
-                , Mapsize() * sizeof(char)).ToArray();
+                , Mapsize()).ToArray();
         }
 
         public char[] To_buf()
@@ -68,7 +68,8 @@ namespace Database.RecordManage
                 , numFreeSlots, 2*ConstProperty.PF_PageHdr_SIZE);
 
             int index = 3 * ConstProperty.PF_PageHdr_SIZE;
-            for (int i = 0; i < Mapsize(); i++)
+            int mapsize = Mapsize();
+            for (int i = 0; i < mapsize; i++)
             {
                 content[index+i] = freeSlotMap[i];
             }

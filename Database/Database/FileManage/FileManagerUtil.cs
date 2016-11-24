@@ -36,6 +36,7 @@ namespace Database.FileManage
             try
             {
                 sr.Write(hdr);
+                sr.Flush();
             }
             catch (IOException e)
             {
@@ -145,7 +146,8 @@ namespace Database.FileManage
             StreamWriter sr = new StreamWriter(fs);
             try
             {
-                long offset = (long)pageNum * pageSize + ConstProperty.PF_FILE_HDR_SIZE;
+                // TODO
+                long offset = ConstProperty.PF_FILE_HDR_SIZE+ (long)pageNum * (pageSize);
                 sr.BaseStream.Seek(offset, SeekOrigin.Begin);
 
                 for (int i = 0; i < outputSource.Length; i++)
@@ -156,6 +158,7 @@ namespace Database.FileManage
                 //source is a record which had the fixed length
                 if (charReplace.Length != pageSize) throw new Exception();
                 sr.Write(charReplace);
+                sr.Flush();
             }
             catch (IOException e)
             {
