@@ -13,7 +13,7 @@ namespace DatabaseUnitTest.RecordManageTest
     public class RecordTest
     {
         [TestMethod]
-        public void WriteTest()
+        public void WriteAndReadTest()
         {
             string filePath = @"D:\test.txt";
             var fh_m = new PF_Manager();
@@ -30,9 +30,17 @@ namespace DatabaseUnitTest.RecordManageTest
             rmm.CloseFile(rh);
         }
 
-        public void ReadTest()
+        [TestMethod]
+        public void BitmapSet()
         {
+            Bitmap b = new Bitmap(124);
 
+            b.Reset();
+            b.Set(90);
+            bool flag = b.Test(90);
+            flag = b.Test(91);
+
+            Bitmap c = new Bitmap(b.bitArray, 124);
         }
     }
 }
