@@ -270,8 +270,8 @@ namespace Database.RecordManage
 
             if (pHdr.numFreeSlots == 0)
             {
-                hdr.firstFree = pHdr.pf_ph.nextFree;
-                pHdr.pf_ph.nextFree = pageNum;
+                pHdr.pf_ph.nextFree = hdr.firstFree;
+                hdr.firstFree = pageNum;
             }
             pHdr.numFreeSlots++;
             bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
@@ -281,6 +281,8 @@ namespace Database.RecordManage
 
         public RM_PageHdr GetPageHeader(PF_PageHandle ph)
         {
+            if (pHdr == null) pHdr = new RM_PageHdr();
+
             char[] buf = ph.pPageData;
             pHdr.From_buf(buf);
             return pHdr;

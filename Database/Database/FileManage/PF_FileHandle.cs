@@ -320,16 +320,10 @@ namespace Database.FileManage
             string str = new string(pageContent.data).Substring(0, ConstProperty.PF_PageHdr_SIZE);
             Int32.TryParse(str, out pageStatics);
 
-            // ConstProperty.Page_statics.PF_PAGE_USED is the situation of the slot be not full
-            if (pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_USED || pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
-            {
-                return ReadPageHandleData(pageContent, pageNum);
-            }
-            else
-            {
-                UnpinPage(pageNum);
-                throw new Exception();
-            }
+            // pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_USED or:正在使用的page
+            // pageStatics == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END or:页面内有空slot并且当前页是最后一页
+            // pageStatics == num:页面内有空slot但当前页不是最后一页
+            return ReadPageHandleData(pageContent, pageNum);
         }
 
         private PF_PageHandle ReadPageHandleData(PF_BufPageDesc pageContent, int pageNum)

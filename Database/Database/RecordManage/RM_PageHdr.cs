@@ -26,6 +26,11 @@ namespace Database.RecordManage
             freeSlotMap = new char[num];
         }
 
+        public RM_PageHdr()
+        {
+            
+        }
+
         public int Size()
         {
             return ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + Mapsize();
