@@ -106,13 +106,20 @@ namespace Database.RecordManage
             // QA2: key point is how to define the free page? if there is still freeslot, is it a free page?
             if (hdr.firstFree != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
+                // 11252016 对应的是新打开的文件，pHdr还没有读入，或者页面发生改变(由于换页)
                 ph = pfHandle.GetThisPage(hdr.firstFree);
+                if (pHdr.numSlots == pHdr.numFreeSlots || pHdr.numFreeSlots != GetPageHeader(ph).numFreeSlots)
+                {
+                    pHdr = GetPageHeader(ph);
+                }
                 pageNum = ph.pageNum;
                 pfHandle.MarkDirty(pageNum);
                 pfHandle.UnpinPage(pageNum);
             }
             else if (hdr.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
             {
+                pfHandle.hdr.firstFree = hdr.firstFree;
+                pfHandle.hdr.numPages = hdr.numPages;
                 ph = pfHandle.AllocatePage();
                 pageNum = ph.pageNum;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
@@ -187,8 +194,6 @@ namespace Database.RecordManage
 
         public RID InsertRec(char[] pData)
         {
-            
-
             IsValid();
             // TODO:consider about the last '\0' of a string
             if (pData == null || pData.Length == 0 || pData.Length > fullRecordSize()) throw new Exception();
@@ -234,6 +239,7 @@ namespace Database.RecordManage
 
             PF_PageHandle ph;
             ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.MarkDirty(pageNum);
             pfHandle.UnpinPage(pageNum);
             pHdr = GetPageHeader(ph);
             var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());

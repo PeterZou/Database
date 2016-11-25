@@ -40,7 +40,7 @@ namespace Database.RecordManage
         public void From_buf(char[] buf)
         {
             string bufStr = new string(buf);
-            Int32.TryParse(bufStr.Take(ConstProperty.PF_PageHdr_SIZE).ToString(), 
+            Int32.TryParse(new string(bufStr.Take(ConstProperty.PF_PageHdr_SIZE).ToArray()), 
                 out pf_ph.nextFree);
 
             Int32.TryParse(bufStr.Substring(ConstProperty.PF_PageHdr_SIZE

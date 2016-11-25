@@ -12,8 +12,50 @@ namespace DatabaseUnitTest.RecordManageTest
     [TestClass]
     public class RecordTest
     {
+        List<RID> list = new List<RID>();
+
         [TestMethod]
-        public void WriteAndReadTest()
+        public void DeleteTest()
+        {
+            string filePath = @"D:\test.txt";
+            var fh_m = new PF_Manager();
+            RM_Manager rmm = new RM_Manager(fh_m);
+            rmm.CreateFile(filePath, 10, "Record file data, use for metadata".ToArray());
+            var rh = rmm.OpenFile(filePath);
+
+            // Store all of the rid of record
+            List<RID> ridList = new List<RID>();
+            // 1.one page insert
+            char[] chars = new char[10];
+            for (int i = 1; i <= 405; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i, 0, 10);
+                ridList.Add(rh.InsertRec(chars));
+            }
+
+            var r = new Random();
+            int num = r.Next(ridList.Count);
+            // 获取当前页面与删除的页面的bitmap比较 TODO
+            rh.DeleteRec(ridList[num]);
+        }
+
+        private void GUTest(List<RID> ridList, RM_FileHandle rh)
+        {
+            var r = new Random();
+            int num = r.Next(ridList.Count);
+            GUTest(ridList[num],rh);
+        }
+
+        private void GUTest(RID rid, RM_FileHandle rh)
+        {
+            var rec = rh.GetRec(rid);
+            rec.data[0] = 'z';
+            rh.UpdateRec(rec);
+            list.Add(rid);
+        }
+
+        [TestMethod]
+        public void GUITest()
         {
             string filePath = @"D:\test.txt";
             var fh_m = new PF_Manager();
@@ -21,19 +63,25 @@ namespace DatabaseUnitTest.RecordManageTest
             rmm.CreateFile(filePath,10,"Record file data, use for metadata".ToArray());
             var rh = rmm.OpenFile(filePath);
 
+            // Store all of the rid of record
+            List<RID> ridList = new List<RID>();
             // 1.one page insert
             char[] chars = new char[10];
-            for (int i = 0; i < 405; i++)
+            for (int i = 1; i <= 405; i++)
             {
                 FileManagerUtil.ReplaceTheNextFree(chars, i, 0, 10);
-                rh.InsertRec(chars);
+                ridList.Add(rh.InsertRec(chars));
             }
 
-            for (int i = 0; i < 404; i++)
+            GUTest(ridList, rh);
+
+            for (int i = 1; i <= 404; i++)
             {
                 FileManagerUtil.ReplaceTheNextFree(chars, i*10, 0, 10);
-                rh.InsertRec(chars);
+                ridList.Add(rh.InsertRec(chars));
             }
+
+            GUTest(ridList, rh);
 
             rmm.CloseFile(rh);
 
@@ -41,17 +89,23 @@ namespace DatabaseUnitTest.RecordManageTest
 
             // 2.Mul pages insert
             chars = new char[10];
-            for (int i = 0; i < 405; i++)
+            for (int i = 1; i <= 405; i++)
             {
-                FileManagerUtil.ReplaceTheNextFree(chars, i*100, 0, 10);
-                rh.InsertRec(chars);
+                FileManagerUtil.ReplaceTheNextFree(chars, i * 100, 0, 10);
+                ridList.Add(rh.InsertRec(chars));
             }
 
-            for (int i = 0; i < 405; i++)
+            // 3.换页对GetNextFreePage的影响
+            GUTest(new RID(0,5), rh);
+            GUTest(ridList, rh);
+
+            for (int i = 1; i <= 405; i++)
             {
-                FileManagerUtil.ReplaceTheNextFree(chars, i*1000, 0, 10);
-                rh.InsertRec(chars);
+                FileManagerUtil.ReplaceTheNextFree(chars, i * 1000, 0, 10);
+                ridList.Add(rh.InsertRec(chars));
             }
+
+            GUTest(ridList, rh);
 
             rmm.CloseFile(rh);
         }
