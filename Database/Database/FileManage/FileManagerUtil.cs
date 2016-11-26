@@ -147,7 +147,7 @@ namespace Database.FileManage
             try
             {
                 // TODO
-                long offset = ConstProperty.PF_FILE_HDR_SIZE+ (long)pageNum * (pageSize);
+                long offset = ConstProperty.PF_FILE_HDR_SIZE + (long)pageNum * (pageSize);
                 sr.BaseStream.Seek(offset, SeekOrigin.Begin);
 
                 for (int i = 0; i < outputSource.Length; i++)

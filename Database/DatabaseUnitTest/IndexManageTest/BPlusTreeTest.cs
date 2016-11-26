@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Database.IndexManage.BPlusTree;
 using Database.IndexManage.IndexValue;
+using System.Diagnostics;
+using log4net.Config;
 
 namespace DatabaseUnitTest.IndexManageTest
 {
@@ -29,6 +31,33 @@ namespace DatabaseUnitTest.IndexManageTest
             bt.Search(546484);
             var v = bt.SearchNode;
             Assert.AreEqual(v, 546484);
+        }
+
+        [TestMethod]
+        public void BPlusTree()
+        {
+            XmlConfigurator.Configure();
+
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(3);
+
+            var list = new List<NodeInt>();
+
+            for (int i = 1; i <= 6; i++)
+            {
+                bt.Insert(new NodeInt(i));
+                bt.InsertRepair();
+
+            }
+            bt.Traverse(bt.Root, bt.TraverseOutput);
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed);
+            bt.Delete(1);
+            bt.RepairAfterDelete();
+            bt.Traverse(bt.Root, bt.TraverseOutput);
+            Console.ReadKey();
         }
     }
 }

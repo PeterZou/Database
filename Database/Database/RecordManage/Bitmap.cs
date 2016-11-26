@@ -34,6 +34,14 @@ namespace Database.RecordManage
             return numChars;
         }
 
+        public static int numChars(int sizePara)
+        {
+            int numChars = (sizePara / ConstProperty.Char_Num);
+            if ((sizePara % ConstProperty.Char_Num) != 0)
+                numChars++;
+            return numChars;
+        }
+
         public void Reset(UInt32 bitNum)
         {
             int location = (int)bitNum / ConstProperty.Char_Num;

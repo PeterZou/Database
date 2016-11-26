@@ -154,6 +154,36 @@ namespace DatabaseUnitTest.RecordManageTest
         }
 
         [TestMethod]
+        public void InsertTest()
+        {
+            string filePath = @"D:\test.txt";
+            var fh_m = new PF_Manager();
+            RM_Manager rmm = new RM_Manager(fh_m);
+            rmm.CreateFile(filePath, 10, "Record file data, use for metadata".ToArray());
+            var rh = rmm.OpenFile(filePath);
+
+            // Store all of the rid of record
+            List<RID> ridList = new List<RID>();
+            // 1.one page insert
+            char[] chars = new char[10];
+            for (int i = 1; i <= 405; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i, 0, 10);
+                ridList.Add(rh.InsertRec(chars));
+            }
+
+            GUTest(ridList, rh);
+
+            for (int i = 1; i <= 405; i++)
+            {
+                FileManagerUtil.ReplaceTheNextFree(chars, i * 10, 0, 10);
+                ridList.Add(rh.InsertRec(chars));
+            }
+
+            rmm.CloseFile(rh);
+        }
+
+        [TestMethod]
         public void GUITest()
         {
             string filePath = @"D:\test.txt";
@@ -221,5 +251,25 @@ namespace DatabaseUnitTest.RecordManageTest
 
             Bitmap c = new Bitmap(b.bitArray, 124);
         }
+
+        [TestMethod]
+        public void EncodingSet()
+        {
+            char c1 = '\u0800';
+            char c2 = '\u7000';
+            char c3 = '\u7fff';
+
+            string s1 = new string(Encoding.ASCII.GetChars(Encoding.ASCII.GetBytes(new char[] { c1, c2, c3 })));
+
+            // 
+
+            // 压缩
+            string s2 = new string(Encoding.UTF8.GetChars(Encoding.UTF8.GetBytes(new char[] { c1,c2,c3 })));
+
+            // 展开
+            var s3 = s2.First();
+        }
+
+
     }
 }
