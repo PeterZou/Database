@@ -21,9 +21,7 @@ namespace Database.RecordManage
         public Bitmap(char[] formerArray, int numBitArray)
         {
             size = numBitArray;
-            bitArray = new char[numChars()];
-            for (int i = 0; i < formerArray.Length; i++)
-                bitArray[i] = formerArray[i];
+            bitArray = UnWrap(new string(formerArray));
         }
 
         public int numChars()
@@ -89,13 +87,94 @@ namespace Database.RecordManage
             return ((num & (1 << offset)) == 0);
         }
 
-        public void To_char_buf(char[] b, int len)
+        public char[] To_char_buf(int len)
         {
-            if (b == null || len != numChars()) throw new Exception();
-            for (int i = 0; i < len; i++)
+            if (len != numChars()) throw new Exception();
+            return Wrap(bitArray).ToArray();
+        }
+
+        // Wrap the bitmap
+        // From:7000,end:7fff
+        // 压缩
+        // 对每个char，附加上头0111，再通过UFTF8转换为单字符（不是字节！！！UTF8最多可能占用3个字节）文本
+        private string Wrap(char[] array)
+        {
+            List<char> list = new List<char>();
+            foreach (var a in array)
             {
-                b[i] = bitArray[i];
+                list.AddRange(ConvertIntToFixArray(a));
             }
+
+            return WrapSav(list.ToArray());
+        }
+
+        private string WrapSav(char[] array)
+        {
+            List<char> list = new List<char>();
+            int num = array.Length;
+            if (num % 12 != 0) throw new Exception();
+            num = array.Length / 12;
+            string strTmp = new string(array);
+            for (int i = 0; i < num; i++)
+            {
+                string str = strTmp.Substring(i * 12, 12);
+                str = "0111" + str;
+                // ASCII逆转换
+                list.Add(GetUNum(str));
+            }
+            return new string(Encoding.UTF8.GetChars(Encoding.UTF8.GetBytes(list.ToArray())));
+        }
+
+        // 展开
+        // unwrap:将头0111去掉，组成新的array
+        private char[] UnWrap(string str)
+        {
+            List<char> charList = new List<char>();
+
+            foreach (var c in str)
+            {
+                int a = c & '\u0fff';
+                // 截取12位
+                //char[] array = ConvertIntToFixArray(a);
+                charList.Add((char)a);
+            }
+
+            return charList.ToArray();
+        }
+
+        private char[] ConvertIntToFixArray(int num)
+        {
+            char[] array = new char[12];
+            if (num > 4095) throw new Exception();
+            for (int i = 11; i >=0; i--)
+            {
+                // ASCII转换
+                array[i] = (char)(num % 2 + 48);
+                num = num / 2;
+            }
+            return array;
+        }
+
+        private char ConvertASCToByte(string str)
+        {
+            // 第一个字符为0
+            if (str.Length != 15) throw new Exception();
+
+            UInt32 num = GetUNum(str);
+
+            return (char)num;
+        }
+
+        private static char GetUNum(string str)
+        {
+            UInt32 num = 0;
+            for (int i = 1; i <= str.Length; i++)
+            {
+                if (str[i - 1] == '1')
+                    num += (UInt32)(Math.Pow(2, str.Length - i));
+            }
+
+            return (char)num;
         }
     }
 }

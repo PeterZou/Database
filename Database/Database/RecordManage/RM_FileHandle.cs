@@ -39,16 +39,17 @@ namespace Database.RecordManage
             if (fullRecordSize() <= 0) throw new Exception();
 
             int bytes_available = ConstProperty.PF_PAGE_SIZE 
-                - ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap;
+                - 2*ConstProperty.PF_FILE_HDR_NumPages_SIZE;
 
-            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize() + 1 / 8));
+            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize()));
 
-            int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars();
+            // 每个UTF占用三个字节
+            int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
 
-            while (slots * fullRecordSize() + r > ConstProperty.PF_PAGE_SIZE)
+            while (slots * fullRecordSize() + r > ConstProperty.PF_PAGE_SIZE+ ConstProperty.PF_FILE_HDR_NumPages_SIZE)
             {
                 slots--;
-                r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars();
+                r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
             }
 
             return slots;
@@ -125,7 +126,7 @@ namespace Database.RecordManage
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
                 var bitmap = new Bitmap(GetNumSlots());
                 bitmap.Reset(); // Initially all slots are free
-                bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
+                pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
 
                 // TODO what is the use of ph.pPageData? no need to write into the disk?
                 ph.pPageData = pHdr.To_buf();
@@ -222,8 +223,7 @@ namespace Database.RecordManage
                 hdr.firstFree = pHdr.pf_ph.nextFree;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_USED;
             }
-            bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
-            
+            pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
             SetPageHeader(ph, pHdr);
             
             return rid;
@@ -274,8 +274,7 @@ namespace Database.RecordManage
                 hdr.firstFree = pageNum;
             }
             pHdr.numFreeSlots++;
-            bitmap.To_char_buf(pHdr.freeSlotMap, bitmap.numChars());
-
+            pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
             SetPageHeader(ph, pHdr);
         }
 
