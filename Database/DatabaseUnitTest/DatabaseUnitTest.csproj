@@ -59,6 +59,7 @@
     <Compile Include="FileManageTest\IOTest.cs" />
     <Compile Include="FileManageTest\StructType.cs" />
     <Compile Include="IndexManageTest\BPlusTreeTest.cs" />
+    <Compile Include="IndexManageTest\IndexIOTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordManageTest\RecordTest.cs" />
     <Compile Include="TestConst.cs" />

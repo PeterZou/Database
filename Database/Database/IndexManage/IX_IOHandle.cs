@@ -21,6 +21,8 @@ namespace Database.IndexManage
 
         private Func<string, TK> ConverStringToTK;
 
+        private Func<TK, string> ConverTKToString;
+
         private Func<TK> CreatNewTK;
         #endregion
 
@@ -68,7 +70,7 @@ namespace Database.IndexManage
             char[] data = record.GetData();
 
             // leaf or not
-            NodeDisk<TK> nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data, ConverStringToTK);
+            NodeDisk<TK> nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data,data.Length, ConverStringToTK);
 
             // set the node link to the parent
             var node = ConvertNodeDiskToNode(nodeDisk, rid);
@@ -91,7 +93,7 @@ namespace Database.IndexManage
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             var nodeDisk = ConvertNodeToNodeDisk(node);
-            char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk);
+            char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk,ConverTKToString);
             // set the nl to the disk
             rmp.InsertRec(data);
         }

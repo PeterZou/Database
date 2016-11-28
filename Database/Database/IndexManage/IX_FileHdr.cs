@@ -31,5 +31,6 @@ namespace Database.IndexManage
         public int dicCount;
         public Dictionary<int, int> dic;
         
+
     }
 }

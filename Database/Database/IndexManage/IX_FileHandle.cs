@@ -20,6 +20,8 @@ namespace Database.IndexManage
     // 2.将非固定问题转化为特定几个固定的长度，比如degree为5，那么长度应该为Fixlen + n*Fixlen2(0<=n<=degress)，全部放在一个文件中，由文件表头定义(N+1)个freelist
     public class IX_FileHandle<TK> : FileHandle
     {
+        Func<TK, string> ConverTKToString;
+
         public IX_FileHdr<TK> hdr;                        // file header
 
         public IX_FileHandle()
@@ -32,7 +34,7 @@ namespace Database.IndexManage
 
         public override void SetFileHeader(PF_PageHandle ph)
         {
-            ph.pPageData = IndexManagerUtil<TK>.SetIndexHeaderToChar(hdr);
+            ph.pPageData = IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString);
         }
 
         public override Tuple<int, RM_PageHdr> GetNextFreePage()
