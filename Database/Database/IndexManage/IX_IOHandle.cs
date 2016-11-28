@@ -68,7 +68,7 @@ namespace Database.IndexManage
             char[] data = record.GetData();
 
             // leaf or not
-            NodeDisk<TK> nodeDisk = ConvertToNodeDisk(data);
+            NodeDisk<TK> nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data, ConverStringToTK);
 
             // set the node link to the parent
             var node = ConvertNodeDiskToNode(nodeDisk, rid);
@@ -91,7 +91,7 @@ namespace Database.IndexManage
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             var nodeDisk = ConvertNodeToNodeDisk(node);
-            char[] data = ConvertToArray(nodeDisk);
+            char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk);
             // set the nl to the disk
             rmp.InsertRec(data);
         }
@@ -163,59 +163,5 @@ namespace Database.IndexManage
             length += nl.capacity * ConstProperty.RM_Page_RID_SIZE+ ConstProperty.RM_Page_RID_SIZE;
             return length;
         }
-
-        private NodeDisk<TK> ConvertToNodeDisk(char[] data)
-        {
-            string dataStr = new string(data);
-            NodeDisk<TK> node = new NodeDisk<TK>();
-            node.length = Convert.ToInt32(dataStr.Substring(0, ConstProperty.Int_Size));
-            node.isLeaf = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size, 1));
-            node.capacity = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-            node.height = Convert.ToInt32(dataStr.Substring(2*ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-
-            for (int i = 0; i < node.capacity; i++)
-            {
-                TK tmp = ConverStringToTK(dataStr.Substring((3 + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                // TODO
-                node.keyList[i] = tmp;
-            }
-            for (int i = 0; i < node.capacity; i++)
-            {
-                // TODO
-                int pageNum = Convert.ToInt32(dataStr.Substring(
-                    (3 + node.capacity+i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                int slotNum = Convert.ToInt32(dataStr.Substring(
-                    (3 + node.capacity+i+1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                node.childRidList[i] = new RID(pageNum,slotNum);
-            }
-            return node;
-        }
-
-        private char[] ConvertToArray(NodeDisk<TK> nl)
-        {
-            char[] data = new char[nl.length];
-            // length
-            FileManagerUtil.ReplaceTheNextFree(data,nl.length,0);
-            // isLeaf
-            data[ConstProperty.Int_Size] = Convert.ToChar(nl.isLeaf);
-            // capacity
-            FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, ConstProperty.Int_Size+1);
-            // height
-            FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, 2*ConstProperty.Int_Size + 1);
-
-            // keyList
-            // TODO Set TK is int
-            for (int i = 0; i < nl.capacity; i++)
-            {
-                FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, (3 + i) *ConstProperty.Int_Size + 1);
-            }
-            // childRidList
-            for (int i = 0; i < nl.capacity; i++)
-            {
-                FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, 
-                    (3 + nl.capacity+i) * ConstProperty.Int_Size + 1,ConstProperty.RM_Page_RID_SIZE);
-            }
-            return data;
-        } 
     }
 }

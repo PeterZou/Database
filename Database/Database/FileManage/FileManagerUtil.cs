@@ -1,5 +1,6 @@
 ﻿using Database.BufferManage;
 using Database.Const;
+using Database.IndexManage;
 using Database.IO;
 using Database.RecordManage;
 using System;
@@ -66,7 +67,7 @@ namespace Database.FileManage
                 {
                     var pf_fh = new RM_FileHdr();
                     ExtractFile(sr, pf_fh);
-                    ExtractRefactor(sr, pf_fh);
+                    ExtractRecord(sr, pf_fh);
                     return pf_fh;
                 }
                 else
@@ -85,7 +86,7 @@ namespace Database.FileManage
             }
         }
 
-        private static void ExtractRefactor(StreamReader sr, RM_FileHdr pf_fh)
+        private static void ExtractRecord(StreamReader sr, RM_FileHdr pf_fh)
         {
             char[] extRecordSize = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
             char[] data = new char[ConstProperty.PF_FILE_HDR_SIZE - 3 * ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
@@ -96,7 +97,7 @@ namespace Database.FileManage
             pf_fh.data = data;
         }
 
-        private static void ExtractFile(StreamReader sr, PF_FileHdr pf_fh)
+        public static void ExtractFile(StreamReader sr, PF_FileHdr pf_fh)
         {
             char[] firstFree = new char[ConstProperty.PF_FILE_HDR_FirstFree_SIZE];
             char[] numPages = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];

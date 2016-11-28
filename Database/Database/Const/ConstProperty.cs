@@ -50,6 +50,9 @@ namespace Database.Const
 
         public enum FileType {File,Record,Index }
 
+        public const int IndexHeaderKey = 2;
+        public const int IndexHeaderValue = 4;
+
         //
         // Attribute types
         //
