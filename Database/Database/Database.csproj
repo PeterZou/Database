@@ -64,7 +64,6 @@
     <Compile Include="FileManage\PF_Manager.cs" />
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
-    <Compile Include="IndexManage\Bitmap2.cs" />
     <Compile Include="IndexManage\BPlusTree\BPlusTree.cs" />
     <Compile Include="IndexManage\BPlusTree\BPlusTreeProvider.cs" />
     <Compile Include="IndexManage\BPlusTree\INode.cs" />
@@ -77,8 +76,6 @@
     <Compile Include="IndexManage\IX_IndexHandle.cs" />
     <Compile Include="IndexManage\IX_FileHdr.cs" />
     <Compile Include="IndexManage\IX_Manager.cs" />
-    <Compile Include="IndexManage\IX_PageHdr.cs" />
-    <Compile Include="Interface\FileHandle.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RecordManagerUtil.cs" />

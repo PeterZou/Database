@@ -5,16 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
-using Database.Interface;
 
 namespace Database.RecordManage
 {
-    public class RM_FileHandle : FileHandle
+    public class RM_FileHandle
     {
+        public PF_FileHandle pfHandle;              // pointer to opened PF_FileHandle
+        public bool bFileOpen;                        // file open flag
+        public bool bHdrChanged;                      // dirty flag for file hdr
+
         public RM_FileHdr hdr;                        // file header
         public RM_PageHdr pHdr;
 
-        #region Unique
         // You will probably then want to copy the file header information into a
         // private variable in the file handle that refers to the open file instance. By
         // copying this information, you will subsequently be able to find out details
@@ -166,16 +168,40 @@ namespace Database.RecordManage
         }
 
         public int fullRecordSize() { return hdr.extRecordSize; }
-        #endregion
 
-        override public int GetNumPages() { return hdr.numPages; }
+       
 
-        override public void IsValid()
+
+        bool hdrChanged() { return bHdrChanged; }
+
+        public void ForcePages(int pageNum)
+        {
+            IsValid();
+            if (!IsValidPageNum(pageNum) && pageNum != ConstProperty.ALL_PAGES) throw new Exception();
+            pfHandle.ForcePages(pageNum);
+        }
+
+        //
+        // IsValidPageNum
+        //
+        // Desc: Internal.  Return TRUE if pageNum is a valid page number
+        //       in the file, FALSE otherwise
+        // In:   pageNum - page number to test
+        // Ret:  TRUE or FALSE
+        //
+        protected bool IsValidPageNum(int pageNum)
+        {
+            return pfHandle.IsValidPageNum(pageNum);
+        }
+
+        public int GetNumPages() { return hdr.numPages; }
+
+        public void IsValid()
         {
             if ((pfHandle == null) || !bFileOpen || GetNumSlots() <= 0) throw new Exception();
         }
 
-        override public RM_Record GetRec(RID rid)
+        public RM_Record GetRec(RID rid)
         {
             IsValid();
             if (!IsValidRID(rid)) throw new Exception();
@@ -198,7 +224,7 @@ namespace Database.RecordManage
             return rec;
         }
 
-        override public RID InsertRec(char[] pData)
+        public RID InsertRec(char[] pData)
         {
             IsValid();
             // TODO:consider about the last '\0' of a string
@@ -234,7 +260,7 @@ namespace Database.RecordManage
             return rid;
         }
 
-        override public void UpdateRec(RM_Record rec)
+        public void UpdateRec(RM_Record rec)
         {
             IsValid();
             RID rid = rec.GetRid();
@@ -260,7 +286,7 @@ namespace Database.RecordManage
             SetPageHeader(ph, pHdr);
         }
 
-        override public void DeleteRec(RID rid)
+        public void DeleteRec(RID rid)
         {
             IsValid();
             int pageNum = rid.Page;
@@ -283,7 +309,7 @@ namespace Database.RecordManage
             SetPageHeader(ph, pHdr);
         }
 
-        override public void SetFileHeader(PF_PageHandle ph)
+        public void SetFileHeader(PF_PageHandle ph)
         {
             ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
         }

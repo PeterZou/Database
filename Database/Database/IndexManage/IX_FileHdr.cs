@@ -10,7 +10,7 @@ using Database.IndexManage.IndexValue;
 
 namespace Database.IndexManage
 {
-    public class IX_FileHdr<TK>: PF_FileHdr
+    public class IX_FileHdr<TK> : PF_FileHdr
     {
         public int totalHeight;
 
@@ -18,5 +18,8 @@ namespace Database.IndexManage
 
         // Root
         NodeDisk<TK> root;
+
+        // K:V=>Degree:fistFreePage
+
     }
 }
