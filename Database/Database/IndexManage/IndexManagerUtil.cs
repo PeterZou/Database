@@ -25,28 +25,31 @@ namespace Database.IndexManage
             FileManagerUtil.ReplaceTheNextFree(content
                 , hdr.extRecordSize, 2 * ConstProperty.PF_PageHdr_SIZE);
 
+            FileManagerUtil.ReplaceTheNextFree(content
+               , hdr.totalHeight, 3 * ConstProperty.PF_PageHdr_SIZE);
+
             // IndexType
             FileManagerUtil.ReplaceTheNextFree(content
-                , (int)hdr.indexType, 2 * ConstProperty.PF_PageHdr_SIZE, 1);
+                , (int)hdr.indexType, 4 * ConstProperty.PF_PageHdr_SIZE, 1);
 
             // Root
             char[] charArray = SetNodeDiskToChar(hdr.root,ConverTKToString);
             FileManagerUtil.ReplaceTheNextFree(content
-                , charArray, 2 * ConstProperty.PF_PageHdr_SIZE + 1, charArray.Length);
+                , charArray, 4 * ConstProperty.PF_PageHdr_SIZE + 1, charArray.Length);
 
             // dicCount
             FileManagerUtil.ReplaceTheNextFree(content
-                , hdr.dic.Keys.Count, 2 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, ConstProperty.PF_PageHdr_SIZE);
+                , hdr.dic.Keys.Count, 4 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, ConstProperty.PF_PageHdr_SIZE);
 
             // KandV
             char[] charArray2 = SetDicToChar(hdr.dic);
             FileManagerUtil.ReplaceTheNextFree(content
-                , charArray2, 3 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, charArray2.Length);
+                , charArray2, 5 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, charArray2.Length);
 
             return content;
         }
 
-        public static interfaceFileHdr ReadIndexFileHdr(string fileName, FileStream fs, ConstProperty.FileType fileType, Func<string, TK> ConverStringToTK)
+        public static interfaceFileHdr ReadIndexFileHdr(FileStream fs, Func<string, TK> ConverStringToTK)
         {
             fs.Position = 0;
             StreamReader sr = new StreamReader(fs);
@@ -63,7 +66,7 @@ namespace Database.IndexManage
             // length
             FileManagerUtil.ReplaceTheNextFree(data, nl.length, 0);
             // isLeaf
-            data[ConstProperty.Int_Size] = Convert.ToChar(nl.isLeaf);
+            data[ConstProperty.Int_Size] = Convert.ToChar(nl.isLeaf+48);
             // capacity
             FileManagerUtil.ReplaceTheNextFree(data, nl.capacity, ConstProperty.Int_Size + 1);
             // height
@@ -79,39 +82,41 @@ namespace Database.IndexManage
 
             // childRidList
             // TODO
-            for (int i = 0; i < nl.capacity; i++)
+            for (int i = 0; i < nl.capacity+1; i++)
             {
                 FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Page,
-                    (3 + nl.capacity + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
+                    (3 + nl.capacity + 2*i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
 
                 FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Slot,
-                    (3 + nl.capacity + i) * ConstProperty.Int_Size + 1+ ConstProperty.Int_Size
-                    , ConstProperty.Int_Size);
+                    (3 + nl.capacity + 2*i) * ConstProperty.Int_Size + 1+ ConstProperty.Int_Size, ConstProperty.Int_Size);
             }
             return data;
         }
 
         public static NodeDisk<TK> SetCharToNodeDisk(char[] data, int length, Func<string, TK> ConverStringToTK)
         {
-            string dataStr = new string(data).Substring(0, length);
+            string dataStr = new string(data).Substring(0, length- ConstProperty.Int_Size);
             NodeDisk<TK> node = new NodeDisk<TK>();
-            node.length = Convert.ToInt32(dataStr.Substring(0, ConstProperty.Int_Size));
-            node.isLeaf = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size, 1));
-            node.capacity = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-            node.height = Convert.ToInt32(dataStr.Substring(2 * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+            node.length = length;
+            node.isLeaf = Convert.ToInt32(dataStr.Substring(0, 1));
+            node.capacity = Convert.ToInt32(dataStr.Substring(1, ConstProperty.Int_Size));
+            node.height = Convert.ToInt32(dataStr.Substring(ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
 
+            node.keyList = new List<TK>();
             for (int i = 0; i < node.capacity; i++)
             {
-                TK tmp = ConverStringToTK(dataStr.Substring((3 + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                node.keyList[i] = tmp;
+                TK tmp = ConverStringToTK(dataStr.Substring((2 + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                node.keyList.Add(tmp);
             }
-            for (int i = 0; i < node.capacity; i++)
+
+            node.childRidList = new List<RID>();
+            for (int i = 0; i < node.capacity+1; i++)
             {
                 int pageNum = Convert.ToInt32(dataStr.Substring(
-                    (3 + node.capacity + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                    (2 + node.capacity + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
                 int slotNum = Convert.ToInt32(dataStr.Substring(
-                    (3 + node.capacity + i + 1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                node.childRidList[i] = new RID(pageNum, slotNum);
+                    (2 + node.capacity + i + 1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                node.childRidList.Add(new RID(pageNum, slotNum));
             }
             return node;
         }
@@ -143,19 +148,18 @@ namespace Database.IndexManage
             sr.Read(lengthChar, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
             Int32.TryParse(new string(lengthChar), out length);
 
-            sr.BaseStream.Seek(ConstProperty.PF_FILE_HDR_NumPages_SIZE, SeekOrigin.Current);
-            char[] data = new char[length];
-            sr.Read(data, 0, length);
-            SetCharToNodeDisk(data, length, ConverStringToTK);
+            char[] data = new char[length - ConstProperty.PF_FILE_HDR_NumPages_SIZE];
+            sr.Read(data, 0, length- ConstProperty.PF_FILE_HDR_NumPages_SIZE);
+            pf_fh.root = SetCharToNodeDisk(data, length, ConverStringToTK);
 
             // DicCount
             sr.Read(dicCount, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
-            Int32.TryParse(new string(totalHeight), out pf_fh.dicCount);
+            Int32.TryParse(new string(dicCount), out pf_fh.dicCount);
 
             int sum = ConstProperty.IndexHeaderKey + ConstProperty.IndexHeaderValue;
             char[] data2 = new char[pf_fh.dicCount* sum];
             sr.Read(data2, 0, pf_fh.dicCount * sum);
-            SetCharToDic(data2, pf_fh.dicCount * sum);
+            pf_fh.dic = SetCharToDic(data2, pf_fh.dicCount * sum);
         }
 
         private static char[] SetDicToChar(Dictionary<int, int> dic)

@@ -25,7 +25,7 @@ namespace Database.RecordManage
             bHdrChanged = false;
         }
 
-        override public void Open(PF_FileHandle pfh, RM_FileHdr hdr_tmp)
+        public void Open(PF_FileHandle pfh, RM_FileHdr hdr_tmp)
         {
             if (bFileOpen || pfHandle != null) throw new Exception();
 
@@ -158,13 +158,60 @@ namespace Database.RecordManage
             return rid;
         }
 
+        public RM_Record GetRec(RID rid)
+        {
+            IsValid();
+            if (!IsValidRID(rid)) throw new Exception();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] data = GetSlotPointer(ph, slotNum);
+
+            var rec = new RM_Record();
+            rec.Set(data, fullRecordSize(), rid);
+            return rec;
+        }
+
+        public override void UpdateRec(RM_Record rec)
+        {
+            IsValid();
+            RID rid = rec.GetRid();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+            if (!IsValidRID(rid)) throw new Exception();
+
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.MarkDirty(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots());
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] recData = rec.GetData();
+            if (recData.Length != fullRecordSize()) throw new Exception();
+
+            SetSlotPointer(ph, slotNum, recData);
+
+            SetPageHeader(ph, pHdr);
+        }
+
         override public void SetFileHeader(PF_PageHandle ph)
         {
             ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
         }
 
         override public int fullRecordSize() { return hdr.extRecordSize; }
-
-        override public int GetNumPages() { return hdr.numPages; }
     }
 }

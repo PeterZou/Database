@@ -37,18 +37,16 @@ namespace Database.IndexManage
         {
             RM_FileHandle rmf = rmm.OpenFile(fileName);
 
-            IX_IOHandle<TK> iX_IOHandle = new IX_IOHandle<TK>(rmf, null, null);
-
             IX_FileHdr<TK> header = new IX_FileHdr<TK>();
 
-            IX_IndexHandle<TK> ixi = new IX_IndexHandle<TK>(iX_IOHandle, header.totalHeight, new RID(1,1));
+            IX_IndexHandle<TK> ixi = new IX_IndexHandle<TK>(rmf, header.totalHeight, new RID(1,1),null,null,null);
 
             return ixi;
         }
 
         public void CloseFile(IX_IndexHandle<TK> ixi)
         {
-            rmm.CloseFile(ixi.iX_IOHandle.rmp);
+            rmm.CloseFile(ixi.rmp);
         }
     }
 }

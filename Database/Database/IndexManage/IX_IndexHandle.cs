@@ -1,4 +1,5 @@
-﻿using Database.IndexManage.BPlusTree;
+﻿using Database.Const;
+using Database.IndexManage.BPlusTree;
 using Database.IndexManage.IndexValue;
 using Database.RecordManage;
 using System;
@@ -21,13 +22,37 @@ namespace Database.IndexManage
     public class IX_IndexHandle<TK>
         where TK : IComparable<TK>
     {
-        private BPlusTreeProvider<TK, RIDKey<TK>> bPlusTreeProvider;
+        #region public property and constructor
+        public RM_FileHandle rmp;
 
-        public IX_IOHandle<TK> iX_IOHandle;
-
-        private int treeHeight;
+        public Node<TK, RIDKey<TK>> SelectNode { set; get; }
 
         public RID RootRid;
+
+        public IX_IndexHandle(RM_FileHandle rmp, int treeHeight, RID rootRid, 
+            Func<string, TK> converStringToTK, Func<TK, string> converTKToString, Func<TK> creatNewTK)
+        {
+            this.rmp = rmp;
+            this.treeHeight = treeHeight;
+            this.RootRid = rootRid;
+            bPlusTreeProvider = new BPlusTreeProvider<TK, RIDKey<TK>>(treeHeight);
+            this.ConverStringToTK = converStringToTK;
+            this.ConverTKToString = converTKToString;
+            this.CreatNewTK = creatNewTK;
+        }
+        #endregion
+
+        #region private property
+        public Func<string, TK> ConverStringToTK;
+
+        public Func<TK, string> ConverTKToString;
+
+        public Func<TK> CreatNewTK;
+
+        private BPlusTreeProvider<TK, RIDKey<TK>> bPlusTreeProvider;
+
+        private int treeHeight;
+        #endregion
 
         // 存储从root到底层的相对路径RID,从而实现方向访问
         private List<RIDKey<TK>> ridkeyList = new List<RIDKey<TK>>();
@@ -35,14 +60,6 @@ namespace Database.IndexManage
         private Node<TK, RIDKey<TK>> SubRoot { set; get; }
         private Node<TK, RIDKey<TK>> LeafNode { set; get; }
         private List<RID> ridList = new List<RID>();
-
-        public IX_IndexHandle(IX_IOHandle<TK> iX_IOHandle, int treeHeight, RID rootRid)
-        {
-            this.iX_IOHandle = iX_IOHandle;
-            this.treeHeight = treeHeight;
-            this.RootRid = rootRid;
-            bPlusTreeProvider = new BPlusTreeProvider<TK, RIDKey<TK>>(treeHeight);
-        }
 
         #region Import disk to memory
         // 向上回溯用
@@ -58,17 +75,17 @@ namespace Database.IndexManage
             // 1.判断当前子节点前面还有多少parent节点，如果数目少于treeHeight，以ridList[0]为节点构造树
             if (ridList.Count - index + 1 <= treeHeight)
             {
-                SubRoot = iX_IOHandle.InsertImportToMemoryRoot(RootRid).Item1;
+                SubRoot = InsertImportToMemoryRoot(RootRid).Item1;
             }
             else
             {
                 //通过leafRid，获取上两层的root,从而重构subtree
-                SubRoot = iX_IOHandle.InsertImportToMemoryRoot(ridList[index+treeHeight]).Item1;
+                SubRoot = InsertImportToMemoryRoot(ridList[index+treeHeight]).Item1;
             }
-            iX_IOHandle.SelectNode = null;
+            SelectNode = null;
             int tmpHeight = ridList.Count - index + 1 <= treeHeight ? ridList.Count - index + 1 : treeHeight;
-            iX_IOHandle.GetSubTreeImportToMemory(tmpHeight, SubRoot.CurrentRID.Rid, null,true, leafRid);
-            return iX_IOHandle.SelectNode;
+            GetSubTreeImportToMemory(tmpHeight, SubRoot.CurrentRID.Rid, null,true, leafRid);
+            return SelectNode;
         }
 
         public void GetSubTreeFromDisk(TK key)
@@ -88,8 +105,8 @@ namespace Database.IndexManage
             // 以root重新构建GetSubTreeFromDisk
 
             // Get the real Root
-            SubRoot = iX_IOHandle.InsertImportToMemoryRoot(rootRid).Item1;
-            iX_IOHandle.GetSubTreeImportToMemory(treeHeight, rootRid, SubRoot, false, default(RID));
+            SubRoot = InsertImportToMemoryRoot(rootRid).Item1;
+            GetSubTreeImportToMemory(treeHeight, rootRid, SubRoot, false, default(RID));
             // 获取部分树的root节点
             // 能够一次性完整的放入整棵树
             if (treeHeight >= bPlusTreeProvider.Root.Height || treeHeight >= bPlusTreeProvider.Root.Height - treeHeight)
@@ -100,7 +117,7 @@ namespace Database.IndexManage
                     // 遍历(providerContext.GetRoot().Height - treeHeight+1)次，找到节点
                     SubRoot = GetRootNode(SubRoot.Height - treeHeight + 1, key);
 
-                    iX_IOHandle.GetSubTreeImportToMemory(treeHeight,
+                    GetSubTreeImportToMemory(treeHeight,
                         bPlusTreeProvider.Root.CurrentRID.Rid, SubRoot,false,default(RID));
                 }
                 bPlusTreeProvider.Root = SubRoot;
@@ -128,11 +145,6 @@ namespace Database.IndexManage
         #endregion
 
         #region Export memory to disk
-        public void ForcePages()
-        {
-            iX_IOHandle.ForcePages();
-        }
-
         public RID GetLeafEntry(TK key)
         {
             GetSubTreeFromDisk(key);
@@ -149,7 +161,7 @@ namespace Database.IndexManage
 
             bPlusTreeProvider.Insert(value);
             // 持久化到本地硬盘
-            bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.InsertExportToDisk);
+            bPlusTreeProvider.Traverse(SubRoot, InsertExportToDisk);
 
             // 回溯处理
             // 回溯停止条件：1.根节点values>=MaxDegree,2.不是真正的根节点
@@ -160,7 +172,7 @@ namespace Database.IndexManage
                 GetSubTreeFromDisk(SubRoot.CurrentRID.Rid);
                 bPlusTreeProvider.InsertRepair(SubRoot);
                 // 持久化到本地硬盘
-                bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.InsertExportToDisk);
+                bPlusTreeProvider.Traverse(SubRoot, InsertExportToDisk);
             }
 
         }
@@ -173,7 +185,7 @@ namespace Database.IndexManage
             bPlusTreeProvider.Delete(key);
 
             // 持久化到本地硬盘
-            bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.DeleteExportToDisk);
+            bPlusTreeProvider.Traverse(SubRoot, DeleteExportToDisk);
 
             // 回溯处理
             // 回溯停止条件：1.不是真正的根节点,2.根节点values<MinDegree
@@ -185,9 +197,140 @@ namespace Database.IndexManage
                 var node = GetSubTreeFromDisk(SubRoot.CurrentRID.Rid);
                 bPlusTreeProvider.RepairAfterDelete(node);
                 // 持久化到本地硬盘
-                bPlusTreeProvider.Traverse(SubRoot, iX_IOHandle.DeleteExportToDisk);
+                bPlusTreeProvider.Traverse(SubRoot, DeleteExportToDisk);
             }
         }
         #endregion
+
+        public void ForcePages()
+        {
+            rmp.ForcePages(ConstProperty.ALL_PAGES);
+        }
+
+        /// <summary>
+        /// 在内存中展开一棵子树
+        /// </summary>
+        /// <param name="height"></param>
+        /// <param name="rid">当前结点的RID</param>
+        /// <param name="parent">父节点</param>
+        public void GetSubTreeImportToMemory(int height, RID rid, Node<TK, RIDKey<TK>> parent, bool useBehind, RID leafRid)
+        {
+            if (height == 0) return;
+
+            var node = InsertImportToMemory(rid, parent);
+
+            if (useBehind && node.Item1.CurrentRID.Rid.CompareTo(leafRid) == 0)
+            {
+                SelectNode = node.Item1;
+            }
+
+            foreach (var n in node.Item2)
+            {
+                GetSubTreeImportToMemory(height - 1, n, node.Item1, useBehind, leafRid);
+            }
+        }
+
+        public Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemoryRoot(RID rid)
+        {
+            RM_Record record = rmp.GetRec(rid);
+
+            char[] data = record.GetData();
+
+            // leaf or not
+            NodeDisk<TK> nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data, data.Length, ConverStringToTK);
+
+            // set the node link to the parent
+            var node = ConvertNodeDiskToNode(nodeDisk, rid);
+
+            return node;
+        }
+
+        // root rid located in the first page
+        // location of the orignal node may not set in right 
+        public Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemory(RID rid, Node<TK, RIDKey<TK>> parent)
+        {
+            var node = InsertImportToMemoryRoot(rid);
+            node.Item1.Parent = parent;
+
+            parent.ChildrenNodes.Add(node.Item1);
+            return node;
+        }
+
+        // 添加单个node到硬盘
+        public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
+        {
+            var nodeDisk = ConvertNodeToNodeDisk(node);
+            char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, ConverTKToString);
+            // set the nl to the disk
+            rmp.InsertRec(data);
+        }
+
+        // 从硬盘删除单个node
+        public void DeleteExportToDisk(Node<TK, RIDKey<TK>> node)
+        {
+            rmp.DeleteRec(node.CurrentRID.Rid);
+        }
+
+        private Tuple<Node<TK, RIDKey<TK>>, List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
+        {
+            List<RID> ridlist = null;
+            Node<TK, RIDKey<TK>> node = new Node<TK, RIDKey<TK>>();
+            node.CurrentRID = new RIDKey<TK>(rid, CreatNewTK());
+            node.Height = nodeDisk.height;
+
+            // leaf:0,branch:1
+            if (nodeDisk.isLeaf == 0)
+            {
+                node.IsLeaf = true;
+
+                // put the property to the leaf
+                for (int i = 0; i < nodeDisk.capacity; i++)
+                {
+                    node.Property.Add(new RIDKey<TK>(nodeDisk.childRidList[i], nodeDisk.keyList[i]));
+                }
+            }
+            else
+            {
+                node.IsLeaf = false;
+                ridlist = new List<RID>();
+                foreach (var v in nodeDisk.childRidList)
+                {
+                    ridlist.Add(v);
+                }
+            }
+            foreach (var v in nodeDisk.keyList)
+                node.Values.Add(v);
+            return new Tuple<Node<TK, RIDKey<TK>>, List<RID>>(node, ridlist);
+        }
+
+        private NodeDisk<TK> ConvertNodeToNodeDisk(Node<TK, RIDKey<TK>> node)
+        {
+            NodeDisk<TK> nl = new NodeDisk<TK>();
+            // leaf:0,branch:1
+            nl.isLeaf = node.IsLeaf == true ? 0 : 1;
+            nl.capacity = node.Values.Count;
+            nl.keyList = node.Values.ToList();
+            nl.height = node.Height;
+
+            foreach (var v in node.Property)
+            {
+                nl.childRidList.Add(v.Rid);
+            }
+            nl.length = GetLength(nl);
+
+            return nl;
+        }
+
+        private int GetLength(NodeDisk<TK> nl)
+        {
+            int length = 0;
+
+            length += 3 * ConstProperty.Int_Size + 1;
+
+            // TODO Set TK is int
+            length += nl.capacity * ConstProperty.Int_Size;
+            length += nl.capacity * ConstProperty.RM_Page_RID_SIZE + ConstProperty.RM_Page_RID_SIZE;
+            return length;
+        }
     }
 }

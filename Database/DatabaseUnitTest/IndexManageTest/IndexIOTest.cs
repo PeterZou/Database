@@ -9,6 +9,7 @@ using Database.IndexManage.IndexValue;
 using Database.FileManage;
 using Database.Const;
 using Database.RecordManage;
+using System.IO;
 
 namespace DatabaseUnitTest.IndexManageTest
 {
@@ -16,22 +17,23 @@ namespace DatabaseUnitTest.IndexManageTest
     public class IndexIOTest
     {
         private Func<int, string> ConverIntToString = p => { string str = Convert.ToString(p); return str; };
+        private Func<string, int> ConverStringToInt = p => {int num =0; Int32.TryParse(p,out num); return num; };
 
         private NodeDisk<int> CreateNodeDisk()
         {
             NodeDisk<int> node = new NodeDisk<int>();
-            node.length = 76;
+            node.length = 81;
             node.isLeaf = 0;
             node.capacity = 5;
             node.height = 2;
             node.keyList = new List<int> { 1, 2, 3, 4, 5 };
             node.childRidList = new List<RID> {
-                new RID(1,5),
-                new RID(12,45),
-                new RID(12,45),
-                new RID(12,45),
-                new RID(12,45),
-                new RID(12,45)
+                new RID(1,2),
+                new RID(3,4),
+                new RID(5,6),
+                new RID(7,8),
+                new RID(9,10),
+                new RID(11,12)
             };
 
             return node;
@@ -61,10 +63,33 @@ namespace DatabaseUnitTest.IndexManageTest
         }
 
         [TestMethod]
-        public void WriteReadTheIndexFileHdr()
+        public void WriteTheIndexFileHdr()
         {
             var hdr = CreatIndexFileHdr();
             char[] data = IndexManagerUtil<int>.WriteIndexFileHdr(hdr, ConverIntToString);
+
+            string filePath = @"D:\test.txt";
+
+            using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            {
+                using (StreamWriter sw = new StreamWriter(fs))
+                {
+                    sw.Write(data);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ReadTheIndexFileHdr()
+        {
+            string filePath = @"D:\test.txt";
+
+            char[] data = new char[122];
+
+            using (FileStream fs = new FileStream(filePath, FileMode.Open,FileAccess.Read))
+            {
+                var d = IndexManagerUtil<int>.ReadIndexFileHdr(fs, ConverStringToInt);
+            }
         }
 
         [TestMethod]

@@ -73,7 +73,6 @@
     <Compile Include="IndexManage\IndexValue\NodeDisk.cs" />
     <Compile Include="IndexManage\IndexValue\RIDKey.cs" />
     <Compile Include="IndexManage\IX_FileHandle.cs" />
-    <Compile Include="IndexManage\IX_IOHandle.cs" />
     <Compile Include="IndexManage\IX_IndexHandle.cs" />
     <Compile Include="IndexManage\IX_FileHdr.cs" />
     <Compile Include="IndexManage\IX_Manager.cs" />
