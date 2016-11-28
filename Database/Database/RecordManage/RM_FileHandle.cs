@@ -5,17 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
+using Database.Interface;
 
 namespace Database.RecordManage
 {
-    public class RM_FileHandle
+    public class RM_FileHandle : FileHandle
     {
-        public PF_FileHandle pfHandle;              // pointer to opened PF_FileHandle
         public RM_FileHdr hdr;                        // file header
-        public bool bFileOpen;                        // file open flag
-        public bool bHdrChanged;                      // dirty flag for file hdr
         public RM_PageHdr pHdr;
 
+        #region Unique
         // You will probably then want to copy the file header information into a
         // private variable in the file handle that refers to the open file instance. By
         // copying this information, you will subsequently be able to find out details
@@ -26,38 +25,6 @@ namespace Database.RecordManage
         {
             bFileOpen = false;
             bHdrChanged = false;
-        }
-
-        bool hdrChanged() { return bHdrChanged; }
-
-        public int fullRecordSize() { return hdr.extRecordSize; }
-
-        public int GetNumPages() { return hdr.numPages; }
-
-        public int GetNumSlots()
-        {
-            if (fullRecordSize() <= 0) throw new Exception();
-
-            int bytes_available = ConstProperty.PF_PAGE_SIZE 
-                - 2*ConstProperty.PF_FILE_HDR_NumPages_SIZE;
-
-            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize()));
-
-            // 每个UTF占用三个字节
-            int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
-
-            while (slots * fullRecordSize() + r > ConstProperty.PF_PAGE_SIZE+ ConstProperty.PF_FILE_HDR_NumPages_SIZE)
-            {
-                slots--;
-                r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
-            }
-
-            return slots;
-        }
-
-        public void IsValid()
-        {
-            if ((pfHandle == null) || !bFileOpen || GetNumSlots() <= 0) throw new Exception();
         }
 
         public void Open(PF_FileHandle pfh, RM_FileHdr hdr_tmp)
@@ -78,17 +45,6 @@ namespace Database.RecordManage
             IsValid();
         }
 
-        public void ForcePages(int pageNum)
-        {
-            IsValid();
-            if (!IsValidPageNum(pageNum) && pageNum != ConstProperty.ALL_PAGES) throw new Exception();
-            pfHandle.ForcePages(pageNum);
-        }
-
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <returns></returns>
         public Tuple<int, RM_PageHdr> GetNextFreePage()
         {
             int pageNum = -3;
@@ -100,7 +56,7 @@ namespace Database.RecordManage
             {
                 pHdr = new RM_PageHdr(slotNum, new PF_PageHdr());
             }
-            
+
 
             // 如果有页面内部还剩余slot没有满的，该页应该做为freepage留给系统可以继续分配
             // QA: the meaning of this branch and what is pHdr in original refer to?
@@ -145,7 +101,56 @@ namespace Database.RecordManage
             return new Tuple<int, RM_PageHdr>(pageNum, pHdr);
         }
 
-        public Tuple<RID,PF_PageHandle> GetNextFreeSlot()
+        public RM_PageHdr GetPageHeader(PF_PageHandle ph)
+        {
+            if (pHdr == null) pHdr = new RM_PageHdr();
+
+            char[] buf = ph.pPageData;
+            pHdr.From_buf(buf);
+            return pHdr;
+        }
+
+        public void SetPageHeader(PF_PageHandle ph, RM_PageHdr pHdr)
+        {
+            // Just replace the head
+            char[] header = pHdr.To_buf();
+            for (int i = 0; i < header.Length; i++) ph.pPageData[i] = header[i];
+
+            pfHandle.SetThisPage(ph);
+        }
+
+        public int fullRecordSize() { return hdr.extRecordSize; }
+        #endregion
+
+        override public int GetNumPages() { return hdr.numPages; }
+
+        override public int GetNumSlots()
+        {
+            if (fullRecordSize() <= 0) throw new Exception();
+
+            int bytes_available = ConstProperty.PF_PAGE_SIZE 
+                - 2*ConstProperty.PF_FILE_HDR_NumPages_SIZE;
+
+            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize()));
+
+            // 每个UTF占用三个字节
+            int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
+
+            while (slots * fullRecordSize() + r > ConstProperty.PF_PAGE_SIZE+ ConstProperty.PF_FILE_HDR_NumPages_SIZE)
+            {
+                slots--;
+                r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
+            }
+
+            return slots;
+        }
+
+        override public void IsValid()
+        {
+            if ((pfHandle == null) || !bFileOpen || GetNumSlots() <= 0) throw new Exception();
+        }
+
+        override public Tuple<RID,PF_PageHandle> GetNextFreeSlot()
         {
             IsValid();
 
@@ -170,7 +175,7 @@ namespace Database.RecordManage
             throw new Exception();
         }
 
-        public RM_Record GetRec(RID rid)
+        override public RM_Record GetRec(RID rid)
         {
             IsValid();
             if (!IsValidRID(rid)) throw new Exception();
@@ -193,7 +198,7 @@ namespace Database.RecordManage
             return rec;
         }
 
-        public RID InsertRec(char[] pData)
+        override public RID InsertRec(char[] pData)
         {
             IsValid();
             // TODO:consider about the last '\0' of a string
@@ -229,7 +234,7 @@ namespace Database.RecordManage
             return rid;
         }
 
-        public void UpdateRec(RM_Record rec)
+        override public void UpdateRec(RM_Record rec)
         {
             IsValid();
             RID rid = rec.GetRid();
@@ -255,7 +260,7 @@ namespace Database.RecordManage
             SetPageHeader(ph, pHdr);
         }
 
-        public void DeleteRec(RID rid)
+        override public void DeleteRec(RID rid)
         {
             IsValid();
             int pageNum = rid.Page;
@@ -278,25 +283,7 @@ namespace Database.RecordManage
             SetPageHeader(ph, pHdr);
         }
 
-        public RM_PageHdr GetPageHeader(PF_PageHandle ph)
-        {
-            if (pHdr == null) pHdr = new RM_PageHdr();
-
-            char[] buf = ph.pPageData;
-            pHdr.From_buf(buf);
-            return pHdr;
-        }
-
-        public void SetPageHeader(PF_PageHandle ph, RM_PageHdr pHdr)
-        {
-            // Just replace the head
-            char[] header = pHdr.To_buf();
-            for (int i = 0; i < header.Length; i++) ph.pPageData[i] = header[i];
-
-            pfHandle.SetThisPage(ph);
-        }
-
-        public void SetFileHeader(PF_PageHandle ph)
+        override public void SetFileHeader(PF_PageHandle ph)
         {
             ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
         }
@@ -334,19 +321,6 @@ namespace Database.RecordManage
             offset += slot * fullRecordSize();
 
             return offset;
-        }
-
-        //
-        // IsValidPageNum
-        //
-        // Desc: Internal.  Return TRUE if pageNum is a valid page number
-        //       in the file, FALSE otherwise
-        // In:   pageNum - page number to test
-        // Ret:  TRUE or FALSE
-        //
-        private bool IsValidPageNum(int pageNum)
-        {
-            return pfHandle.IsValidPageNum(pageNum);
         }
 
         //

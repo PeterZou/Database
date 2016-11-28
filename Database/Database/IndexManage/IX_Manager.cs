@@ -22,9 +22,6 @@ namespace Database.IndexManage
 
         public void CreateFile(string fileName, int recordSize, ConstProperty.AttrType indexType)
         {
-            // TODO
-            // 第一条记录要常驻内存，这怎么处理？放在硬盘什么地方？
-            // TODO
             NodeDisk<TK> nd = new NodeDisk<TK>();
 
             rmm.CreateFile(fileName, recordSize, new char[] { '1' ,'2'});
@@ -42,9 +39,9 @@ namespace Database.IndexManage
 
             IX_IOHandle<TK> iX_IOHandle = new IX_IOHandle<TK>(rmf, null, null);
 
-            IX_FileHdr header = new IX_FileHdr();
+            IX_FileHdr<TK> header = new IX_FileHdr<TK>();
 
-            IX_IndexHandle<TK> ixi = new IX_IndexHandle<TK>(iX_IOHandle, header.height, new RID(1,1));
+            IX_IndexHandle<TK> ixi = new IX_IndexHandle<TK>(iX_IOHandle, header.totalHeight, new RID(1,1));
 
             return ixi;
         }

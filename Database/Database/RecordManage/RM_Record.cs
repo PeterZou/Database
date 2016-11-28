@@ -9,9 +9,9 @@ namespace Database.RecordManage
     public class RM_Record
     {
         public int recordSize;
-        public char[] data;
         public RID rid;
-
+        public char[] data;
+        
         public RM_Record()
         {
             rid = new RID(-1, -1);

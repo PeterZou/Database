@@ -10,14 +10,13 @@ using Database.IndexManage.IndexValue;
 
 namespace Database.IndexManage
 {
-    public struct IX_FileHdr
+    public class IX_FileHdr<TK>: PF_FileHdr
     {
-        public PF_FileHdr pf_fh;
-        public int extRecordSize;
-
-        // RM_FileHdr.data 作为结点常驻内存
-        public int height;
+        public int totalHeight;
 
         public ConstProperty.AttrType indexType;
+
+        // Root
+        NodeDisk<TK> root;
     }
 }
