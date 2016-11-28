@@ -40,11 +40,7 @@ namespace Database.Interface
 
         abstract public int GetNumPages();
 
-        abstract public int GetNumSlots();
-
         abstract public void IsValid();
-
-        abstract public Tuple<RID, PF_PageHandle> GetNextFreeSlot();
 
         abstract public RM_Record GetRec(RID rid);
 

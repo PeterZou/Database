@@ -64,6 +64,7 @@
     <Compile Include="FileManage\PF_Manager.cs" />
     <Compile Include="FileManage\PF_PageHandle.cs" />
     <Compile Include="FileManage\PF_PageHdr.cs" />
+    <Compile Include="IndexManage\Bitmap2.cs" />
     <Compile Include="IndexManage\BPlusTree\BPlusTree.cs" />
     <Compile Include="IndexManage\BPlusTree\BPlusTreeProvider.cs" />
     <Compile Include="IndexManage\BPlusTree\INode.cs" />

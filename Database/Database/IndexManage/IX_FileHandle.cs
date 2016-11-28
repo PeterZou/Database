@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Database.FileManage;
 using Database.Interface;
 using Database.RecordManage;
+using Database.Const;
 
 namespace Database.IndexManage
 {
@@ -31,8 +32,40 @@ namespace Database.IndexManage
         public void Open(PF_FileHandle pfh, IX_FileHdr<TK> hdr_tmp)
         { }
 
-        public Tuple<int, IX_PageHdr> GetNextFreePage()
+        public Tuple<RID, PF_PageHandle> GetNextFreeSlot(int recordSize)
         {
+            IsValid();
+
+            var tmp = GetNextFreePage(recordSize);
+            int pageNum = tmp.Item1;
+            pHdr = tmp.Item2;
+
+            PF_PageHandle ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+
+            int slotNum = GetNumSlots(pageNum);
+            var bitmap = new RecordManage.Bitmap(pHdr.freeSlotMap, slotNum);
+
+            for (UInt32 i = 0; i < slotNum; i++)
+            {
+                if (bitmap.Test(i))
+                {
+                    return new Tuple<RID, PF_PageHandle>(new RID(pageNum, (int)i), ph);
+                }
+            }
+
+            throw new Exception();
+        }
+
+        /// <summary>
+        /// 先查找有没有比maxSize的以前删除的记录，有的话直接插入，没有的话，压缩
+        /// </summary>
+        /// <returns></returns>
+        public Tuple<int, IX_PageHdr> GetNextFreePage(int recordSize)
+        {
+            // while循环直到找到能够放置这个record的页面
+
+
             return null;
         }
 
@@ -45,17 +78,16 @@ namespace Database.IndexManage
         { }
         #endregion
 
-        public override Tuple<RID, PF_PageHandle> GetNextFreeSlot()
+        /// <summary>
+        /// 在使用GetNextFreePage后，重新获取该pageNum下的slotNum
+        /// </summary>
+        /// <returns></returns>
+        public int GetNumSlots(int pageNum)
         {
-            throw new NotImplementedException();
+            return 0;
         }
 
         public override int GetNumPages()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int GetNumSlots()
         {
             throw new NotImplementedException();
         }

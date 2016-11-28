@@ -101,6 +101,52 @@ namespace Database.RecordManage
             return new Tuple<int, RM_PageHdr>(pageNum, pHdr);
         }
 
+        public Tuple<RID, PF_PageHandle> GetNextFreeSlot()
+        {
+            IsValid();
+
+            var tmp = GetNextFreePage();
+            int pageNum = tmp.Item1;
+            pHdr = tmp.Item2;
+
+            PF_PageHandle ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+
+            int slotNum = GetNumSlots();
+            var bitmap = new Bitmap(pHdr.freeSlotMap, slotNum);
+
+            for (UInt32 i = 0; i < slotNum; i++)
+            {
+                if (bitmap.Test(i))
+                {
+                    return new Tuple<RID, PF_PageHandle>(new RID(pageNum, (int)i), ph);
+                }
+            }
+
+            throw new Exception();
+        }
+
+        public int GetNumSlots()
+        {
+            if (fullRecordSize() <= 0) throw new Exception();
+
+            int bytes_available = ConstProperty.PF_PAGE_SIZE
+                - 2 * ConstProperty.PF_FILE_HDR_NumPages_SIZE;
+
+            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize()));
+
+            // 每个UTF占用三个字节
+            int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars() * 3;
+
+            while (slots * fullRecordSize() + r > ConstProperty.PF_PAGE_SIZE + ConstProperty.PF_FILE_HDR_NumPages_SIZE)
+            {
+                slots--;
+                r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars() * 3;
+            }
+
+            return slots;
+        }
+
         public RM_PageHdr GetPageHeader(PF_PageHandle ph)
         {
             if (pHdr == null) pHdr = new RM_PageHdr();
@@ -124,55 +170,9 @@ namespace Database.RecordManage
 
         override public int GetNumPages() { return hdr.numPages; }
 
-        override public int GetNumSlots()
-        {
-            if (fullRecordSize() <= 0) throw new Exception();
-
-            int bytes_available = ConstProperty.PF_PAGE_SIZE 
-                - 2*ConstProperty.PF_FILE_HDR_NumPages_SIZE;
-
-            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize()));
-
-            // 每个UTF占用三个字节
-            int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
-
-            while (slots * fullRecordSize() + r > ConstProperty.PF_PAGE_SIZE+ ConstProperty.PF_FILE_HDR_NumPages_SIZE)
-            {
-                slots--;
-                r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars()*3;
-            }
-
-            return slots;
-        }
-
         override public void IsValid()
         {
             if ((pfHandle == null) || !bFileOpen || GetNumSlots() <= 0) throw new Exception();
-        }
-
-        override public Tuple<RID,PF_PageHandle> GetNextFreeSlot()
-        {
-            IsValid();
-
-            var tmp = GetNextFreePage();
-            int pageNum = tmp.Item1;
-            pHdr = tmp.Item2;
-
-            PF_PageHandle ph = pfHandle.GetThisPage(pageNum);
-            pfHandle.UnpinPage(pageNum);
-
-            int slotNum = GetNumSlots();
-            var bitmap = new Bitmap(pHdr.freeSlotMap, slotNum);
-            
-            for (UInt32 i = 0; i < slotNum; i++)
-            {
-                if (bitmap.Test(i))
-                {
-                    return new Tuple<RID, PF_PageHandle>(new RID(pageNum, (int)i), ph);
-                }
-            }
-
-            throw new Exception();
         }
 
         override public RM_Record GetRec(RID rid)
