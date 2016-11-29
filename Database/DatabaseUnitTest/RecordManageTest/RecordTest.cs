@@ -275,7 +275,7 @@ namespace DatabaseUnitTest.RecordManageTest
             ph = rh.pfHandle.GetThisPage(pageNum);
             rh.pfHandle.UnpinPage(pageNum);
             var pHdr = rh.GetPageHeader(ph);
-            var bitmap = new Bitmap(pHdr.freeSlotMap, rh.GetNumSlots());
+            var bitmap = new Bitmap(pHdr.freeSlotMap, rh.GetNumSlots(-1));
 
             return bitmap;
         }

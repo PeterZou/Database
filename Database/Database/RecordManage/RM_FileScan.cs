@@ -33,7 +33,7 @@ namespace Database.RecordManage
             if (bOpen) throw new Exception();
             prmh = fileHandle;
             if (prmh == null) throw new Exception();
-            prmh.IsValid();
+            prmh.IsValid(-1);
 
             // TODO:when value is null?
             if (
@@ -84,13 +84,13 @@ namespace Database.RecordManage
                 ph = prmh.pfHandle.GetThisPage(j);
                 prmh.pfHandle.UnpinPage(j);
                 pHdr = prmh.GetPageHeader(ph);
-                var bitmap = new Bitmap(pHdr.freeSlotMap, prmh.GetNumSlots());
+                var bitmap = new Bitmap(pHdr.freeSlotMap, prmh.GetNumSlots(-1));
                 int i = -1;
                 if (current.Page == j)
                     i = current.Slot + 1;
                 else
                     i = 0;
-                for (; i < prmh.GetNumSlots(); i++)
+                for (; i < prmh.GetNumSlots(-1); i++)
                 {
                     if (!bitmap.Test((UInt32)i))
                     {

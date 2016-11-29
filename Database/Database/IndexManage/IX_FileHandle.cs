@@ -24,6 +24,7 @@ namespace Database.IndexManage
         public IX_IndexHandle<TK> iih;
 
         public IX_FileHdr<TK> hdr;                        // file header
+        public IX_PageHdr pHdr;
 
         public IX_FileHandle(IX_IndexHandle<TK> iih)
         {
@@ -31,6 +32,8 @@ namespace Database.IndexManage
             bHdrChanged = false;
             this.iih = iih;
         }
+
+        public int GetNumPages() { return hdr.numPages; }
 
         public override int fullRecordSize() { return hdr.extRecordSize; }
 
@@ -40,17 +43,16 @@ namespace Database.IndexManage
         }
 
         // TODO
-        public override Tuple<int, RM_PageHdr> GetNextFreePage()
+        public Tuple<int, IX_PageHdr> GetNextFreePage(int size)
         {
             int pageNum = -3;
-            IsValid();
             PF_PageHandle ph;
-            // TODO
-            int slotNum = GetNumSlots();
+
+            int slotNum = GetNumSlots(size);
 
             if (pHdr == null)
             {
-                pHdr = new RM_PageHdr(slotNum, new PF_PageHdr());
+                pHdr = new IX_PageHdr(slotNum, new PF_PageHdr(),size);
             }
 
 
@@ -76,7 +78,7 @@ namespace Database.IndexManage
                 ph = pfHandle.AllocatePage();
                 pageNum = ph.pageNum;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
-                var bitmap = new Bitmap(GetNumSlots());
+                var bitmap = new Bitmap(GetNumSlots(pageNum));
                 bitmap.Reset(); // Initially all slots are free
                 pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
 
@@ -93,7 +95,7 @@ namespace Database.IndexManage
             else
                 throw new Exception();
 
-            return new Tuple<int, RM_PageHdr>(pageNum, pHdr);
+            return new Tuple<int, IX_PageHdr>(pageNum, pHdr);
         }
 
         public override void DeleteRec(RID rid)
@@ -111,6 +113,11 @@ namespace Database.IndexManage
             throw new NotImplementedException();
         }
 
+        public RM_Record GetRec(RID rid)
+        {
+            return null;
+        }
+
         public void Open(PF_FileHandle pfh, IX_FileHdr<TK> hdr_tmp)
         {
             if (bFileOpen || pfHandle != null) throw new Exception();
@@ -126,12 +133,16 @@ namespace Database.IndexManage
 
             bHdrChanged = true;
 
-            IsValid();
+            IsValid(-1);
         }
 
-        public RM_Record GetRec(RID rid)
+        public IX_PageHdr GetPageHeader(PF_PageHandle ph)
         {
-            return null;
+            if (pHdr == null) pHdr = new IX_PageHdr();
+
+            char[] buf = ph.pPageData;
+            pHdr.From_buf(buf);
+            return pHdr;
         }
     }
 }

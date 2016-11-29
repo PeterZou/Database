@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.Const;
+using Database.Interface;
 
 namespace Database.RecordManage
 {
@@ -42,7 +43,7 @@ namespace Database.RecordManage
             return b.numChars();
         }
         
-        public void From_buf(char[] buf)
+        public virtual void From_buf(char[] buf)
         {
             string bufStr = new string(buf);
             Int32.TryParse(new string(bufStr.Take(ConstProperty.PF_PageHdr_SIZE).ToArray()), 
@@ -60,7 +61,7 @@ namespace Database.RecordManage
                 , Mapsize()).ToArray();
         }
 
-        public char[] To_buf()
+        public virtual char[] To_buf()
         {
             char[] content = new char[Size()];
             FileManagerUtil.ReplaceTheNextFree(content
