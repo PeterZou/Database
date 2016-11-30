@@ -53,7 +53,7 @@ namespace Database.RecordManage
                     || attrLength > ConstProperty.MAXSTRINGLEN))
                 throw new Exception();
 
-            if ((attrOffset >= prmh.fullRecordSize()) || attrOffset < 0)
+            if ((attrOffset >= prmh.fullRecordSize(-1)) || attrOffset < 0)
                 throw new Exception();
 
             bOpen = true;

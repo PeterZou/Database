@@ -16,31 +16,23 @@ namespace Database.Interface
         public bool bFileOpen;                        // file open flag
         public bool bHdrChanged;                      // dirty flag for file hdr
 
+        public abstract int fullRecordSize(int size);
+
         public int GetNumSlots(int size)
         {
-            int frs = 0;
-            if (size == -1)
-                frs = fullRecordSize();
-            else
-            {
-                // TODO
-            }
-            return GetNumSlotsInArbitrary(frs);
-        }
+            int num = fullRecordSize(size);
 
-        public int GetNumSlotsInArbitrary(int fullRecordSize)
-        {
-            if (fullRecordSize <= 0) throw new Exception();
+            if (num <= 0) throw new Exception();
 
             int bytes_available = ConstProperty.PF_PAGE_SIZE
                 - 2 * ConstProperty.PF_FILE_HDR_NumPages_SIZE;
 
-            var slots = (int)Math.Floor(1.0 * bytes_available / (fullRecordSize));
+            var slots = (int)Math.Floor(1.0 * bytes_available / (num));
 
             // 每个UTF占用三个字节
             int r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars() * 3;
 
-            while (slots * fullRecordSize + r > ConstProperty.PF_PAGE_SIZE + ConstProperty.PF_FILE_HDR_NumPages_SIZE)
+            while (slots * num + r > ConstProperty.PF_PAGE_SIZE + ConstProperty.PF_FILE_HDR_NumPages_SIZE)
             {
                 slots--;
                 r = ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + (new Bitmap(slots)).numChars() * 3;
@@ -85,12 +77,12 @@ namespace Database.Interface
             if ((pfHandle == null) || !bFileOpen || GetNumSlots(size) <= 0) throw new Exception();
         }
 
-        public char[] GetSlotPointer(PF_PageHandle ph, int slot)
+        public char[] GetSlotPointer(PF_PageHandle ph, int slot,int size)
         {
             int offset = CalcOffset(slot,-1);
-            int offsetAfter = offset + fullRecordSize();
+            int offsetAfter = offset + fullRecordSize(size);
             int index = 0;
-            char[] data = new char[fullRecordSize()];
+            char[] data = new char[fullRecordSize(size)];
             for (int i = offset; i < offsetAfter; i++)
             {
                 data[index] = ph.pPageData[i];
@@ -115,7 +107,7 @@ namespace Database.Interface
             IsValid(size);
             var bitmap = new Bitmap(GetNumSlots(size));
             int offset = (new RM_PageHdr(GetNumSlots(size), new PF_PageHdr())).Size();
-            offset += slot * fullRecordSize();
+            offset += slot * fullRecordSize(size);
 
             return offset;
         }
@@ -132,13 +124,9 @@ namespace Database.Interface
             return IsValidPageNum(page) && slot >= 0 && slot < GetNumSlots(-1);
         }
 
-        abstract public int fullRecordSize();
-
         abstract public RID InsertRec(char[] pData);
 
         abstract public void DeleteRec(RID rid);
-
-        abstract public void UpdateRec(RM_Record rec);
 
         abstract public void SetFileHeader(PF_PageHandle ph);
     }

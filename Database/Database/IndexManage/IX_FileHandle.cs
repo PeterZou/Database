@@ -7,6 +7,8 @@ using Database.FileManage;
 using Database.RecordManage;
 using Database.Const;
 using Database.Interface;
+using Database.IndexManage.IndexValue;
+using Database.IndexManage.BPlusTree;
 
 namespace Database.IndexManage
 {
@@ -18,6 +20,7 @@ namespace Database.IndexManage
     //       2）data,尽可能在一页插入数据，1)遍历后发现所有的slot都比较小，做gc,压缩
     //                                   2)压缩之后发现还是不够插入，①保留压缩后的data为以后插入做准备，②循环进入下一页重复
     // 2.将非固定问题转化为特定几个固定的长度，比如degree为5，那么长度应该为Fixlen + n*Fixlen2(0<=n<=degress)，全部放在一个文件中，由文件表头定义(N+1)个freelist
+    // Point:如果遇到allocate,需要添加额外的操作保证对firstpage的操作转化为对dic的操作Wrapper
     public class IX_FileHandle<TK> : FileHandle
         where TK : IComparable<TK>
     {
@@ -33,36 +36,45 @@ namespace Database.IndexManage
             this.iih = iih;
         }
 
-        public int GetNumPages() { return hdr.numPages; }
-
-        public override int fullRecordSize() { return hdr.extRecordSize; }
-
-        public override void SetFileHeader(PF_PageHandle ph)
+        override public void SetFileHeader(PF_PageHandle ph)
         {
             ph.pPageData = IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, iih.ConverTKToString);
         }
 
-        // TODO
-        public Tuple<int, IX_PageHdr> GetNextFreePage(int size)
+        override public int fullRecordSize(int size)
+        {
+            // TODO defalut TK occupied 4 Bytes
+            return 4 *ConstProperty.Int_Size+size* ConstProperty.Int_Size + size*ConstProperty.RM_Page_RID_SIZE;
+        }
+
+        override public void DeleteRec(RID rid)
+        {
+            throw new NotImplementedException();
+        }
+
+        override public RID InsertRec(char[] pData)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int GetNumPages() { return hdr.numPages; }
+
+        public Tuple<int, IX_PageHdr> GetNextFreePage(int degreesSize)
         {
             int pageNum = -3;
             PF_PageHandle ph;
 
-            int slotNum = GetNumSlots(size);
+            int slotNum = GetNumSlots(degreesSize);
 
             if (pHdr == null)
             {
-                pHdr = new IX_PageHdr(slotNum, new PF_PageHdr(),size);
+                pHdr = new IX_PageHdr(slotNum, new PF_PageHdr(), degreesSize);
             }
 
-
-            // 如果有页面内部还剩余slot没有满的，该页应该做为freepage留给系统可以继续分配
-            // QA: the meaning of this branch and what is pHdr in original refer to?
-            // QA2: key point is how to define the free page? if there is still freeslot, is it a free page?
-            if (hdr.firstFree != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
+            // 对应的
+            if (hdr.dic[degreesSize] != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
-                // 11252016 对应的是新打开的文件，pHdr还没有读入，或者页面发生改变(由于换页)
-                ph = pfHandle.GetThisPage(hdr.firstFree);
+                ph = pfHandle.GetThisPage(hdr.dic[degreesSize]);
                 if (pHdr.numSlots == pHdr.numFreeSlots || pHdr.numFreeSlots != GetPageHeader(ph).numFreeSlots)
                 {
                     pHdr = GetPageHeader(ph);
@@ -71,26 +83,30 @@ namespace Database.IndexManage
                 pfHandle.MarkDirty(pageNum);
                 pfHandle.UnpinPage(pageNum);
             }
-            else if (hdr.firstFree == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
+            else if (hdr.dic[degreesSize] == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
             {
-                pfHandle.hdr.firstFree = hdr.firstFree;
                 pfHandle.hdr.numPages = hdr.numPages;
+
+                #region Wrap the dic put into the firstFree and then replace it
+                pfHandle.hdr.firstFree = hdr.dic[degreesSize];
                 ph = pfHandle.AllocatePage();
+                //hdr.dic[degreesSize] = pfHandle.hdr.firstFree;
+                #endregion
+
                 pageNum = ph.pageNum;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
+                pHdr.size = degreesSize;
                 var bitmap = new Bitmap(GetNumSlots(pageNum));
-                bitmap.Reset(); // Initially all slots are free
+                bitmap.Reset();
                 pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
 
                 ph.pPageData = pHdr.To_buf();
 
                 pfHandle.UnpinPage(pageNum);
 
-                // add page to the free list
-                hdr.firstFree = pageNum;
+                hdr.dic[degreesSize] = pageNum;
                 hdr.numPages++;
                 bHdrChanged = true;
-
             }
             else
                 throw new Exception();
@@ -98,24 +114,29 @@ namespace Database.IndexManage
             return new Tuple<int, IX_PageHdr>(pageNum, pHdr);
         }
 
-        public override void DeleteRec(RID rid)
+        public Tuple<RID, PF_PageHandle> GetNextFreeSlot(int size)
         {
-            throw new NotImplementedException();
-        }
+            IsValid(-1);
 
-        public override RID InsertRec(char[] pData)
-        {
-            throw new NotImplementedException();
-        }
+            var tmp = GetNextFreePage(size);
+            int pageNum = tmp.Item1;
+            pHdr = (IX_PageHdr)tmp.Item2;
 
-        public override void UpdateRec(RM_Record rec)
-        {
-            throw new NotImplementedException();
-        }
+            PF_PageHandle ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
 
-        public RM_Record GetRec(RID rid)
-        {
-            return null;
+            int slotNum = GetNumSlots(size);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, slotNum);
+
+            for (UInt32 i = 0; i < slotNum; i++)
+            {
+                if (bitmap.Test(i))
+                {
+                    return new Tuple<RID, PF_PageHandle>(new RID(pageNum, (int)i), ph);
+                }
+            }
+
+            throw new Exception();
         }
 
         public void Open(PF_FileHandle pfh, IX_FileHdr<TK> hdr_tmp)
@@ -136,6 +157,11 @@ namespace Database.IndexManage
             IsValid(-1);
         }
 
+        public Node<TK, RIDKey<TK>> ShowBplustree(RID rid)
+        {
+            return null;
+        }
+
         public IX_PageHdr GetPageHeader(PF_PageHandle ph)
         {
             if (pHdr == null) pHdr = new IX_PageHdr();
@@ -143,6 +169,12 @@ namespace Database.IndexManage
             char[] buf = ph.pPageData;
             pHdr.From_buf(buf);
             return pHdr;
+        }
+
+        private int CalculateSize(int length)
+        {
+            // TODO defalut TK occupied 4 Bytes
+            return (length - 4 * ConstProperty.Int_Size) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size);
         }
     }
 }
