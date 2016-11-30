@@ -49,12 +49,104 @@ namespace Database.IndexManage
 
         override public void DeleteRec(RID rid)
         {
-            throw new NotImplementedException();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.MarkDirty(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            int size = pHdr.size;
+            IsValid(pageNum);
+
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(size));
+            bitmap.Reset((UInt32)slotNum);
+
+            if (pHdr.numFreeSlots == 0)
+            {
+                pHdr.pf_ph.nextFree = hdr.dic[size];
+                hdr.dic[size] = pageNum;
+                //pHdr.pf_ph.nextFree = hdr.firstFree;
+                //hdr.firstFree = pageNum;
+            }
+            pHdr.numFreeSlots++;
+            pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
+            SetPageHeader(ph, pHdr);
         }
 
         override public RID InsertRec(char[] pData)
         {
-            throw new NotImplementedException();
+            int size = CalculateSize(pData.Length);
+            IsValid(size);
+
+            if (pData == null || pData.Length == 0 || pData.Length > fullRecordSize(size)) throw new Exception();
+
+            var tuple = GetNextFreeSlot(size);
+
+            PF_PageHandle ph = tuple.Item2;
+            RID rid = tuple.Item1;
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(size));
+
+            if (pHdr.numFreeSlots == 0)
+            {
+                pHdr.numFreeSlots = GetNumSlots(size);
+            }
+
+            SetSlotPointer(ph, slotNum, pData);
+
+            bitmap.Set((UInt32)slotNum); // slot s is no longer free
+            pHdr.numFreeSlots--;
+            if (pHdr.numFreeSlots == 0)
+            {
+                hdr.dic[size] = pHdr.pf_ph.nextFree;
+                hdr.firstFree = hdr.dic[size];
+                pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_USED;
+            }
+            pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
+            SetPageHeader(ph, pHdr);
+
+            return rid;
+        }
+
+        public Node<TK, RIDKey<TK>> ShowPartitialBplustree(RID rid)
+        {
+            iih.GetSubTreeImportToMemory(iih.treeHeight, rid,null, true, rid);
+            return iih.SelectNode;
+        }
+
+        public void DeleteEntry(RID rid)
+        {
+        }
+
+        public void InsertEntry(RID rid)
+        {
+        }
+
+        public RM_Record GetRec(RID rid)
+        {
+            if (!IsValidRID(rid)) throw new Exception();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+
+            IsValid(pageNum);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(pHdr.size));
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] data = GetSlotPointer(ph, slotNum, pHdr.size);
+
+            var rec = new RM_Record();
+            rec.Set(data, fullRecordSize(pHdr.size), rid);
+            return rec;
         }
 
         public int GetNumPages() { return hdr.numPages; }
@@ -155,11 +247,6 @@ namespace Database.IndexManage
             bHdrChanged = true;
 
             IsValid(-1);
-        }
-
-        public Node<TK, RIDKey<TK>> ShowBplustree(RID rid)
-        {
-            return null;
         }
 
         public IX_PageHdr GetPageHeader(PF_PageHandle ph)

@@ -22,17 +22,16 @@ namespace Database.IndexManage
     public class IX_IndexHandle<TK>
         where TK : IComparable<TK>
     {
-        #region public property and constructor
-        public RM_FileHandle rmp;
+        public IX_FileHandle<TK> imp;
 
         public Node<TK, RIDKey<TK>> SelectNode { set; get; }
 
         public RID RootRid;
 
-        public IX_IndexHandle(RM_FileHandle rmp, int treeHeight, RID rootRid, 
+        public IX_IndexHandle(IX_FileHandle<TK> imp, int treeHeight, RID rootRid, 
             Func<string, TK> converStringToTK, Func<TK, string> converTKToString, Func<TK> creatNewTK)
         {
-            this.rmp = rmp;
+            this.imp = imp;
             this.treeHeight = treeHeight;
             this.RootRid = rootRid;
             bPlusTreeProvider = new BPlusTreeProvider<TK, RIDKey<TK>>(treeHeight);
@@ -40,9 +39,7 @@ namespace Database.IndexManage
             this.ConverTKToString = converTKToString;
             this.CreatNewTK = creatNewTK;
         }
-        #endregion
 
-        #region private property
         public Func<string, TK> ConverStringToTK;
 
         public Func<TK, string> ConverTKToString;
@@ -51,8 +48,7 @@ namespace Database.IndexManage
 
         private BPlusTreeProvider<TK, RIDKey<TK>> bPlusTreeProvider;
 
-        private int treeHeight;
-        #endregion
+        public int treeHeight;
 
         // 存储从root到底层的相对路径RID,从而实现方向访问
         private List<RIDKey<TK>> ridkeyList = new List<RIDKey<TK>>();
@@ -204,7 +200,7 @@ namespace Database.IndexManage
 
         public void ForcePages()
         {
-            rmp.ForcePages(ConstProperty.ALL_PAGES);
+            imp.ForcePages(ConstProperty.ALL_PAGES);
         }
 
         /// <summary>
@@ -232,7 +228,7 @@ namespace Database.IndexManage
 
         public Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemoryRoot(RID rid)
         {
-            RM_Record record = rmp.GetRec(rid);
+            RM_Record record = imp.GetRec(rid);
 
             char[] data = record.GetData();
 
@@ -262,13 +258,13 @@ namespace Database.IndexManage
             var nodeDisk = ConvertNodeToNodeDisk(node);
             char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, ConverTKToString);
             // set the nl to the disk
-            rmp.InsertRec(data);
+            imp.InsertRec(data);
         }
 
         // 从硬盘删除单个node
         public void DeleteExportToDisk(Node<TK, RIDKey<TK>> node)
         {
-            rmp.DeleteRec(node.CurrentRID.Rid);
+            imp.DeleteRec(node.CurrentRID.Rid);
         }
 
         private Tuple<Node<TK, RIDKey<TK>>, List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)

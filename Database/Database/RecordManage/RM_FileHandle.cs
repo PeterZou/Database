@@ -26,11 +26,6 @@ namespace Database.RecordManage
             bHdrChanged = false;
         }
 
-        override public int fullRecordSize(int size)
-        {
-            return hdr.extRecordSize;
-        }
-
         override public void DeleteRec(RID rid)
         {
             IsValid(-1);
@@ -90,9 +85,63 @@ namespace Database.RecordManage
             return rid;
         }
 
+        override public int fullRecordSize(int size)
+        {
+            return hdr.extRecordSize;
+        }
+
         override public void SetFileHeader(PF_PageHandle ph)
         {
             ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
+        }
+
+        public void UpdateRec(RM_Record rec)
+        {
+            IsValid(-1);
+            RID rid = rec.GetRid();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+            if (!IsValidRID(rid)) throw new Exception();
+
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.MarkDirty(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(-1));
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] recData = rec.GetData();
+            if (recData.Length != fullRecordSize(-1)) throw new Exception();
+
+            SetSlotPointer(ph, slotNum, recData);
+
+            SetPageHeader(ph, pHdr);
+        }
+
+        public RM_Record GetRec(RID rid)
+        {
+            IsValid(-1);
+            if (!IsValidRID(rid)) throw new Exception();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(-1));
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] data = GetSlotPointer(ph, slotNum, -1);
+
+            var rec = new RM_Record();
+            rec.Set(data, fullRecordSize(-1), rid);
+            return rec;
         }
 
         public int GetNumPages() { return hdr.numPages; }
@@ -169,55 +218,6 @@ namespace Database.RecordManage
                 throw new Exception();
 
             return new Tuple<int, RM_PageHdr>(pageNum, pHdr);
-        }
-
-        public void UpdateRec(RM_Record rec)
-        {
-            IsValid(-1);
-            RID rid = rec.GetRid();
-            int pageNum = rid.Page;
-            int slotNum = rid.Slot;
-            if (!IsValidRID(rid)) throw new Exception();
-
-            PF_PageHandle ph;
-            ph = pfHandle.GetThisPage(pageNum);
-            pfHandle.MarkDirty(pageNum);
-            pfHandle.UnpinPage(pageNum);
-            pHdr = GetPageHeader(ph);
-            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(-1));
-
-            // already free
-            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
-
-            char[] recData = rec.GetData();
-            if (recData.Length != fullRecordSize(-1)) throw new Exception();
-
-            SetSlotPointer(ph, slotNum, recData);
-
-            SetPageHeader(ph, pHdr);
-        }
-
-        public RM_Record GetRec(RID rid)
-        {
-            IsValid(-1);
-            if (!IsValidRID(rid)) throw new Exception();
-            int pageNum = rid.Page;
-            int slotNum = rid.Slot;
-
-            PF_PageHandle ph;
-            ph = pfHandle.GetThisPage(pageNum);
-            pfHandle.UnpinPage(pageNum);
-            pHdr = GetPageHeader(ph);
-            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(-1));
-
-            // already free
-            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
-
-            char[] data = GetSlotPointer(ph, slotNum, -1);
-
-            var rec = new RM_Record();
-            rec.Set(data, fullRecordSize(-1), rid);
-            return rec;
         }
 
         public Tuple<RID, PF_PageHandle> GetNextFreeSlot()
