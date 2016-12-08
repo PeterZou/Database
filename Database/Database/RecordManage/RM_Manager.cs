@@ -12,7 +12,7 @@ namespace Database.RecordManage
 {
     public class RM_Manager
     {
-        PF_Manager pfm; // A reference to the external PF_Manager
+        public PF_Manager pfm; // A reference to the external PF_Manager
 
         public RM_Manager(PF_Manager pfm)
         {

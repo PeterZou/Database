@@ -117,12 +117,15 @@ namespace Database.IndexManage
             return iih.SelectNode;
         }
 
-        public void DeleteEntry(RID rid)
+        public void DeleteEntry(TK key)
         {
+            iih.DeleteEntry(key);
         }
 
-        public void InsertEntry(RID rid)
+        public void InsertEntry(RID rid,TK key)
         {
+            RIDKey<TK> value = new RIDKey<TK>(rid,key);
+            iih.InsertEntry(value);
         }
 
         public RM_Record GetRec(RID rid)

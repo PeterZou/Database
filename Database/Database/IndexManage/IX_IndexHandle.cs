@@ -28,10 +28,12 @@ namespace Database.IndexManage
 
         public RID RootRid;
 
-        public IX_IndexHandle(IX_FileHandle<TK> imp, int treeHeight, RID rootRid, 
+        public IX_IndexHandle()
+        { }
+
+        public IX_IndexHandle(int treeHeight, RID rootRid, 
             Func<string, TK> converStringToTK, Func<TK, string> converTKToString, Func<TK> creatNewTK)
         {
-            this.imp = imp;
             this.treeHeight = treeHeight;
             this.RootRid = rootRid;
             bPlusTreeProvider = new BPlusTreeProvider<TK, RIDKey<TK>>(treeHeight);
