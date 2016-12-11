@@ -14,24 +14,40 @@ namespace Database.IndexManage
     public class IX_Manager<TK>
         where TK : IComparable<TK>
     {
-        RM_Manager rmm;
+        PF_Manager pfm;
 
-        public IX_Manager(RM_Manager rmm)
+        private Func<TK, string> ConverTKToString;
+        private Func<string, TK> ConverStringToTK;
+
+        public IX_Manager(PF_Manager pfm, Func<TK, string> ConverTKToString, Func<string, TK> ConverStringToTK)
         {
-            this.rmm = rmm;
+            this.pfm = pfm;
+            this.ConverStringToTK = ConverStringToTK;
+            this.ConverTKToString = ConverTKToString;
         }
 
         public void CreateFile(string fileName, int recordSize, ConstProperty.AttrType indexType)
         {
-            // set header
-            NodeDisk<TK> nd = new NodeDisk<TK>();
+            if ((recordSize >= ConstProperty.PF_PAGE_SIZE
+                - ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap)
+                || recordSize < 0)
+                throw new Exception();
 
-            rmm.CreateFile(fileName, recordSize, new char[] { '1' ,'2'});
+            pfm.CreateFile(fileName);
+
+            PF_FileHandle pfh = pfm.OpenFile(fileName);
+
+            var hdr = CreatIndexFileHdr(pfh,3,30,6,3);
+            char[] data = IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString);
+
+            FileManagerUtil.WriteFileHdr(data, 0, pfm.fs);
+            pfm.fs.Close();
+            pfm.fs.Dispose();
         }
 
         public void DestroyFile(string fileName)
         {
-            rmm.DestroyFile(fileName);
+            pfm.DestroyFile(fileName);
         }
 
         
@@ -42,7 +58,7 @@ namespace Database.IndexManage
 
             IX_FileHandle<TK> ixi = new IX_FileHandle<TK>(iih);
 
-            var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(rmm.pfm.fs,ixi.iih.ConverStringToTK);
+            var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(pfm.fs,ixi.iih.ConverStringToTK);
 
             var header = headerTmp as IX_FileHdr<TK>;
 
@@ -69,12 +85,46 @@ namespace Database.IndexManage
 
             if (!ixi.imp.pfHandle.bFileOpen) throw new IOException();
             ixi.imp.pfHandle.pf_bm.FlushPages(ixi.imp.pfHandle.fd);
-            rmm.pfm.fs.Close();
+            pfm.fs.Close();
 
             ixi.imp.pfHandle.bFileOpen = false;
 
             ixi.imp.pfHandle = null;
             ixi.imp.bFileOpen = false;
+        }
+
+        private IX_FileHdr<TK> CreatIndexFileHdr(PF_FileHandle pfh,int length,int recordSize,int totalHeight,int dicCount)
+        {
+            IX_FileHdr<TK> hdr = new IX_FileHdr<TK>();
+            hdr.firstFree = pfh.hdr.firstFree;
+            hdr.numPages = pfh.hdr.numPages;
+
+            hdr.extRecordSize = recordSize;
+            hdr.totalHeight = totalHeight;
+            hdr.indexType = ConstProperty.AttrType.INT;
+
+
+            hdr.root = CreateNodeDisk(length);
+
+            hdr.dicCount = dicCount;
+            var dic = new Dictionary<int, int>();
+            hdr.dic = dic;
+            return hdr;
+        }
+
+        private NodeDisk<TK> CreateNodeDisk(int length)
+        {
+            NodeDisk<TK> node = new NodeDisk<TK>();
+            // 节点容量
+            node.length = length;
+            node.isLeaf = 0;
+            node.capacity = 0;
+            // 当前节点所在的高度（相对于子节点开始）
+            node.height = 0;
+            node.keyList = new List<TK> {};
+            node.childRidList = new List<RID> {};
+
+            return node;
         }
     }
 }

@@ -269,7 +269,7 @@ namespace Database.IndexManage
             imp.DeleteRec(node.CurrentRID.Rid);
         }
 
-        private Tuple<Node<TK, RIDKey<TK>>, List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
+        public Tuple<Node<TK, RIDKey<TK>>, List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, RID rid)
         {
             List<RID> ridlist = null;
             Node<TK, RIDKey<TK>> node = new Node<TK, RIDKey<TK>>();
