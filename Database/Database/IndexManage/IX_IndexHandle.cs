@@ -336,10 +336,13 @@ namespace Database.IndexManage
             nl.isLeaf = node.IsLeaf == true ? 0 : 1;
             nl.height = node.Height;
 
-            if (nl.capacity != 0)nl.capacity = node.Values.Count;
-            if (nl.keyList != null) nl.keyList = node.Values.ToList();
+            if (node.Values == null) throw new Exception();
 
-            if (node.Property != null)
+            nl.capacity = node.Values.Count;
+            nl.keyList = node.Values.ToList();
+
+            // leaf node
+            if (node.Property == null)
             {
                 nl.childRidList = new List<RID>();
                 foreach (var v in node.Property)

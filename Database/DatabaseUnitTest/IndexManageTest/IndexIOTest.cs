@@ -100,9 +100,9 @@ namespace DatabaseUnitTest.IndexManageTest
             PF_Manager pfm = new PF_Manager();
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString, ConverStringToInt, CreatNewTK);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"E:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
 
-            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt");
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"E:\IndexFile.txt");
 
             ifh.InsertEntry(1);
         }

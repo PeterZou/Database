@@ -85,7 +85,7 @@ namespace Database.IndexManage
 
             // childRidList
             // TODO
-            if (nl.capacity != 0)
+            if (nl.childRidList != null && nl.childRidList.Count != 0)
             {
                 for (int i = 0; i < nl.capacity + 1; i++)
                 {

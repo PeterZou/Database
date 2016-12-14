@@ -38,9 +38,6 @@ namespace DatabaseUnitTest.IndexManageTest
         {
             XmlConfigurator.Configure();
 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
             BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(3);
 
             var list = new List<NodeInt>();
@@ -52,12 +49,9 @@ namespace DatabaseUnitTest.IndexManageTest
 
             }
             bt.Traverse(bt.Root, bt.TraverseOutput);
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed);
             bt.Delete(1);
             bt.RepairAfterDelete();
             bt.Traverse(bt.Root, bt.TraverseOutput);
-            Console.ReadKey();
         }
     }
 }
