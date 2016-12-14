@@ -28,20 +28,23 @@ namespace Database.IndexManage
 
         public IX_FileHdr<TK> hdr;                        // file header
         public IX_PageHdr pHdr;
+        public Func<TK, string> ConverTKToString;
 
-        public IX_FileHandle()
+        public IX_FileHandle(PF_FileHandle pfh, Func<TK, string> converTKToString)
         {
             bFileOpen = false;
             bHdrChanged = false;
-            pfHandle = new PF_FileHandle();
+            pfHandle = pfh;
+            this.ConverTKToString = converTKToString;
         }
 
-        public IX_FileHandle(IX_IndexHandle<TK> iih)
+        public IX_FileHandle(IX_IndexHandle<TK> iih, PF_FileHandle pfh, Func<TK, string> converTKToString)
         {
             bFileOpen = false;
             bHdrChanged = false;
             this.iih = iih;
-            pfHandle = new PF_FileHandle();
+            pfHandle = pfh;
+            this.ConverTKToString = converTKToString;
         }
 
         override public void SetFileHeader(PF_PageHandle ph)
@@ -87,7 +90,7 @@ namespace Database.IndexManage
             int size = CalculateSize(pData.Length);
             IsValid(size);
 
-            if (pData == null || pData.Length == 0 || pData.Length > fullRecordSize(size)) throw new Exception();
+            if (pData == null || pData.Length == 0 || pData.Length < fullRecordSize(size)) throw new Exception();
 
             var tuple = GetNextFreeSlot(size);
 
@@ -267,6 +270,26 @@ namespace Database.IndexManage
             return pHdr;
         }
 
+        
+        public void FlushPages()
+        {
+            if (!bFileOpen) throw new Exception();
+
+            if (bHdrChanged)
+            {
+                // write to the filehdr
+                IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString);
+
+                bHdrChanged = false;
+            }
+            pfHandle.pf_bm.FlushPages(pfHandle.fd);
+        }
+
+        /// <summary>
+        /// slot to set the record putting on the right page which have the same size for a single record 
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
         private int CalculateSize(int length)
         {
             // TODO defalut TK occupied 4 Bytes

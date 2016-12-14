@@ -49,9 +49,10 @@ namespace Database.IndexManage
             return content;
         }
 
-        public static interfaceFileHdr ReadIndexFileHdr(string filePath,Func<string, TK> ConverStringToTK)
+        public static interfaceFileHdr ReadIndexFileHdr(PF_FileHandle pfh, Func<string, TK> ConverStringToTK)
         {
-            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            var fs = pfh.fs;
+            try
             {
                 fs.Position = 0;
                 StreamReader sr = new StreamReader(fs);
@@ -60,6 +61,11 @@ namespace Database.IndexManage
                 FileManagerUtil.ExtractFile(sr, pf_fh);
                 ExtractIndex(sr, pf_fh, ConverStringToTK);
                 return pf_fh;
+            }
+            catch (IOException e)
+            {
+                fs.Close();
+                throw new IOException(e.ToString());
             }
         }
 
@@ -149,7 +155,7 @@ namespace Database.IndexManage
 
             // TODO Set TK is int
             length += nl.capacity * ConstProperty.Int_Size;
-            if(nl.capacity != 0)length += nl.capacity * ConstProperty.RM_Page_RID_SIZE + ConstProperty.RM_Page_RID_SIZE;
+            if(nl.childRidList != null)length += nl.capacity * ConstProperty.RM_Page_RID_SIZE + ConstProperty.RM_Page_RID_SIZE;
             return length;
         }
 

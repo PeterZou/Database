@@ -80,11 +80,11 @@ namespace DatabaseUnitTest.IndexManageTest
         [TestMethod]
         public void ReadTheIndexFileHdr()
         {
-            string filePath = @"D:\test.txt";
+            //string filePath = @"D:\test.txt";
 
-            char[] data = new char[122];
+            //char[] data = new char[122];
 
-            var d = IndexManagerUtil<int>.ReadIndexFileHdr(filePath, ConverStringToInt);
+            //var d = IndexManagerUtil<int>.ReadIndexFileHdr(filePath, ConverStringToInt);
         }
 
         [TestMethod]
@@ -105,6 +105,12 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_FileHandle<int> ifh = ixm.OpenFile(@"E:\IndexFile.txt");
 
             ifh.InsertEntry(1);
+
+            ifh.FlushPages();
+
+            ifh.InsertEntry(2);
+
+            ifh.FlushPages();
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Database.IndexManage
         { }
 
         public IX_IndexHandle(int treeHeight, NodeDisk<TK> root, 
-            Func<string, TK> converStringToTK, Func<TK, string> converTKToString, Func<TK> creatNewTK)
+            Func<string, TK> converStringToTK, Func<TK, string> converTKToString, Func<TK> creatNewTK, IX_FileHandle<TK> imp)
         {
             this.CreatNewTK = creatNewTK;
             this.treeHeight = treeHeight;
@@ -42,6 +42,7 @@ namespace Database.IndexManage
             bPlusTreeProvider = new BPlusTreeProvider<TK, RIDKey<TK>>(treeHeight,Root);
             this.ConverStringToTK = converStringToTK;
             this.ConverTKToString = converTKToString;
+            this.imp = imp;
         }
 
         public Func<string, TK> ConverStringToTK;

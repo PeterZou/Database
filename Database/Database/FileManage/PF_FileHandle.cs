@@ -22,7 +22,7 @@ namespace Database.FileManage
         public bool bFileOpen;                                 // file open flag
         private bool bHdrChanged;                              // dirty flag for file hdr
         public int fd;                                        // OS file descriptor
-        private FileStream fs;
+        public FileStream fs;
 
         public PF_FileHdr hdr;
         private ILog m_log;

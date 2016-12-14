@@ -55,9 +55,11 @@ namespace Database.IndexManage
         
         public IX_FileHandle<TK> OpenFile(string fileName)
         {
-            IX_FileHandle<TK> ixi = new IX_FileHandle<TK>();
+            PF_FileHandle pfh = pfm.OpenFile(fileName);
 
-            var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(fileName,ConverStringToTK);
+            IX_FileHandle<TK> ixi = new IX_FileHandle<TK>(pfh, ConverTKToString);
+
+            var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(pfh,ConverStringToTK);
 
             var header = headerTmp as IX_FileHdr<TK>;
 
@@ -65,7 +67,8 @@ namespace Database.IndexManage
 
             if (ixi == null) throw new Exception();
 
-            IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(header.totalHeight,header.root,ConverStringToTK,ConverTKToString,CreatNewTK);
+            IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(header.totalHeight,header.root,ConverStringToTK,
+                ConverTKToString,CreatNewTK,ixi);
             ixi.iih = iih;
 
             ixi.Open(header);
@@ -111,7 +114,7 @@ namespace Database.IndexManage
 
             hdr.dicCount = dicCount;
             var dic = new Dictionary<int, int>();
-            dic.Add(0, 0);
+            dic.Add(0, -1);
             hdr.dic = dic;
             return hdr;
         }
