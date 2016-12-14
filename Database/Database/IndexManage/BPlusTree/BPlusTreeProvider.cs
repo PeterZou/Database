@@ -52,9 +52,11 @@ namespace Database.IndexManage.BPlusTree
         }
 
         // TODO 单例
-        public BPlusTreeProvider(int degree)
+        public BPlusTreeProvider(int degree, Node<TK, TV> root)
         {
             bBplusTree = new BPlusTree<TK, TV>(degree);
+            this.Root = root;
+            this.SearchNode = root;
         }
 
         public void InsertRepair(Node<TK, TV> node)

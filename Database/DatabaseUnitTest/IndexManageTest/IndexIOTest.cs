@@ -1,15 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Database.IndexManage;
 using Database.IndexManage.IndexValue;
-using Database.FileManage;
 using Database.Const;
 using Database.RecordManage;
 using System.IO;
+using Database.FileManage;
 
 namespace DatabaseUnitTest.IndexManageTest
 {
@@ -18,6 +15,7 @@ namespace DatabaseUnitTest.IndexManageTest
     {
         private Func<int, string> ConverIntToString = p => { string str = Convert.ToString(p); return str; };
         private Func<string, int> ConverStringToInt = p => {int num =0; Int32.TryParse(p,out num); return num; };
+        private Func<int> CreatNewTK = () => { return 0; };
 
         private NodeDisk<int> CreateNodeDisk()
         {
@@ -86,10 +84,7 @@ namespace DatabaseUnitTest.IndexManageTest
 
             char[] data = new char[122];
 
-            using (FileStream fs = new FileStream(filePath, FileMode.Open,FileAccess.Read))
-            {
-                var d = IndexManagerUtil<int>.ReadIndexFileHdr(fs, ConverStringToInt);
-            }
+            var d = IndexManagerUtil<int>.ReadIndexFileHdr(filePath, ConverStringToInt);
         }
 
         [TestMethod]
@@ -97,6 +92,19 @@ namespace DatabaseUnitTest.IndexManageTest
         {
             var node = CreateNodeDisk();
             char[] data = IndexManagerUtil<int>.SetNodeDiskToChar(node, ConverIntToString);
+        }
+
+        [TestMethod]
+        public void CreateAndOpenIndexFileTest()
+        {
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString, ConverStringToInt, CreatNewTK);
+
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt");
+
+            ifh.InsertEntry(1);
         }
     }
 }

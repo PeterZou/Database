@@ -18,12 +18,14 @@ namespace Database.IndexManage
 
         private Func<TK, string> ConverTKToString;
         private Func<string, TK> ConverStringToTK;
+        private Func<TK> CreatNewTK;
 
-        public IX_Manager(PF_Manager pfm, Func<TK, string> ConverTKToString, Func<string, TK> ConverStringToTK)
+        public IX_Manager(PF_Manager pfm, Func<TK, string> ConverTKToString, Func<string, TK> ConverStringToTK, Func<TK> CreatNewTK)
         {
             this.pfm = pfm;
             this.ConverStringToTK = ConverStringToTK;
             this.ConverTKToString = ConverTKToString;
+            this.CreatNewTK = CreatNewTK;
         }
 
         public void CreateFile(string fileName, int recordSize, ConstProperty.AttrType indexType)
@@ -37,7 +39,7 @@ namespace Database.IndexManage
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);
 
-            var hdr = CreatIndexFileHdr(pfh,3,30,6,3);
+            var hdr = CreatIndexFileHdr(pfh, IndexManagerUtil<int>.GetNodeDiskLength(), 30,6,1);
             char[] data = IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString);
 
             FileManagerUtil.WriteFileHdr(data, 0, pfm.fs);
@@ -53,19 +55,20 @@ namespace Database.IndexManage
         
         public IX_FileHandle<TK> OpenFile(string fileName)
         {
-            IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(
-                );
+            IX_FileHandle<TK> ixi = new IX_FileHandle<TK>();
 
-            IX_FileHandle<TK> ixi = new IX_FileHandle<TK>(iih);
-
-            var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(pfm.fs,ixi.iih.ConverStringToTK);
+            var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(fileName,ConverStringToTK);
 
             var header = headerTmp as IX_FileHdr<TK>;
 
             if (header == null) throw new Exception();
 
             if (ixi == null) throw new Exception();
-            ixi.Open(ixi.pfHandle, header);
+
+            IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(header.totalHeight,header.root,ConverStringToTK,ConverTKToString,CreatNewTK);
+            ixi.iih = iih;
+
+            ixi.Open(header);
 
             return ixi;
         }
@@ -108,6 +111,7 @@ namespace Database.IndexManage
 
             hdr.dicCount = dicCount;
             var dic = new Dictionary<int, int>();
+            dic.Add(0, 0);
             hdr.dic = dic;
             return hdr;
         }

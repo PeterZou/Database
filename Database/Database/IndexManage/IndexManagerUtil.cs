@@ -49,15 +49,18 @@ namespace Database.IndexManage
             return content;
         }
 
-        public static interfaceFileHdr ReadIndexFileHdr(FileStream fs, Func<string, TK> ConverStringToTK)
+        public static interfaceFileHdr ReadIndexFileHdr(string filePath,Func<string, TK> ConverStringToTK)
         {
-            fs.Position = 0;
-            StreamReader sr = new StreamReader(fs);
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                fs.Position = 0;
+                StreamReader sr = new StreamReader(fs);
 
-            var pf_fh = new IX_FileHdr<TK>();
-            FileManagerUtil.ExtractFile(sr, pf_fh);
-            ExtractIndex(sr, pf_fh, ConverStringToTK);
-            return pf_fh;
+                var pf_fh = new IX_FileHdr<TK>();
+                FileManagerUtil.ExtractFile(sr, pf_fh);
+                ExtractIndex(sr, pf_fh, ConverStringToTK);
+                return pf_fh;
+            }
         }
 
         public static char[] SetNodeDiskToChar(NodeDisk<TK> nl, Func<TK, string> ConverTKToString)
@@ -82,14 +85,18 @@ namespace Database.IndexManage
 
             // childRidList
             // TODO
-            for (int i = 0; i < nl.capacity+1; i++)
+            if (nl.capacity != 0)
             {
-                FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Page,
-                    (3 + nl.capacity + 2*i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
+                for (int i = 0; i < nl.capacity + 1; i++)
+                {
+                    FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Page,
+                        (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
 
-                FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Slot,
-                    (3 + nl.capacity + 2*i) * ConstProperty.Int_Size + 1+ ConstProperty.Int_Size, ConstProperty.Int_Size);
+                    FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Slot,
+                        (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1 + ConstProperty.Int_Size, ConstProperty.Int_Size);
+                }
             }
+            
             return data;
         }
 
@@ -110,15 +117,40 @@ namespace Database.IndexManage
             }
 
             node.childRidList = new List<RID>();
-            for (int i = 0; i < node.capacity+1; i++)
+            if (node.capacity != 0)
             {
-                int pageNum = Convert.ToInt32(dataStr.Substring(
-                    (2 + node.capacity + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                int slotNum = Convert.ToInt32(dataStr.Substring(
-                    (2 + node.capacity + i + 1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
-                node.childRidList.Add(new RID(pageNum, slotNum));
+                for (int i = 0; i < node.capacity + 1; i++)
+                {
+                    int pageNum = Convert.ToInt32(dataStr.Substring(
+                        (2 + node.capacity + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                    int slotNum = Convert.ToInt32(dataStr.Substring(
+                        (2 + node.capacity + i + 1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                    node.childRidList.Add(new RID(pageNum, slotNum));
+                }
             }
+            
             return node;
+        }
+
+        public static int GetNodeDiskLength()
+        {
+            int length = 0;
+
+            length += 3 * ConstProperty.Int_Size + 1;
+
+            return length;
+        }
+
+        public static int GetNodeDiskLength(NodeDisk<TK> nl)
+        {
+            int length = 0;
+
+            length += 3 * ConstProperty.Int_Size + 1;
+
+            // TODO Set TK is int
+            length += nl.capacity * ConstProperty.Int_Size;
+            if(nl.capacity != 0)length += nl.capacity * ConstProperty.RM_Page_RID_SIZE + ConstProperty.RM_Page_RID_SIZE;
+            return length;
         }
 
         private static void ExtractIndex(StreamReader sr, IX_FileHdr<TK> pf_fh, Func<string, TK> ConverStringToTK)

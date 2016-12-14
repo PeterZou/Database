@@ -29,11 +29,19 @@ namespace Database.IndexManage
         public IX_FileHdr<TK> hdr;                        // file header
         public IX_PageHdr pHdr;
 
+        public IX_FileHandle()
+        {
+            bFileOpen = false;
+            bHdrChanged = false;
+            pfHandle = new PF_FileHandle();
+        }
+
         public IX_FileHandle(IX_IndexHandle<TK> iih)
         {
             bFileOpen = false;
             bHdrChanged = false;
             this.iih = iih;
+            pfHandle = new PF_FileHandle();
         }
 
         override public void SetFileHeader(PF_PageHandle ph)
@@ -122,9 +130,10 @@ namespace Database.IndexManage
             iih.DeleteEntry(key);
         }
 
-        public void InsertEntry(RID rid,TK key)
+        public void InsertEntry(TK key)
         {
-            RIDKey<TK> value = new RIDKey<TK>(rid,key);
+            // need to replace
+            RIDKey<TK> value = new RIDKey<TK>(new RID(-2,-2),key);
             iih.InsertEntry(value);
         }
 
@@ -234,14 +243,11 @@ namespace Database.IndexManage
             throw new Exception();
         }
 
-        public void Open(PF_FileHandle pfh, IX_FileHdr<TK> hdr_tmp)
+        public void Open(IX_FileHdr<TK> hdr_tmp)
         {
-            if (bFileOpen || pfHandle != null) throw new Exception();
-
-            if (pfh == null) throw new Exception();
+            if (bFileOpen) throw new Exception();
 
             bFileOpen = true;
-            pfHandle = pfh;
 
             hdr = hdr_tmp;
 
