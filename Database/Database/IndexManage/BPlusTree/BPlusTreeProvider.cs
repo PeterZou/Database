@@ -41,9 +41,14 @@ namespace Database.IndexManage.BPlusTree
             bBplusTree.Search(key);
         }
 
-        public void Traverse(Node<TK, TV> node, Action<Node<TK, TV>> action)
+        public void TraverseForword(Node<TK, TV> node, Action<Node<TK, TV>> action)
         {
-            bBplusTree.Traverse(node,action);
+            bBplusTree.TraverseForword(node,action);
+        }
+
+        public void TraverseBackword(Node<TK, TV> node, Action<Node<TK, TV>> action)
+        {
+            bBplusTree.TraverseBackword(node, action);
         }
 
         public Node<TK, TV> SearchInTimes(int times,TK key, List<TV> ridList)

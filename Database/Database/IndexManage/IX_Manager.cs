@@ -115,6 +115,12 @@ namespace Database.IndexManage
             hdr.dicCount = dicCount;
             var dic = new Dictionary<int, int>();
             dic.Add(0, -1);
+            dic.Add(1, -1);
+            dic.Add(2, -1);
+            dic.Add(3, -1);
+            dic.Add(4, -1);
+            dic.Add(5, -1);
+            dic.Add(6, -1);
             hdr.dic = dic;
             return hdr;
         }

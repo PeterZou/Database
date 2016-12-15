@@ -62,7 +62,6 @@ namespace Database.IndexManage
         private List<RIDKey<TK>> ridkeyList = new List<RIDKey<TK>>();
 
         private Node<TK, RIDKey<TK>> SubRoot { set; get; }
-        private Node<TK, RIDKey<TK>> LeafNode { set; get; }
         private List<RID> ridList = new List<RID>();
 
         #region Import disk to memory
@@ -164,8 +163,12 @@ namespace Database.IndexManage
             GetSubTreeFromDisk(value.Key);
 
             bPlusTreeProvider.Insert(value);
+
+            // 12152016
+            SubRoot = bPlusTreeProvider.bBplusTree.Root;
+
             // 持久化到本地硬盘
-            bPlusTreeProvider.Traverse(SubRoot, InsertExportToDisk);
+            bPlusTreeProvider.TraverseBackword(SubRoot, InsertExportToDisk);
 
             // 回溯处理
             // 回溯停止条件：1.根节点values>=MaxDegree,2.不是真正的根节点
@@ -176,7 +179,7 @@ namespace Database.IndexManage
                 GetSubTreeFromDiskUpper(SubRoot.CurrentRID.Rid);
                 bPlusTreeProvider.InsertRepair(SubRoot);
                 // 持久化到本地硬盘
-                bPlusTreeProvider.Traverse(SubRoot, InsertExportToDisk);
+                bPlusTreeProvider.TraverseBackword(SubRoot, InsertExportToDisk);
             }
 
         }
@@ -189,7 +192,7 @@ namespace Database.IndexManage
             bPlusTreeProvider.Delete(key);
 
             // 持久化到本地硬盘
-            bPlusTreeProvider.Traverse(SubRoot, DeleteExportToDisk);
+            bPlusTreeProvider.TraverseForword(SubRoot, DeleteExportToDisk);
 
             // 回溯处理
             // 回溯停止条件：1.不是真正的根节点,2.根节点values<MinDegree
@@ -201,7 +204,7 @@ namespace Database.IndexManage
                 var node = GetSubTreeFromDiskUpper(SubRoot.CurrentRID.Rid);
                 bPlusTreeProvider.RepairAfterDelete(node);
                 // 持久化到本地硬盘
-                bPlusTreeProvider.Traverse(SubRoot, DeleteExportToDisk);
+                bPlusTreeProvider.TraverseForword(SubRoot, DeleteExportToDisk);
             }
         }
         #endregion
@@ -280,23 +283,51 @@ namespace Database.IndexManage
             } 
         }
 
+        List<RID> insertRIDList = new List<RID>();
         // 添加单个node到硬盘
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             var nodeDisk = ConvertNodeToNodeDisk(node);
-            
-            // rote node
-            if (node.IsLeaf == true && node.Height == 0)
+
+            // Root node
+            if (node.Parent == null)
             {
+                if (node.IsLeaf == false)
+                {
+                    nodeDisk.childRidList.Clear();
+                    foreach (var i in insertRIDList)
+                    {
+                        nodeDisk.childRidList.Add(i);
+                    }
+
+                    insertRIDList.Clear();
+                }
+
                 Root = node;
                 imp.hdr.root = nodeDisk;
                 ChangeOrNot = true;
             }
             else
             {
+                // Non-leaf
+                if (node.IsLeaf == false)
+                {
+                    foreach (var i in insertRIDList)
+                    {
+                        nodeDisk.childRidList.Add(i);
+                    }
+
+                    insertRIDList.Clear();
+                }
+                
                 // set the nl to the disk
                 char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, ConverTKToString);
-                imp.InsertRec(data);
+                var currentRID = imp.InsertRec(data);
+
+                if (node.IsLeaf == true)
+                {
+                    insertRIDList.Add(currentRID);
+                }
             }
         }
 
@@ -356,13 +387,13 @@ namespace Database.IndexManage
             nl.capacity = node.Values.Count;
             nl.keyList = node.Values.ToList();
 
-            // leaf node
+            // non-leaf node
             if (node.Property == null)
             {
                 nl.childRidList = new List<RID>();
-                foreach (var v in node.Property)
+                foreach (var v in node.ChildrenNodes)
                 {
-                    nl.childRidList.Add(v.Rid);
+                    nl.childRidList.Add(default(RID));
                 }
             }
             

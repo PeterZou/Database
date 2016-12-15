@@ -1,4 +1,5 @@
-﻿using Database.FileManage;
+﻿using Database.Const;
+using Database.FileManage;
 using Database.RecordManage;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,10 @@ namespace Database.IndexManage
         {
             int length = buf.Length;
             base.From_buf(buf);
-            Int32.TryParse(new string(buf).Substring(length, 4), out size);
+            char[] data = new string(buf).Substring(3 * ConstProperty.PF_PageHdr_SIZE+Mapsize(), 
+                ConstProperty.PF_PageHdr_SIZE).ToArray();
+            Int32.TryParse(new string(data.ToArray()),
+                out size);
 
         }
 

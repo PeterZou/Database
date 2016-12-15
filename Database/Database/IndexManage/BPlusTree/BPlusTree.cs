@@ -162,7 +162,7 @@ namespace Database.IndexManage.BPlusTree
         /// Go through the tree include the nodes and leaves
         /// BFS
         /// </summary>
-        public void Traverse(Node<TK, TV> node, Action<Node<TK, TV>> action)
+        public void TraverseForword(Node<TK, TV> node, Action<Node<TK, TV>> action)
         {
             if (node == null) return;
 
@@ -171,9 +171,23 @@ namespace Database.IndexManage.BPlusTree
             {
                 foreach (var n in node.ChildrenNodes)
                 {
-                    Traverse(n, action);
+                    TraverseForword(n, action);
                 }
             } 
+        }
+
+        public void TraverseBackword(Node<TK, TV> node, Action<Node<TK, TV>> action)
+        {
+            if (node == null) return;
+
+            if (node.ChildrenNodes != null)
+            {
+                foreach (var n in node.ChildrenNodes)
+                {
+                    TraverseBackword(n, action);
+                }
+            }
+            action(node);
         }
 
         public void TraverseOutput(Node<TK, TV> node)

@@ -48,10 +48,10 @@ namespace DatabaseUnitTest.IndexManageTest
                 bt.InsertRepair();
 
             }
-            bt.Traverse(bt.Root, bt.TraverseOutput);
+            bt.TraverseForword(bt.Root, bt.TraverseOutput);
             bt.Delete(1);
             bt.RepairAfterDelete();
-            bt.Traverse(bt.Root, bt.TraverseOutput);
+            bt.TraverseForword(bt.Root, bt.TraverseOutput);
         }
     }
 }
