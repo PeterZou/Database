@@ -91,9 +91,9 @@ namespace Database.Interface
             return data;
         }
 
-        protected void SetSlotPointer(PF_PageHandle ph, int slot, char[] data)
+        protected void SetSlotPointer(PF_PageHandle ph, int slot, char[] data,int childNum)
         {
-            int offset = CalcOffset(slot,-1);
+            int offset = CalcOffset(slot, childNum);
 
             // Replace
             for (int i = 0; i < data.Length; i++)
@@ -102,14 +102,9 @@ namespace Database.Interface
             }
         }
 
-        private int CalcOffset(int slot,int size)
+        protected void SetSlotPointer(PF_PageHandle ph, int slot, char[] data)
         {
-            IsValid(size);
-            var bitmap = new Bitmap(GetNumSlots(size));
-            int offset = (new RM_PageHdr(GetNumSlots(size), new PF_PageHdr())).Size();
-            offset += slot * fullRecordSize(size);
-
-            return offset;
+            SetSlotPointer(ph, slot, data, -1);
         }
 
         //
@@ -129,5 +124,7 @@ namespace Database.Interface
         abstract public void DeleteRec(RID rid);
 
         abstract public void SetFileHeader(PF_PageHandle ph);
+
+        abstract public int CalcOffset(int slot, int size);
     }
 }

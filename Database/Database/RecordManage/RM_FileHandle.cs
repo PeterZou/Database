@@ -95,6 +95,15 @@ namespace Database.RecordManage
             ph.pPageData = RecordManagerUtil.SetFileHeaderToChar(hdr);
         }
 
+        override public int CalcOffset(int slot, int size)
+        {
+            IsValid(size);
+            int offset = (new RM_PageHdr(GetNumSlots(size), new PF_PageHdr())).Size();
+            offset += slot * fullRecordSize(size);
+
+            return offset;
+        }
+
         public void UpdateRec(RM_Record rec)
         {
             IsValid(-1);

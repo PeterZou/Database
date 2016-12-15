@@ -47,17 +47,6 @@ namespace Database.IndexManage
             this.ConverTKToString = converTKToString;
         }
 
-        override public void SetFileHeader(PF_PageHandle ph)
-        {
-            ph.pPageData = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, iih.ConverTKToString);
-        }
-
-        override public int fullRecordSize(int size)
-        {
-            // TODO defalut TK occupied 4 Bytes
-            return 4 *ConstProperty.Int_Size+size* ConstProperty.Int_Size + size*ConstProperty.RM_Page_RID_SIZE;
-        }
-
         override public void DeleteRec(RID rid)
         {
             int pageNum = rid.Page;
@@ -85,12 +74,25 @@ namespace Database.IndexManage
             SetPageHeader(ph, pHdr);
         }
 
+        override public void SetFileHeader(PF_PageHandle ph)
+        {
+            ph.pPageData = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, iih.ConverTKToString);
+        }
+
+        override public int fullRecordSize(int size)
+        {
+            // TODO defalut TK occupied 4 Bytes
+            return 4 * ConstProperty.Int_Size + ConstProperty.Int_Size + ConstProperty.RM_Page_RID_SIZE;
+        }
+
         override public RID InsertRec(char[] pData)
         {
-            int size = CalculateSize(pData.Length);
+            // Set the child and value num in the pData 
+            int size = CalculateSize(pData.Length,pData[4]-48);
+
             IsValid(size);
 
-            if (pData == null || pData.Length == 0 || pData.Length < fullRecordSize(size)) throw new Exception();
+            if (pData == null || pData.Length == 0) throw new Exception();
 
             var tuple = GetNextFreeSlot(size);
 
@@ -106,7 +108,7 @@ namespace Database.IndexManage
                 pHdr.numFreeSlots = GetNumSlots(size);
             }
 
-            SetSlotPointer(ph, slotNum, pData);
+            SetSlotPointer(ph, slotNum, pData, size);
 
             bitmap.Set((UInt32)slotNum); // slot s is no longer free
             pHdr.numFreeSlots--;
@@ -120,6 +122,15 @@ namespace Database.IndexManage
             SetPageHeader(ph, pHdr);
 
             return rid;
+        }
+
+        override public int CalcOffset(int slot, int size)
+        {
+            IsValid(size);
+            int offset = (new RM_PageHdr(GetNumSlots(size), new PF_PageHdr())).Size();
+            offset += slot * fullRecordSize(size);
+
+            return offset;
         }
 
         public Node<TK, RIDKey<TK>> ShowPartitialBplustree(RID rid)
@@ -294,10 +305,18 @@ namespace Database.IndexManage
         /// </summary>
         /// <param name="length"></param>
         /// <returns></returns>
-        private int CalculateSize(int length)
+        private int CalculateSize(int length,int flag)
         {
             // TODO defalut TK occupied 4 Bytes
-            return (length - 4 * ConstProperty.Int_Size) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size);
+            // Leaf:0
+            if (flag == 0)
+            {
+                return (length - 3 * ConstProperty.Int_Size - 1) / ConstProperty.Int_Size;
+            }
+            else
+            {
+                return (length - 3 * ConstProperty.Int_Size-1) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size);
+            }
         }
     }
 }
