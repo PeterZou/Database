@@ -13,7 +13,7 @@ namespace Database.IndexManage
 {
     public static class IndexManagerUtil<TK>
     {
-        public static char[] WriteIndexFileHdr(IX_FileHdr<TK> hdr, Func<TK, string> ConverTKToString)
+        public static char[] IndexFileHdrToCharArray(IX_FileHdr<TK> hdr, Func<TK, string> ConverTKToString)
         {
             char[] content = new char[ConstProperty.PF_FILE_HDR_SIZE];
             FileManagerUtil.ReplaceTheNextFree(content
@@ -47,6 +47,13 @@ namespace Database.IndexManage
                 , charArray2, 5 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, charArray2.Length);
 
             return content;
+        }
+
+        public static void WriteIndexFileHdr(IX_FileHdr<TK> hdr, Func<TK, string> ConverTKToString,
+            FileStream fs, int fd)
+        {
+            var data = IndexFileHdrToCharArray(hdr, ConverTKToString);
+            FileManagerUtil.WriteFileHdr(data,fd,fs);
         }
 
         public static interfaceFileHdr ReadIndexFileHdr(PF_FileHandle pfh, Func<string, TK> ConverStringToTK)

@@ -49,7 +49,7 @@ namespace Database.IndexManage
 
         override public void SetFileHeader(PF_PageHandle ph)
         {
-            ph.pPageData = IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, iih.ConverTKToString);
+            ph.pPageData = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, iih.ConverTKToString);
         }
 
         override public int fullRecordSize(int size)
@@ -138,6 +138,11 @@ namespace Database.IndexManage
             // need to replace
             RIDKey<TK> value = new RIDKey<TK>(new RID(-2,-2),key);
             iih.InsertEntry(value);
+            if (iih.ChangeOrNot == true)
+            {
+                bHdrChanged = true;
+                iih.ChangeOrNot = false;
+            }
         }
 
         public RM_Record GetRec(RID rid)
@@ -278,8 +283,7 @@ namespace Database.IndexManage
             if (bHdrChanged)
             {
                 // write to the filehdr
-                IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString);
-
+                IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString,pfHandle.fs, pfHandle.fd);
                 bHdrChanged = false;
             }
             pfHandle.pf_bm.FlushPages(pfHandle.fd);

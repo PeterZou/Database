@@ -64,7 +64,7 @@ namespace DatabaseUnitTest.IndexManageTest
         public void WriteTheIndexFileHdr()
         {
             var hdr = CreatIndexFileHdr();
-            char[] data = IndexManagerUtil<int>.WriteIndexFileHdr(hdr, ConverIntToString);
+            char[] data = IndexManagerUtil<int>.IndexFileHdrToCharArray(hdr, ConverIntToString);
 
             string filePath = @"D:\test.txt";
 
@@ -109,6 +109,11 @@ namespace DatabaseUnitTest.IndexManageTest
             ifh.FlushPages();
 
             ifh.InsertEntry(2);
+            ifh.InsertEntry(3);
+            ifh.InsertEntry(4);
+            ifh.InsertEntry(5);
+            ifh.InsertEntry(6);
+            //ifh.InsertEntry(7);
 
             ifh.FlushPages();
         }

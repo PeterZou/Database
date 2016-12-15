@@ -26,6 +26,8 @@ namespace Database.IndexManage
 
         public Node<TK, RIDKey<TK>> SelectNode { set; get; }
 
+        public bool ChangeOrNot { get; set; }
+
         public Node<TK, RIDKey<TK>> Root;
 
         private readonly static RID RootRID = new RID(-1, -1);
@@ -43,6 +45,7 @@ namespace Database.IndexManage
             this.ConverStringToTK = converStringToTK;
             this.ConverTKToString = converTKToString;
             this.imp = imp;
+            ChangeOrNot = false;
         }
 
         public Func<string, TK> ConverStringToTK;
@@ -281,9 +284,20 @@ namespace Database.IndexManage
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             var nodeDisk = ConvertNodeToNodeDisk(node);
-            char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, ConverTKToString);
-            // set the nl to the disk
-            imp.InsertRec(data);
+            
+            // rote node
+            if (node.IsLeaf == true && node.Height == 0)
+            {
+                Root = node;
+                imp.hdr.root = nodeDisk;
+                ChangeOrNot = true;
+            }
+            else
+            {
+                // set the nl to the disk
+                char[] data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, ConverTKToString);
+                imp.InsertRec(data);
+            }
         }
 
         // 从硬盘删除单个node
@@ -309,7 +323,7 @@ namespace Database.IndexManage
                 // put the property to the leaf
                 for (int i = 0; i < nodeDisk.capacity; i++)
                 {
-                    node.Property.Add(new RIDKey<TK>(nodeDisk.childRidList[i], nodeDisk.keyList[i]));
+                    node.Property.Add(new RIDKey<TK>(default(RID), nodeDisk.keyList[i]));
                 }
             }
             else

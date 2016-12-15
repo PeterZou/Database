@@ -40,7 +40,7 @@ namespace Database.IndexManage
             PF_FileHandle pfh = pfm.OpenFile(fileName);
 
             var hdr = CreatIndexFileHdr(pfh, IndexManagerUtil<int>.GetNodeDiskLength(), 30,6,1);
-            char[] data = IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString);
+            char[] data = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, ConverTKToString);
 
             FileManagerUtil.WriteFileHdr(data, 0, pfm.fs);
             pfm.fs.Close();
@@ -84,7 +84,7 @@ namespace Database.IndexManage
             if (ixi.imp.bHdrChanged)
             {
                 int num = IO.IOFDDic.FDMapping.Keys.Max() + 1;
-                IndexManagerUtil<TK>.WriteIndexFileHdr(ixi.imp.hdr,ixi.ConverTKToString);
+                IndexManagerUtil<TK>.WriteIndexFileHdr(ixi.imp.hdr,ixi.ConverTKToString, ixi.imp.pfHandle.pf_bm.fs,num);
 
                 ixi.imp.bHdrChanged = false;
             }
