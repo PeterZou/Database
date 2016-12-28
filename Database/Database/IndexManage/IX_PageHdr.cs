@@ -11,7 +11,7 @@ namespace Database.IndexManage
 {
     public class IX_PageHdr: RM_PageHdr
     {
-
+        // Number of the key in the node to clearify the dic in the file header.
         public int size;
 
         public IX_PageHdr() : base()
@@ -20,6 +20,11 @@ namespace Database.IndexManage
         public IX_PageHdr(int numSlots, PF_PageHdr pf_ph,int size) : base(numSlots,pf_ph)
         {
             this.size = size;
+        }
+
+        public override int Size()
+        {
+            return base.Size() + ConstProperty.Int_Size;
         }
 
         public override void From_buf(char[] buf)
@@ -36,9 +41,8 @@ namespace Database.IndexManage
         public override char[] To_buf()
         {
             char[] array = base.To_buf();
-            char[] numArray = new char[4];
-            FileManagerUtil.ReplaceTheNextFree(numArray, size, 0);
-            return (new string(array) + new string(numArray)).ToArray();
+            FileManagerUtil.ReplaceTheNextFree(array, size,array.Length-4,4);
+            return array;
         }
     }
 }

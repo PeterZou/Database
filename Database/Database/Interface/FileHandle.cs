@@ -41,7 +41,7 @@ namespace Database.Interface
             return slots;
         }
 
-        public void SetPageHeader(PF_PageHandle ph, RM_PageHdr pHdr)
+        public void SetPageHeader(PF_PageHandle ph, PageHdr pHdr)
         {
             // Just replace the head
             char[] header = pHdr.To_buf();

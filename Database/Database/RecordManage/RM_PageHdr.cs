@@ -9,7 +9,7 @@ using Database.Interface;
 
 namespace Database.RecordManage
 {
-    public class RM_PageHdr
+    public class RM_PageHdr: PageHdr
     {
         public PF_PageHdr pf_ph;
 
@@ -32,7 +32,7 @@ namespace Database.RecordManage
             
         }
 
-        public int Size()
+        public virtual int Size()
         {
             return ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap + Mapsize();
         }

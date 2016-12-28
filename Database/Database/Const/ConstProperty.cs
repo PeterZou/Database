@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Database.RecordManage;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,8 @@ namespace Database.Const
         public const int IX_PAGE_LIST_END = -1;
 
         public const int Char_Num = 12;
+
+        public readonly static RID RootRID = new RID(-1, -1);
 
         // int is occupided 8char
         // which cs is influenced

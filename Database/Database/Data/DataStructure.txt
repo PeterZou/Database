@@ -1,2 +1,5 @@
 ﻿1.NodeDisk<TK>
 length(4)+isLeaf(1)+capacity(4)+height(4)+keyList(TK*capacity)+childRidList(8*capacity)
+
+2.Index file header
+firstFree(4) + numPages(4) + extRecordSize(4) + totalHeight(4) + indexType(1) + root(NodeDisk<TK>) + dicCount(4) + dic(dicCount*8)

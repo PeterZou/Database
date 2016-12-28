@@ -127,16 +127,15 @@ namespace Database.IndexManage
         override public int CalcOffset(int slot, int size)
         {
             IsValid(size);
-            int offset = (new RM_PageHdr(GetNumSlots(size), new PF_PageHdr())).Size();
+            int offset = (new IX_PageHdr(GetNumSlots(size), new PF_PageHdr(),size)).Size();
             offset += slot * fullRecordSize(size);
 
             return offset;
         }
 
-        public Node<TK, RIDKey<TK>> ShowPartitialBplustree(RID rid)
+        public void ShowPartitialBplustree(RID rid)
         {
-            iih.GetSubTreeImportToMemory(iih.treeHeight, rid,null, true, rid);
-            return iih.SelectNode;
+            //TODO
         }
 
         public void DeleteEntry(TK key)

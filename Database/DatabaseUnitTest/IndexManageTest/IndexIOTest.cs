@@ -113,7 +113,7 @@ namespace DatabaseUnitTest.IndexManageTest
             ifh.InsertEntry(4);
             ifh.InsertEntry(5);
             ifh.InsertEntry(6);
-            //ifh.InsertEntry(7);
+            ifh.InsertEntry(7);
 
             ifh.FlushPages();
         }
