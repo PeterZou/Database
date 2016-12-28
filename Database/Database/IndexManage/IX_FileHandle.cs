@@ -140,19 +140,13 @@ namespace Database.IndexManage
 
         public void DeleteEntry(TK key)
         {
-            iih.DeleteEntry(key);
+            throw new NotImplementedException();
         }
 
         public void InsertEntry(TK key)
         {
             // need to replace
-            RIDKey<TK> value = new RIDKey<TK>(new RID(-2,-2),key);
-            iih.InsertEntry(value);
-            if (iih.ChangeOrNot == true)
-            {
-                bHdrChanged = true;
-                iih.ChangeOrNot = false;
-            }
+            iih.InsertEntry(key);
         }
 
         public RM_Record GetRec(RID rid)

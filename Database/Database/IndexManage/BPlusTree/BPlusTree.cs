@@ -575,5 +575,10 @@ namespace Database.IndexManage.BPlusTree
 
             leftSib.Values.Remove(leftSib.Values.Last());
         }
+
+        public Node<TK, TV> SearchProperNode(TK key,List<Node<TK, TV>> topToLeafStoreList)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

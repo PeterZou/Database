@@ -245,10 +245,9 @@ namespace Database.IndexManage
 
 
         #region get and set a partial tree
-        public static Tuple<Node<TK, RIDKey<TK>>, List<RID>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk, 
-            RID rid, Func<TK> creatNewTK)
+        public static Node<TK, RIDKey<TK>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk,
+            RID rid, Func<TK> creatNewTK, List<RID> ridlist)
         {
-            List<RID> ridlist = null;
             Node<TK, RIDKey<TK>> node = new Node<TK, RIDKey<TK>>();
             node.CurrentRID = new RIDKey<TK>(rid, creatNewTK());
             node.Height = nodeDisk.height;
@@ -281,7 +280,7 @@ namespace Database.IndexManage
                     node.Values.Add(v);
             }
 
-            return new Tuple<Node<TK, RIDKey<TK>>, List<RID>>(node, ridlist);
+            return node;
         }
 
         public static NodeDisk<TK> ConvertNodeToNodeDisk(Node<TK, RIDKey<TK>> node)
@@ -313,81 +312,6 @@ namespace Database.IndexManage
             nl.length = IndexManagerUtil<TK>.GetNodeDiskLength(nl);
 
             return nl;
-        }
-
-        public static Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemoryRoot(RID rid, 
-            Func<string, TK> converStringToTK, Func<TK> creatNewTK, Node<TK, RIDKey<TK>> root, IX_FileHandle<TK> imp)
-        {
-            NodeDisk<TK> nodeDisk;
-            if (rid.CompareTo(ConstProperty.RootRID) == 0)
-            {
-                nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(root);
-            }
-            else
-            {
-                RM_Record record = imp.GetRec(rid);
-
-                char[] data = record.GetData();
-
-                // leaf or not
-                nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data, data.Length, converStringToTK);
-            }
-
-
-            // set the node link to the parent
-            var node = IndexManagerUtil<TK>.ConvertNodeDiskToNode(nodeDisk, rid, creatNewTK);
-
-            return node;
-        }
-
-        // root rid located in the first page
-        // location of the orignal node may not set in right 
-        public static Tuple<Node<TK, RIDKey<TK>>, List<RID>> InsertImportToMemory(RID rid, Node<TK, RIDKey<TK>> parent
-            , Func<string, TK> converStringToTK, Func<TK> creatNewTK, Node<TK, RIDKey<TK>> root, IX_FileHandle<TK> imp)
-        {
-            if (rid.CompareTo(ConstProperty.RootRID) != 0)
-            {
-                var node = InsertImportToMemoryRoot(rid, converStringToTK, creatNewTK,root,imp);
-                node.Item1.Parent = parent;
-
-                parent.ChildrenNodes.Add(node.Item1);
-
-                return node;
-            }
-            else
-            {
-                return new Tuple<Node<TK, RIDKey<TK>>, List<RID>>(parent, null);
-            }
-        }
-
-        /// <summary>
-        /// 在内存中展开一棵子树
-        /// </summary>
-        /// <param name="height"></param>
-        /// <param name="rid">当前结点的RID</param>
-        /// <param name="parent">父节点</param>
-        public static Node<TK, RIDKey<TK>> GetSubTreeImportToMemory(int height, RID rid, Node<TK, RIDKey<TK>> parent
-            , bool useBehind, RID leafRid, Func<string, TK> converStringToTK, Func<TK> creatNewTK,
-            Node<TK, RIDKey<TK>> root, IX_FileHandle<TK> imp)
-        {
-            if (height == 0) return null;
-
-            var node = InsertImportToMemory(rid, parent, converStringToTK, creatNewTK, root, imp);
-
-            if (useBehind && node.Item1.CurrentRID.Rid.CompareTo(leafRid) == 0)
-            {
-                return node.Item1;
-            }
-
-            if (node.Item2 != null)
-            {
-                foreach (var n in node.Item2)
-                {
-                    GetSubTreeImportToMemory(height - 1, n, node.Item1, useBehind, leafRid, converStringToTK, creatNewTK,root,imp);
-                }
-            }
-
-            throw new Exception();
         }
         #endregion
     }

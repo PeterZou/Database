@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Database.RecordManage;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,6 +42,12 @@ namespace Database.IndexManage.BPlusTree
             bBplusTree.Search(key);
         }
 
+        // Get the proper "Leaf" node(maybe a leaf node in the disk)
+        public Node<TK, TV> SearchProperNode(TK key, List<Node<TK, TV>> topToLeafStoreList)
+        {
+            return bBplusTree.SearchProperNode(key, topToLeafStoreList);
+        }
+
         public void TraverseForword(Node<TK, TV> node, Action<Node<TK, TV>> action)
         {
             bBplusTree.TraverseForword(node,action);
@@ -56,14 +63,19 @@ namespace Database.IndexManage.BPlusTree
             return bBplusTree.SearchInTimes(times, key, ridList);
         }
 
-        // TODO 单例
-        public BPlusTreeProvider(int degree, Node<TK, TV> root)
+        private BPlusTreeProvider(int degree, Node<TK, TV> root)
         {
             bBplusTree = new BPlusTree<TK, TV>(degree);
             this.Root = root;
             this.SearchNode = root;
         }
 
+        public static BPlusTreeProvider<TK, TV> CreatBPlusTree(int degree, Node<TK, TV> root)
+        {
+            return new BPlusTreeProvider<TK, TV>(degree,root);
+        }
+
+        // Find which nodes are changed
         public void InsertRepair(Node<TK, TV> node)
         {
             bBplusTree.InsertRepair(node);
