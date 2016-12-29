@@ -26,11 +26,11 @@ namespace Database
         // 内存中能够展开的最大高度
         private int MaxTreeHeightInMemory { get; }
 
-        private Func<string, TK> ConverStringToTK;
+        private Func<string, TK> FuncConverStringToTK;
 
-        public Func<TK, string> ConverTKToString;
+        public Func<TK, string> FuncConverTKToString;
 
-        private Func<TK> CreatNewTK;
+        private Func<TK> FuncCreatNewTK;
 
         private int TreeDegree { get; } = 6;
 
@@ -44,11 +44,11 @@ namespace Database
             this.imp = imp;
 
             this.MaxTreeHeightInMemory = maxTreeHeightInMemory;
-            this.Root = IndexManagerUtil<TK>.ConvertNodeDiskToNode(root, new RID(-1, -1), CreatNewTK, RootRIDList);
+            this.Root = IndexManagerUtil<TK>.ConvertNodeDiskToNode(root, new RID(-1, -1), FuncCreatNewTK, RootRIDList);
 
-            this.CreatNewTK = creatNewTK;
-            this.ConverStringToTK = converStringToTK;
-            this.ConverTKToString = converTKToString;
+            this.FuncCreatNewTK = creatNewTK;
+            this.FuncConverStringToTK = converStringToTK;
+            this.FuncConverTKToString = converTKToString;
         }
         #endregion
 
@@ -62,8 +62,25 @@ namespace Database
         {
             var lastSubRoot = GetSubTreeUntilLeaf(key);
 
+            CreateEntry(key, lastSubRoot);
+
             int num = 0;
             GetSubTreeUntilTop(lastSubRoot,ref num);
+        }
+
+        private void CreateEntry(TK key, Node<TK, RIDKey<TK>> lastSubRoot)
+        {
+            // add the entry and export to the disk
+            var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
+
+            // TODO Record RID,ought to be imported by record manage, default rid for now
+            RID recordRID = default(RID);
+            RIDKey<TK> value = new RIDKey<TK>(recordRID, key);
+            bPlusTreeProvider.Insert(value);
+            //Get the leaf child
+
+            var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
+            InsertExportToDiskReturn(leafNode);
         }
         #endregion
 
@@ -100,11 +117,14 @@ namespace Database
         {
             // import all of it
             var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, subRoot);
-            bPlusTreeProvider.InsertRepair(subRoot);
 
-            // DISK to save
-            // TODO which should be saved, async
-            // TODO or use delegate?
+            // do not repair the root
+            bPlusTreeProvider.InsertRepair(subRoot,false, InsertExportToDisk);
+
+            if (subRoot.CurrentRID.Rid.CompareTo(Root.CurrentRID.Rid) == 0)
+            {
+                bPlusTreeProvider.Split(bPlusTreeProvider.Root, true, InsertExportToDisk);
+            }
         }
 
         private void GetSubTreeUntilLeaf(TK key, Node<TK, RIDKey<TK>> node, List<RID> RIDList,
@@ -121,7 +141,7 @@ namespace Database
             {
                 // import all the tree and search the leaf
                 var treeHead = ImportToBPlusTreeProvider(node, RIDList, bPlusTreeProvider);
-                var subRoot = bPlusTreeProvider.SearchProperNode(key, TopToLeafStoreList);
+                var subRoot = bPlusTreeProvider.SearchProperLeafNode(key, TopToLeafStoreList);
 
                 // Recusive
                 // Head
@@ -169,24 +189,36 @@ namespace Database
                 char[] data = record.GetData();
 
                 // leaf or not
-                nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data, data.Length, ConverStringToTK);
+                nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(data, data.Length, FuncConverStringToTK);
             }
 
             // set the node link to the parent
-            var node = IndexManagerUtil<TK>.ConvertNodeDiskToNode(nodeDisk, rid, CreatNewTK, RIDList);
+            var node = IndexManagerUtil<TK>.ConvertNodeDiskToNode(nodeDisk, rid, FuncCreatNewTK, RIDList);
 
             return node;
         }
         #endregion
 
         #region deltegate to handle this
+        // DISK to save
+        // TODO which should be saved, async
         public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
-            throw new NotImplementedException();
+            InsertExportToDiskReturn(node);
+        }
+
+        public RID InsertExportToDiskReturn(Node<TK, RIDKey<TK>> node)
+        {
+            var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
+
+            var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
+
+            return imp.InsertRec(chars);
         }
         #endregion
 
         #region method to use in this class
+        
         #endregion
     }
 }

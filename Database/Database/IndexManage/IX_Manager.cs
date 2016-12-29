@@ -84,7 +84,7 @@ namespace Database.IndexManage
             if (ixi.imp.bHdrChanged)
             {
                 int num = IO.IOFDDic.FDMapping.Keys.Max() + 1;
-                IndexManagerUtil<TK>.WriteIndexFileHdr(ixi.imp.hdr,ixi.ConverTKToString, ixi.imp.pfHandle.pf_bm.fs,num);
+                IndexManagerUtil<TK>.WriteIndexFileHdr(ixi.imp.hdr,ixi.FuncConverTKToString, ixi.imp.pfHandle.pf_bm.fs,num);
 
                 ixi.imp.bHdrChanged = false;
             }

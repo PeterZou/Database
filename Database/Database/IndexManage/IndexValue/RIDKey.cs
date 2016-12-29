@@ -16,5 +16,7 @@ namespace Database.IndexManage.IndexValue
         {
             this.Rid = rid;
         }
+
+
     }
 }

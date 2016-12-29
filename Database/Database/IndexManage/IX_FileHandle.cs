@@ -76,7 +76,7 @@ namespace Database.IndexManage
 
         override public void SetFileHeader(PF_PageHandle ph)
         {
-            ph.pPageData = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, iih.ConverTKToString);
+            ph.pPageData = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, iih.FuncConverTKToString);
         }
 
         override public int fullRecordSize(int size)

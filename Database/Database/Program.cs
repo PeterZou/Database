@@ -11,7 +11,7 @@ namespace Database
     {
         static void Main(string[] args)
         {
-            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(2);
+            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(4);
 
             var list = new List<NodeInt>();
 
@@ -21,7 +21,7 @@ namespace Database
                 {
                     var node = new NodeInt(i);
                     bt.Insert(node);
-                    bt.InsertRepair();
+                    bt.InsertRepair(true,null);
                 }
             }
             bt.TraverseForword(bt.Root, bt.TraverseOutput);

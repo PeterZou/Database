@@ -34,7 +34,7 @@ namespace Database.IndexManage.BPlusTree
         public void Insert(TV value)
         {
             bBplusTree.Insert(value);
-            bBplusTree.InsertRepair();
+            bBplusTree.InsertRepair(true,null);
         }
 
         public void Search(TK key)
@@ -43,9 +43,9 @@ namespace Database.IndexManage.BPlusTree
         }
 
         // Get the proper "Leaf" node(maybe a leaf node in the disk)
-        public Node<TK, TV> SearchProperNode(TK key, List<Node<TK, TV>> topToLeafStoreList)
+        public Node<TK, TV> SearchProperLeafNode(TK key, List<Node<TK, TV>> topToLeafStoreList)
         {
-            return bBplusTree.SearchProperNode(key, topToLeafStoreList);
+            return bBplusTree.SearchProperLeafNode(key, topToLeafStoreList);
         }
 
         public void TraverseForword(Node<TK, TV> node, Action<Node<TK, TV>> action)
@@ -75,10 +75,19 @@ namespace Database.IndexManage.BPlusTree
             return new BPlusTreeProvider<TK, TV>(degree,root);
         }
 
-        // Find which nodes are changed
-        public void InsertRepair(Node<TK, TV> node)
+        /// <summary>
+        /// 修正节点
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="isRepairRoot">是否修正根节点</param>
+        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
         {
-            bBplusTree.InsertRepair(node);
+            bBplusTree.InsertRepair(node, isRepairRoot, actionInsertToDisk);
+        }
+
+        public Node<TK, TV> Split(Node<TK, TV> node, bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
+        {
+            return bBplusTree.Split(node, isRepairRoot, actionInsertToDisk);
         }
 
         public void RepairAfterDelete(Node<TK, TV> node)

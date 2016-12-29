@@ -62,6 +62,7 @@ namespace Database.IndexManage.BPlusTree
 
         public BPlusTree(int degree)
         {
+            if (degree < 3) throw new Exception();
             this.Degree = degree;
         }
 
@@ -229,11 +230,14 @@ namespace Database.IndexManage.BPlusTree
             return node.ChildrenNodes;
         }
 
-        // 反向调用接口方法
-        public void InsertRepair()
+        /// <summary>
+        /// // 反向调用接口方法
+        /// </summary>
+        /// <param name="isRepairRoot">是否修正根节点</param>
+        public void InsertRepair(bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
         {
             if(tmpNode != null)
-                InsertRepair(tmpNode);
+                InsertRepair(tmpNode, isRepairRoot, actionInsertToDisk);
         }
 
         // 反向调用接口方法
@@ -244,7 +248,12 @@ namespace Database.IndexManage.BPlusTree
                 RepairAfterDelete(tmpNode);
         }
 
-        public void InsertRepair(Node<TK, TV> node)
+        /// <summary>
+        /// 修正节点
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="isRepairRoot">是否修正根节点</param>
+        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
         {
             if (node.Values.Count <= MaxDegree)
             {
@@ -252,13 +261,13 @@ namespace Database.IndexManage.BPlusTree
             }
             else if (node.Parent == null)
             {
-                Root = Split(node);
+                Root = Split(node, isRepairRoot, actionInsertToDisk);
                 return;
             }
             else
             {
-                var newNode = Split(node);
-                this.InsertRepair(newNode);
+                var newNode = Split(node, isRepairRoot, actionInsertToDisk);
+                this.InsertRepair(newNode, isRepairRoot, actionInsertToDisk);
             }
         }
 
@@ -323,7 +332,7 @@ namespace Database.IndexManage.BPlusTree
         }
 
         // implete func
-        private Node<TK, TV> Split(Node<TK, TV> node)
+        public Node<TK, TV> Split(Node<TK, TV> node,bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
         {
             var rightNode = node.SetNode(node.IsLeaf);
             var risingNode = node.Values[Degree / 2];
@@ -376,23 +385,38 @@ namespace Database.IndexManage.BPlusTree
 
             var leftNode = node;
 
-            if (node.Parent != null)
+            if (isRepairRoot == false)
             {
-                return node.Parent;
+                actionInsertToDisk(node);
+                if (node.Parent != null)
+                {
+                    return node.Parent;
+                }
+                else
+                {
+                    return node;
+                }
             }
             else
             {
-                // branch node
-                Root = node.SetNode(false);
-                Root.Parent = null;
-                Root.Values.Add(risingNode);
-                Root.ChildrenNodes.AddRange(new List<Node<TK, TV>>() { leftNode, rightNode });
-                leftNode.Parent = Root;
-                rightNode.Parent = Root;
-                Root.IsLeaf = false;
-                Root.Height++;
-                return Root;
-            }
+                if (node.Parent != null)
+                {
+                    return node.Parent;
+                }
+                else
+                {
+                    // branch node
+                    Root = node.SetNode(false);
+                    Root.Parent = null;
+                    Root.Values.Add(risingNode);
+                    Root.ChildrenNodes.AddRange(new List<Node<TK, TV>>() { leftNode, rightNode });
+                    leftNode.Parent = Root;
+                    rightNode.Parent = Root;
+                    Root.IsLeaf = false;
+                    Root.Height++;
+                    return Root;
+                }
+            } 
         }
 
         private int GetIndex(TK key, Node<TK, TV> node)
@@ -576,9 +600,29 @@ namespace Database.IndexManage.BPlusTree
             leftSib.Values.Remove(leftSib.Values.Last());
         }
 
-        public Node<TK, TV> SearchProperNode(TK key,List<Node<TK, TV>> topToLeafStoreList)
+        public Node<TK, TV> SearchProperLeafNode(TK key,List<Node<TK, TV>> topToLeafStoreList)
         {
-            throw new NotImplementedException();
+            Node<TK, TV> node = null;
+            SearchProperLeafNode(key, topToLeafStoreList,Root,ref node);
+            return node;
+        }
+
+        private void SearchProperLeafNode(TK key, List<Node<TK, TV>> topToLeafStoreList, 
+            Node<TK, TV> searchNode, ref Node<TK, TV> selectedNode)
+        {
+            if (searchNode.IsLeaf != true && searchNode.ChildrenNodes != null && searchNode.ChildrenNodes.Count != 0)
+            {
+                int index = GetIndex(key, searchNode);
+                if (topToLeafStoreList != null)
+                {
+                    topToLeafStoreList.Add(searchNode);
+                }
+                SearchProperLeafNode(key, topToLeafStoreList, searchNode.ChildrenNodes[index], ref selectedNode);
+            }
+            else
+            {
+                selectedNode = searchNode;
+            }
         }
     }
 }
