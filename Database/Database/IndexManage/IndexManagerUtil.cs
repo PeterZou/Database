@@ -153,10 +153,11 @@ namespace Database.IndexManage
             {
                 for (int i = 0; i < node.capacity + 1; i++)
                 {
+                    int num = (2 + node.capacity + 2*i) * ConstProperty.Int_Size + 1;
                     int pageNum = Convert.ToInt32(dataStr.Substring(
-                        (2 + node.capacity + i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                        num, ConstProperty.Int_Size));
                     int slotNum = Convert.ToInt32(dataStr.Substring(
-                        (2 + node.capacity + i + 1) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size));
+                        num+ ConstProperty.Int_Size, ConstProperty.Int_Size));
                     node.childRidList.Add(new RID(pageNum, slotNum));
                 }
             }
@@ -176,7 +177,7 @@ namespace Database.IndexManage
         public static int GetNodeDiskLengthWithChild(int size,int slotNum)
         {
             int num = ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size;
-            return (GetNodeDiskLength() + size * (num))* slotNum;
+            return (GetNodeDiskLength() + (size - 1) * (num) + ConstProperty.RM_Page_RID_SIZE) * slotNum;
         }
 
         public static int GetNodeDiskLength(NodeDisk<TK> nl)
@@ -291,10 +292,12 @@ namespace Database.IndexManage
             else
             {
                 node.IsLeaf = false;
-                ridlist = new List<RID>();
-                foreach (var v in nodeDisk.childRidList)
+                if (ridlist != null)
                 {
-                    ridlist.Add(v);
+                    foreach (var v in nodeDisk.childRidList)
+                    {
+                        ridlist.Add(v);
+                    }
                 }
             }
             if (nodeDisk.keyList != null)

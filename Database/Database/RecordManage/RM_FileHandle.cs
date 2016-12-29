@@ -262,5 +262,10 @@ namespace Database.RecordManage
             pHdr.From_buf(buf);
             return pHdr;
         }
+
+        override public void IsValid(int size)
+        {
+            if ((pfHandle == null) || !bFileOpen || GetNumSlots(size) <= 0) throw new Exception();
+        }
     }
 }

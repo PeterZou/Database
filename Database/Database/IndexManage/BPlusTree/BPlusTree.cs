@@ -410,7 +410,8 @@ namespace Database.IndexManage.BPlusTree
                 Root.IsLeaf = false;
                 Root.Height++;
 
-                funcInsertToDisk(Root);
+                var parent = funcInsertToDisk(Root);
+                Root.CurrentRID = parent;
                 return Root;
             }
         }

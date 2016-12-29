@@ -90,15 +90,16 @@ namespace Database.IndexManage
 
         override public int fullRecordSize(int size)
         {
-            int leafNum = 3 * ConstProperty.Int_Size + ConstProperty.Flg_Size + size * OccupiedNum(default(TK));
+            int leafNum = 3 * ConstProperty.Int_Size + ConstProperty.Flg_Size;
             // TODO defalut TK occupied 4 Bytes
             if (isLeaf)
             {
-                return leafNum;
+                return leafNum + size * OccupiedNum(default(TK));
             }
             else
             {
-                int branchNum = size * ConstProperty.RM_Page_RID_SIZE;
+                if (size < 2) throw new Exception();
+                int branchNum = size * ConstProperty.RM_Page_RID_SIZE + (size - 1) * OccupiedNum(default(TK));
                 return leafNum + branchNum;
             }
         }
@@ -204,7 +205,7 @@ namespace Database.IndexManage
             var virtualPageSize = 
                 IndexManagerUtil<TK>.GetNodeDiskLengthWithChild(pHdr.size, slotNum);
 
-            return virtualPageSize >= ConstProperty.PF_PAGE_SIZE ? true:false;
+            return virtualPageSize >= ConstProperty.PF_PAGE_SIZE ? true : false;
         }
 
         public int GetNumPages() { return hdr.numPages; }
@@ -314,7 +315,11 @@ namespace Database.IndexManage
             return pHdr;
         }
 
-        
+        override public void IsValid(int size)
+        {
+            if ((pfHandle == null) || !bFileOpen) throw new Exception();
+        }
+
         public void FlushPages()
         {
             if (!bFileOpen) throw new Exception();

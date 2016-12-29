@@ -84,6 +84,7 @@ namespace Database.IndexManage.BPlusTree
             Func<Node<TK, TV>,TV> funcInsertToDisk)
         {
             bBplusTree.InsertRepair(node, isRepairRoot, funcInsertToDisk);
+            Root = bBplusTree.Root;
         }
 
         public void RepairAfterDelete(Node<TK, TV> node)

@@ -82,7 +82,7 @@ namespace Database
             CreateEntry(key, lastSubRoot);
 
             int num = 0;
-            GetSubTreeUntilTop(lastSubRoot,ref num);
+            GetSubTreeUntilTop(lastSubRoot, ref num);
         }
 
         private void CreateEntry(TK key, Node<TK, RIDKey<TK>> lastSubRoot)
@@ -146,6 +146,8 @@ namespace Database
 
             // do not repair the root
             bPlusTreeProvider.InsertRepair(subRoot,false, InsertExportToDisk);
+
+            Root = bPlusTreeProvider.Root;
         }
 
         private void GetSubTreeUntilLeaf(TK key, Node<TK, RIDKey<TK>> node, List<RID> RIDList,
@@ -184,6 +186,7 @@ namespace Database
         {
             if (times != 0 && node.IsLeaf == false)
             {
+                node.ChildrenNodes = new List<Node<TK, RIDKey<TK>>>();
                 foreach (var r in RIDList)
                 {
                     List<RID> subRIDList = new List<RID>();

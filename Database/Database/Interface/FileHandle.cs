@@ -72,18 +72,12 @@ namespace Database.Interface
             return pfHandle.IsValidPageNum(pageNum);
         }
 
-        public void IsValid(int size)
-        {
-            if ((pfHandle == null) || !bFileOpen || GetNumSlots(size) <= 0) throw new Exception();
-        }
-
         public char[] GetSlotPointer(PF_PageHandle ph, int slot,int size)
         {
             int offset = CalcOffset(slot,size);
-            int offsetAfter = offset + slot*fullRecordSize(size);
             int index = 0;
             char[] data = new char[fullRecordSize(size)];
-            for (int i = offsetAfter; i < fullRecordSize(size)+ offsetAfter; i++)
+            for (int i = offset; i < fullRecordSize(size)+ offset; i++)
             {
                 data[index] = ph.pPageData[i];
                 index++;
@@ -116,7 +110,7 @@ namespace Database.Interface
             int page = rid.Page;
             int slot = rid.Slot;
 
-            return IsValidPageNum(page) && slot >= 0 && slot < GetNumSlots(-1);
+            return IsValidPageNum(page) && slot >= 0;
         }
 
         abstract public RID InsertRec(char[] pData);
@@ -124,5 +118,7 @@ namespace Database.Interface
         abstract public void SetFileHeader(PF_PageHandle ph);
 
         abstract public int CalcOffset(int slot, int size);
+
+        abstract public void IsValid(int size);
     }
 }
