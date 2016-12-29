@@ -126,7 +126,7 @@ namespace DatabaseUnitTest.IndexManageTest
 
             // Branch test
             ifh.InsertEntry(6);
-            
+            ifh.InsertEntry(7);
             ifh.FlushPages();
         }
 

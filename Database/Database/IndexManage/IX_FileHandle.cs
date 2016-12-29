@@ -56,6 +56,7 @@ namespace Database.IndexManage
 
         public void DeleteRec(RID rid,bool leafOrNot)
         {
+            if (rid.Page < 0 || rid.Slot < 0) return;
             int pageNum = rid.Page;
             int slotNum = rid.Slot;
             PF_PageHandle ph;

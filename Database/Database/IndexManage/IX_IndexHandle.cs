@@ -20,9 +20,9 @@ namespace Database
 
         private List<RID> RootRIDList = new List<RID>();
 
-        private List<Node<TK, RIDKey<TK>>> TopToLeafStoreList { get; set; } 
+        private List<Node<TK, RIDKey<TK>>> TopToLeafStoreList { get; set; }
             = new List<Node<TK, RIDKey<TK>>>();
-        
+
         // 内存中能够展开的最大高度
         private int MaxTreeHeightInMemory { get; }
 
@@ -32,14 +32,14 @@ namespace Database
 
         private Func<TK> FuncCreatNewTK;
 
-        private int TreeDegree { get; } = 6;
+        private int TreeDegree { get; } = 4;
 
         #region constructor
         public IX_IndexHandle()
         { }
 
         public IX_IndexHandle(int maxTreeHeightInMemory, RID rootRID,
-            Func<string, TK> converStringToTK, Func<TK, string> converTKToString, 
+            Func<string, TK> converStringToTK, Func<TK, string> converTKToString,
             Func<TK> creatNewTK, IX_FileHandle<TK> imp)
         {
             this.imp = imp;
@@ -70,13 +70,15 @@ namespace Database
             else
             {
                 Root = new Node<TK, RIDKey<TK>>();
-                Root.CurrentRID = new RIDKey<TK>(new RID(-1,-1),default(TK));
+                Root.CurrentRID = new RIDKey<TK>(new RID(-1, -1), default(TK));
             }
-            
+
         }
 
         public void InsertEntry(TK key)
         {
+            // TODO
+            GetRootEntry(Root.CurrentRID.Rid);
             var lastSubRoot = GetSubTreeUntilLeaf(key);
 
             CreateEntry(key, lastSubRoot);
@@ -93,13 +95,13 @@ namespace Database
             // TODO Record RID,ought to be imported by record manage, default rid for now
             RID recordRID = default(RID);
             RIDKey<TK> value = new RIDKey<TK>(recordRID, key);
-            
+
             //Get the leaf child
             var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
-            if (leafNode.Values.Count != TreeDegree-1)
+            if (leafNode.Values.Count != TreeDegree - 1)
             {
                 bPlusTreeProvider.Insert(value);
-                leafNode.CurrentRID = lastSubRoot.CurrentRID;
+
                 InsertExportToDisk(leafNode);
             }
             else
@@ -115,11 +117,11 @@ namespace Database
         {
             TopToLeafStoreList.Clear();
             Node<TK, RIDKey<TK>> lastSubRoot = null;
-            GetSubTreeUntilLeaf(key, Root, RootRIDList, ref lastSubRoot); 
+            GetSubTreeUntilLeaf(key, Root, RootRIDList, ref lastSubRoot);
             return lastSubRoot;
         }
 
-        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode,ref int index)
+        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index)
         {
             int TotolHeight = Root.Height;
             // Two nums must match
@@ -145,7 +147,7 @@ namespace Database
             var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, subRoot);
 
             // do not repair the root
-            bPlusTreeProvider.InsertRepair(subRoot,false, InsertExportToDisk);
+            bPlusTreeProvider.InsertRepair(subRoot, false, InsertExportToDisk);
 
             Root = bPlusTreeProvider.Root;
         }
@@ -171,7 +173,7 @@ namespace Database
             }
         }
 
-        private Node<TK, RIDKey<TK>> ImportToBPlusTreeProvider(Node<TK, RIDKey<TK>> node, 
+        private Node<TK, RIDKey<TK>> ImportToBPlusTreeProvider(Node<TK, RIDKey<TK>> node,
             List<RID> RIDList, BPlusTreeProvider<TK, RIDKey<TK>> bPlusTreeProvider)
         {
             // times<=MaxTreeHeightInMemory
@@ -227,7 +229,7 @@ namespace Database
         // TODO which should be saved, async
         public RIDKey<TK> InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
-            if (node.Values.Count > 1)
+            if (node.Values.Count > 0)
             {
                 if (node.CurrentRID != null)
                 {
@@ -241,6 +243,17 @@ namespace Database
 
             RID rid = imp.InsertRec(chars);
 
+            // 向上递归
+            if (node.CurrentRID != null)
+            {
+                node.CurrentRID.Rid = rid;
+
+                if (node.Parent != null)
+                {
+                    ResetNodeToParentLink(node);
+                }
+            }
+
             // 如果root节点发生变化，重置root节点
             // TODO
             if (node.CurrentRID != null)
@@ -253,7 +266,17 @@ namespace Database
                 }
             }
 
-            return new RIDKey<TK>(rid,default(TK));
+            return new RIDKey<TK>(rid, default(TK));
+        }
+
+        private void ResetNodeToParentLink(Node<TK, RIDKey<TK>> node)
+        {
+            if (node.Parent != null)
+            {
+                InsertExportToDisk(node.Parent);
+
+                ResetNodeToParentLink(node.Parent);
+            }
         }
         #endregion
 
