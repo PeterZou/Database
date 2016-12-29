@@ -34,19 +34,20 @@ namespace Database.IndexManage
             FileManagerUtil.ReplaceTheNextFree(content
                 , (int)hdr.indexType, 4 * ConstProperty.PF_PageHdr_SIZE, 1);
 
-            // Root
-            char[] charArray = SetNodeDiskToChar(hdr.root,ConverTKToString);
+            // RootRID
             FileManagerUtil.ReplaceTheNextFree(content
-                , charArray, 4 * ConstProperty.PF_PageHdr_SIZE + 1, charArray.Length);
+                , hdr.rootRID.Page, 4 * ConstProperty.PF_PageHdr_SIZE + 1, 4);
+            FileManagerUtil.ReplaceTheNextFree(content
+                , hdr.rootRID.Slot, 4 * ConstProperty.PF_PageHdr_SIZE + 5, 4);
 
             // dicCount
             FileManagerUtil.ReplaceTheNextFree(content
-                , hdr.dic.Keys.Count, 4 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, ConstProperty.PF_PageHdr_SIZE);
+                , hdr.dic.Keys.Count, 4 * ConstProperty.PF_PageHdr_SIZE + 9, ConstProperty.PF_PageHdr_SIZE);
 
             // KandV
             char[] charArray2 = SetDicToChar(hdr.dic);
             FileManagerUtil.ReplaceTheNextFree(content
-                , charArray2, 5 * ConstProperty.PF_PageHdr_SIZE + 1 + charArray.Length, charArray2.Length);
+                , charArray2, 5 * ConstProperty.PF_PageHdr_SIZE + 9, charArray2.Length);
 
             return content;
         }
@@ -132,7 +133,8 @@ namespace Database.IndexManage
 
         public static NodeDisk<TK> SetCharToNodeDisk(char[] data, int length, Func<string, TK> ConverStringToTK)
         {
-            string dataStr = new string(data).Substring(0, length- ConstProperty.Int_Size);
+            string tmpStr = new string(data);
+            string dataStr = tmpStr.Substring(ConstProperty.Int_Size, length- ConstProperty.Int_Size);
             NodeDisk<TK> node = new NodeDisk<TK>();
             node.length = length;
             node.isLeaf = Convert.ToInt32(dataStr.Substring(0, 1));
@@ -147,7 +149,7 @@ namespace Database.IndexManage
             }
 
             node.childRidList = new List<RID>();
-            if (node.capacity != 0)
+            if (node.capacity != 0 && node.isLeaf == 1)
             {
                 for (int i = 0; i < node.capacity + 1; i++)
                 {
@@ -169,6 +171,12 @@ namespace Database.IndexManage
             length += 3 * ConstProperty.Int_Size + 1;
 
             return length;
+        }
+
+        public static int GetNodeDiskLengthWithChild(int size,int slotNum)
+        {
+            int num = ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size;
+            return (GetNodeDiskLength() + size * (num))* slotNum;
         }
 
         public static int GetNodeDiskLength(NodeDisk<TK> nl)
@@ -207,12 +215,14 @@ namespace Database.IndexManage
 
             // NodeDisk<TK>
             // 读入NodeDisk<TK>的length确定data[]的长度
-            sr.Read(lengthChar, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
-            Int32.TryParse(new string(lengthChar), out length);
+            int pageNum = 0;
+            int slotNum = 0;
+            sr.Read(lengthChar, 0, ConstProperty.Int_Size);
+            Int32.TryParse(new string(lengthChar), out pageNum);
+            sr.Read(lengthChar, 0, ConstProperty.Int_Size);
+            Int32.TryParse(new string(lengthChar), out slotNum);
 
-            char[] data = new char[length - ConstProperty.PF_FILE_HDR_NumPages_SIZE];
-            sr.Read(data, 0, length- ConstProperty.PF_FILE_HDR_NumPages_SIZE);
-            pf_fh.root = SetCharToNodeDisk(data, length, ConverStringToTK);
+            pf_fh.rootRID = new RID(pageNum, slotNum);
 
             // DicCount
             sr.Read(dicCount, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
@@ -258,8 +268,6 @@ namespace Database.IndexManage
             return dic;
         }
 
-
-        #region get and set a partial tree
         public static Node<TK, RIDKey<TK>> ConvertNodeDiskToNode(NodeDisk<TK> nodeDisk,
             RID rid, Func<TK> creatNewTK, List<RID> ridlist)
         {
@@ -311,7 +319,7 @@ namespace Database.IndexManage
             nl.keyList = node.Values.ToList();
 
             // non-leaf node
-            if (node.Property == null)
+            if (node.Property == null || node.Property.Count ==0)
             {
                 nl.childRidList = new List<RID>();
                 foreach (var v in node.ChildrenNodes)
@@ -328,6 +336,5 @@ namespace Database.IndexManage
 
             return nl;
         }
-        #endregion
     }
 }

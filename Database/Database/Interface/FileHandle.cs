@@ -79,11 +79,11 @@ namespace Database.Interface
 
         public char[] GetSlotPointer(PF_PageHandle ph, int slot,int size)
         {
-            int offset = CalcOffset(slot,-1);
-            int offsetAfter = offset + fullRecordSize(size);
+            int offset = CalcOffset(slot,size);
+            int offsetAfter = offset + slot*fullRecordSize(size);
             int index = 0;
             char[] data = new char[fullRecordSize(size)];
-            for (int i = offset; i < offsetAfter; i++)
+            for (int i = offsetAfter; i < fullRecordSize(size)+ offsetAfter; i++)
             {
                 data[index] = ph.pPageData[i];
                 index++;

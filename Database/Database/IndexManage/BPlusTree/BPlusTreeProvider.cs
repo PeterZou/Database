@@ -34,7 +34,7 @@ namespace Database.IndexManage.BPlusTree
         public void Insert(TV value)
         {
             bBplusTree.Insert(value);
-            bBplusTree.InsertRepair(true,null);
+            bBplusTree.InsertRepair(true,null,null);
         }
 
         public void Search(TK key)
@@ -80,14 +80,10 @@ namespace Database.IndexManage.BPlusTree
         /// </summary>
         /// <param name="node"></param>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
+        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, 
+            Func<Node<TK, TV>,TV> funcInsertToDisk)
         {
-            bBplusTree.InsertRepair(node, isRepairRoot, actionInsertToDisk);
-        }
-
-        public Node<TK, TV> Split(Node<TK, TV> node, bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
-        {
-            return bBplusTree.Split(node, isRepairRoot, actionInsertToDisk);
+            bBplusTree.InsertRepair(node, isRepairRoot, funcInsertToDisk);
         }
 
         public void RepairAfterDelete(Node<TK, TV> node)

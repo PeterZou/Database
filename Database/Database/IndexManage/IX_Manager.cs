@@ -61,6 +61,7 @@ namespace Database.IndexManage
             PF_FileHandle pfh = pfm.OpenFile(fileName);
 
             IX_FileHandle<TK> ixi = new IX_FileHandle<TK>(pfh, ConverTKToString, OccupiedNum);
+            ixi.bFileOpen = true;
 
             var headerTmp = IndexManagerUtil<TK>.ReadIndexFileHdr(pfh,ConverStringToTK);
 
@@ -70,7 +71,7 @@ namespace Database.IndexManage
 
             if (ixi == null) throw new Exception();
 
-            IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(header.totalHeight,header.root,ConverStringToTK,
+            IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(header.totalHeight,header.rootRID,ConverStringToTK,
                 ConverTKToString,CreatNewTK,ixi);
             ixi.iih = iih;
 
@@ -113,7 +114,7 @@ namespace Database.IndexManage
             hdr.indexType = ConstProperty.AttrType.INT;
 
 
-            hdr.root = CreateNodeDisk(length);
+            hdr.rootRID = new RID(-1, -1);
 
             hdr.dicCount = dicCount;
             var dic = new Dictionary<int, int>();

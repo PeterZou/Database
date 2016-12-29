@@ -32,6 +32,8 @@ namespace Database.IndexManage
         public Func<TK, int> OccupiedNum;
         public bool isLeaf { get; set; }
 
+        public bool IsHdrChanged { get; set; } = false;
+
         public IX_FileHandle(PF_FileHandle pfh, Func<TK, string> converTKToString, Func<TK, int> occupiedNum)
         {
             bFileOpen = false;
@@ -146,7 +148,8 @@ namespace Database.IndexManage
         override public int CalcOffset(int slot, int size)
         {
             IsValid(size);
-            int offset = (new IX_PageHdr(GetNumSlots(size), new PF_PageHdr(),size)).Size();
+            var slotNum = GetNumSlots(size);
+            int offset = (new IX_PageHdr(slotNum, new PF_PageHdr(),size)).Size();
             offset += slot * fullRecordSize(size);
 
             return offset;
@@ -166,11 +169,13 @@ namespace Database.IndexManage
         {
             // need to replace
             iih.InsertEntry(key);
+
+            hdr.rootRID = iih.Root.CurrentRID.Rid;
         }
 
         public RM_Record GetRec(RID rid)
         {
-            if (!IsValidRID(rid)) throw new Exception();
+            if (!IsValidRID(rid)) return null;
             int pageNum = rid.Page;
             int slotNum = rid.Slot;
 
@@ -185,11 +190,21 @@ namespace Database.IndexManage
             // already free
             if (bitmap.Test((UInt32)slotNum)) throw new Exception();
 
+            // TODO
+            isLeaf = IsLeafByPageHeader(pHdr.numSlots);
             char[] data = GetSlotPointer(ph, slotNum, pHdr.size);
 
             var rec = new RM_Record();
             rec.Set(data, fullRecordSize(pHdr.size), rid);
             return rec;
+        }
+
+        private bool IsLeafByPageHeader(int slotNum)
+        {
+            var virtualPageSize = 
+                IndexManagerUtil<TK>.GetNodeDiskLengthWithChild(pHdr.size, slotNum);
+
+            return virtualPageSize >= ConstProperty.PF_PAGE_SIZE ? true:false;
         }
 
         public int GetNumPages() { return hdr.numPages; }
@@ -203,7 +218,7 @@ namespace Database.IndexManage
 
             int slotNum = GetNumSlots(degreesSize);
 
-            if (pHdr == null)
+            if (pHdr == null || pHdr.numSlots != slotNum)
             {
                 pHdr = new IX_PageHdr(slotNum, new PF_PageHdr(), degreesSize);
             }
@@ -234,7 +249,7 @@ namespace Database.IndexManage
                 pageNum = ph.pageNum;
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_LIST_END;
                 pHdr.size = degreesSize;
-                var bitmap = new Bitmap(GetNumSlots(pageNum));
+                var bitmap = new Bitmap(GetNumSlots(degreesSize));
                 bitmap.Reset();
                 pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
 
@@ -279,8 +294,6 @@ namespace Database.IndexManage
 
         public void Open(IX_FileHdr<TK> hdr_tmp)
         {
-            if (bFileOpen) throw new Exception();
-
             bFileOpen = true;
 
             hdr = hdr_tmp;
@@ -306,12 +319,10 @@ namespace Database.IndexManage
         {
             if (!bFileOpen) throw new Exception();
 
-            if (bHdrChanged)
-            {
-                // write to the filehdr
-                IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString,pfHandle.fs, pfHandle.fd);
-                bHdrChanged = false;
-            }
+            // write to the filehdr
+            IndexManagerUtil<TK>.WriteIndexFileHdr(hdr, ConverTKToString,pfHandle.fs, pfHandle.fd);
+            bHdrChanged = false;
+
             pfHandle.pf_bm.FlushPages(pfHandle.fd);
         }
 
@@ -330,7 +341,7 @@ namespace Database.IndexManage
             }
             else
             {
-                return (length - 3 * ConstProperty.Int_Size-1) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size);
+                return (length - 3 * ConstProperty.Int_Size-1- ConstProperty.RM_Page_RID_SIZE) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size)+1;
             }
         }
     }

@@ -16,7 +16,7 @@ namespace Database
     {
         public IX_FileHandle<TK> imp;
 
-        private Node<TK, RIDKey<TK>> Root;
+        public Node<TK, RIDKey<TK>> Root;
 
         private List<RID> RootRIDList = new List<RID>();
 
@@ -38,24 +38,41 @@ namespace Database
         public IX_IndexHandle()
         { }
 
-        public IX_IndexHandle(int maxTreeHeightInMemory, NodeDisk<TK> root,
-            Func<string, TK> converStringToTK, Func<TK, string> converTKToString, Func<TK> creatNewTK, IX_FileHandle<TK> imp)
+        public IX_IndexHandle(int maxTreeHeightInMemory, RID rootRID,
+            Func<string, TK> converStringToTK, Func<TK, string> converTKToString, 
+            Func<TK> creatNewTK, IX_FileHandle<TK> imp)
         {
             this.imp = imp;
 
             this.MaxTreeHeightInMemory = maxTreeHeightInMemory;
-            this.Root = IndexManagerUtil<TK>.ConvertNodeDiskToNode(root, new RID(-1, -1), FuncCreatNewTK, RootRIDList);
 
             this.FuncCreatNewTK = creatNewTK;
             this.FuncConverStringToTK = converStringToTK;
             this.FuncConverTKToString = converTKToString;
+
+            GetRootEntry(rootRID);
         }
         #endregion
 
         #region Link to IX_FileHandle
-        public RID GetLeafEntry(TK key)
+        public void GetRootEntry(RID rid)
         {
-            throw new NotImplementedException();
+            var rec = imp.GetRec(rid);
+            RootRIDList.Clear();
+
+            if (rec != null)
+            {
+                var nodeDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(rec.data, rec.data.Length,
+                    FuncConverStringToTK);
+                Root = IndexManagerUtil<TK>.ConvertNodeDiskToNode(nodeDisk, rid,
+                    FuncCreatNewTK, RootRIDList);
+            }
+            else
+            {
+                Root = new Node<TK, RIDKey<TK>>();
+                Root.CurrentRID = new RIDKey<TK>(new RID(-1,-1),default(TK));
+            }
+            
         }
 
         public void InsertEntry(TK key)
@@ -76,11 +93,20 @@ namespace Database
             // TODO Record RID,ought to be imported by record manage, default rid for now
             RID recordRID = default(RID);
             RIDKey<TK> value = new RIDKey<TK>(recordRID, key);
-            bPlusTreeProvider.Insert(value);
             
             //Get the leaf child
             var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
-            InsertExportToDiskReturn(leafNode);
+            if (leafNode.Values.Count != TreeDegree-1)
+            {
+                bPlusTreeProvider.Insert(value);
+                leafNode.CurrentRID = lastSubRoot.CurrentRID;
+                InsertExportToDisk(leafNode);
+            }
+            else
+            {
+                leafNode.Property.Add(value);
+                leafNode.Values.Add(key);
+            }
         }
         #endregion
 
@@ -120,11 +146,6 @@ namespace Database
 
             // do not repair the root
             bPlusTreeProvider.InsertRepair(subRoot,false, InsertExportToDisk);
-
-            if (subRoot.CurrentRID.Rid.CompareTo(Root.CurrentRID.Rid) == 0)
-            {
-                bPlusTreeProvider.Split(bPlusTreeProvider.Root, true, InsertExportToDisk);
-            }
         }
 
         private void GetSubTreeUntilLeaf(TK key, Node<TK, RIDKey<TK>> node, List<RID> RIDList,
@@ -201,23 +222,35 @@ namespace Database
         #region deltegate to handle this
         // DISK to save
         // TODO which should be saved, async
-        public void InsertExportToDisk(Node<TK, RIDKey<TK>> node)
-        {
-            InsertExportToDiskReturn(node);
-        }
-
-        public RID InsertExportToDiskReturn(Node<TK, RIDKey<TK>> node)
+        public RIDKey<TK> InsertExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             if (node.Values.Count > 1)
             {
-                imp.DeleteRec(node.CurrentRID.Rid,node.IsLeaf);
+                if (node.CurrentRID != null)
+                {
+                    imp.DeleteRec(node.CurrentRID.Rid, node.IsLeaf);
+                }
             }
 
             var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
 
             var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
 
-            return imp.InsertRec(chars);
+            RID rid = imp.InsertRec(chars);
+
+            // 如果root节点发生变化，重置root节点
+            // TODO
+            if (node.CurrentRID != null)
+            {
+                Root = node;
+                Root.CurrentRID.Rid = rid;
+                if (node.ChildrenNodes != null)
+                {
+                    RootRIDList = node.ChildrenNodes.Select(p => p.CurrentRID.Rid).ToList();
+                }
+            }
+
+            return new RIDKey<TK>(rid,default(TK));
         }
         #endregion
 

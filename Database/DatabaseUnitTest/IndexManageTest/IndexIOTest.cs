@@ -48,8 +48,8 @@ namespace DatabaseUnitTest.IndexManageTest
             hdr.totalHeight = 6;
             hdr.indexType = ConstProperty.AttrType.INT;
 
-            
-            hdr.root = CreateNodeDisk();
+
+            hdr.rootRID = new RID(-1, -1);
 
             hdr.dicCount = 13;
             var dic = new Dictionary<int, int>();
@@ -116,16 +116,29 @@ namespace DatabaseUnitTest.IndexManageTest
             ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt");
-
             ifh.InsertEntry(1);
-
             ifh.FlushPages();
-
             ifh.InsertEntry(2);
+
             ifh.InsertEntry(3);
             ifh.InsertEntry(4);
             ifh.InsertEntry(5);
+
+            // Branch test
             ifh.InsertEntry(6);
+            
+            ifh.FlushPages();
+        }
+
+        [TestMethod]
+        public void CloseAndReOpenTest()
+        {
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt");
+
             ifh.InsertEntry(7);
 
             ifh.FlushPages();

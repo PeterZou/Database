@@ -22,7 +22,7 @@ namespace Database.IndexManage
         public ConstProperty.AttrType indexType;
 
         // Root
-        public NodeDisk<TK> root;
+        public RID rootRID;
 
         // K:V=>Degree:fistFreePage 
         // K=>ConstProperty.IndexHeaderKey,

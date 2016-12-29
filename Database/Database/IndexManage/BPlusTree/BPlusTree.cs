@@ -234,10 +234,11 @@ namespace Database.IndexManage.BPlusTree
         /// // 反向调用接口方法
         /// </summary>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
+        public void InsertRepair(bool isRepairRoot, 
+            Func<Node<TK, TV>,TV> funcInsertToDisk, Action<Node<TK, TV>, TV> ImportCurrentRIDToNode)
         {
             if(tmpNode != null)
-                InsertRepair(tmpNode, isRepairRoot, actionInsertToDisk);
+                InsertRepair(tmpNode, isRepairRoot, funcInsertToDisk);
         }
 
         // 反向调用接口方法
@@ -253,7 +254,8 @@ namespace Database.IndexManage.BPlusTree
         /// </summary>
         /// <param name="node"></param>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
+        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, 
+            Func<Node<TK, TV>,TV> funcnInsertToDisk)
         {
             if (node.Values.Count <= MaxDegree)
             {
@@ -261,13 +263,14 @@ namespace Database.IndexManage.BPlusTree
             }
             else if (node.Parent == null)
             {
-                Root = Split(node, isRepairRoot, actionInsertToDisk);
+                Root = Split(node, isRepairRoot, funcnInsertToDisk);
                 return;
             }
             else
             {
-                var newNode = Split(node, isRepairRoot, actionInsertToDisk);
-                this.InsertRepair(newNode, isRepairRoot, actionInsertToDisk);
+                var newNode = Split(node, isRepairRoot, funcnInsertToDisk);
+                this.InsertRepair(newNode, isRepairRoot, 
+                    funcnInsertToDisk);
             }
         }
 
@@ -332,7 +335,8 @@ namespace Database.IndexManage.BPlusTree
         }
 
         // implete func
-        public Node<TK, TV> Split(Node<TK, TV> node,bool isRepairRoot, Action<Node<TK, TV>> actionInsertToDisk)
+        public Node<TK, TV> Split(Node<TK, TV> node,bool isRepairRoot, 
+            Func<Node<TK, TV>,TV> funcInsertToDisk)
         {
             var rightNode = node.SetNode(node.IsLeaf);
             var risingNode = node.Values[Degree / 2];
@@ -385,38 +389,30 @@ namespace Database.IndexManage.BPlusTree
 
             var leftNode = node;
 
-            if (isRepairRoot == false)
+            var left = funcInsertToDisk(leftNode);
+            leftNode.CurrentRID = left;
+            var right = funcInsertToDisk(rightNode);
+            rightNode.CurrentRID = right;
+
+            if (node.Parent != null)
             {
-                actionInsertToDisk(node);
-                if (node.Parent != null)
-                {
-                    return node.Parent;
-                }
-                else
-                {
-                    return node;
-                }
+                return node.Parent;
             }
             else
             {
-                if (node.Parent != null)
-                {
-                    return node.Parent;
-                }
-                else
-                {
-                    // branch node
-                    Root = node.SetNode(false);
-                    Root.Parent = null;
-                    Root.Values.Add(risingNode);
-                    Root.ChildrenNodes.AddRange(new List<Node<TK, TV>>() { leftNode, rightNode });
-                    leftNode.Parent = Root;
-                    rightNode.Parent = Root;
-                    Root.IsLeaf = false;
-                    Root.Height++;
-                    return Root;
-                }
-            } 
+                // branch node
+                Root = node.SetNode(false);
+                Root.Parent = null;
+                Root.Values.Add(risingNode);
+                Root.ChildrenNodes.AddRange(new List<Node<TK, TV>>() { leftNode, rightNode });
+                leftNode.Parent = Root;
+                rightNode.Parent = Root;
+                Root.IsLeaf = false;
+                Root.Height++;
+
+                funcInsertToDisk(Root);
+                return Root;
+            }
         }
 
         private int GetIndex(TK key, Node<TK, TV> node)

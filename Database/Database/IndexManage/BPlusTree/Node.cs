@@ -24,7 +24,13 @@ namespace Database.IndexManage.BPlusTree
         public List<Node<TK, TV>> ChildrenNodes { set; get; }
 
         public Node()
-        { }
+        {
+            this.IsLeaf = true;
+            this.Parent = null;
+            this.Height = 0;
+            this.Property = new List<TV>();
+            this.Values = new List<TK>();
+        }
 
         // must be a leaf node or root node
         public Node(bool isLeaf, Node<TK, TV> parent, TV property,int height)
@@ -34,8 +40,8 @@ namespace Database.IndexManage.BPlusTree
             this.Property.Add(property);
             this.IsLeaf = isLeaf;
             this.Parent = parent;
-            Values = new List<TK>();
-            Values.Add(property.Key);
+            this.Values = new List<TK>();
+            this.Values.Add(property.Key);
         }
 
         // delegate to set the new RID

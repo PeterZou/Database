@@ -27,7 +27,7 @@ namespace DatabaseUnitTest.IndexManageTest
                 {
                     var node = new NodeInt(i);
                     bt.Insert(node);
-                    bt.InsertRepair(true,null);
+                    bt.InsertRepair(true,null,null);
                 }
             }
             bt.TraverseForword(bt.Root, bt.TraverseOutput);
@@ -49,7 +49,7 @@ namespace DatabaseUnitTest.IndexManageTest
             for (int i = 1; i <= 6; i++)
             {
                 bt.Insert(new NodeInt(i));
-                bt.InsertRepair(true,null);
+                bt.InsertRepair(true,null,null);
 
             }
             bt.TraverseForword(bt.Root, bt.TraverseOutput);
