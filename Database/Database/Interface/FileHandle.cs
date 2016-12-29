@@ -121,8 +121,6 @@ namespace Database.Interface
 
         abstract public RID InsertRec(char[] pData);
 
-        abstract public void DeleteRec(RID rid);
-
         abstract public void SetFileHeader(PF_PageHandle ph);
 
         abstract public int CalcOffset(int slot, int size);

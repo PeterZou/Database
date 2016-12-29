@@ -29,25 +29,30 @@ namespace Database.IndexManage
         public IX_FileHdr<TK> hdr;                        // file header
         public IX_PageHdr pHdr;
         public Func<TK, string> ConverTKToString;
+        public Func<TK, int> OccupiedNum;
+        public bool isLeaf { get; set; }
 
-        public IX_FileHandle(PF_FileHandle pfh, Func<TK, string> converTKToString)
+        public IX_FileHandle(PF_FileHandle pfh, Func<TK, string> converTKToString, Func<TK, int> occupiedNum)
         {
             bFileOpen = false;
             bHdrChanged = false;
             pfHandle = pfh;
             this.ConverTKToString = converTKToString;
+            this.OccupiedNum = occupiedNum;
         }
 
-        public IX_FileHandle(IX_IndexHandle<TK> iih, PF_FileHandle pfh, Func<TK, string> converTKToString)
+        public IX_FileHandle(IX_IndexHandle<TK> iih, PF_FileHandle pfh, 
+            Func<TK, string> converTKToString, Func<TK, int> occupiedNum)
         {
             bFileOpen = false;
             bHdrChanged = false;
             this.iih = iih;
             pfHandle = pfh;
             this.ConverTKToString = converTKToString;
+            this.OccupiedNum = occupiedNum;
         }
 
-        override public void DeleteRec(RID rid)
+        public void DeleteRec(RID rid,bool leafOrNot)
         {
             int pageNum = rid.Page;
             int slotNum = rid.Slot;
@@ -62,10 +67,12 @@ namespace Database.IndexManage
             var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(size));
             bitmap.Reset((UInt32)slotNum);
 
+            int positionSize = leafOrNot == true ? size : -size;
+
             if (pHdr.numFreeSlots == 0)
             {
-                pHdr.pf_ph.nextFree = hdr.dic[size];
-                hdr.dic[size] = pageNum;
+                pHdr.pf_ph.nextFree = hdr.dic[positionSize];
+                hdr.dic[positionSize] = pageNum;
                 //pHdr.pf_ph.nextFree = hdr.firstFree;
                 //hdr.firstFree = pageNum;
             }
@@ -81,14 +88,24 @@ namespace Database.IndexManage
 
         override public int fullRecordSize(int size)
         {
+            int leafNum = 3 * ConstProperty.Int_Size + ConstProperty.Flg_Size + size * OccupiedNum(default(TK));
             // TODO defalut TK occupied 4 Bytes
-            return 4 * ConstProperty.Int_Size + ConstProperty.Int_Size + ConstProperty.RM_Page_RID_SIZE;
+            if (isLeaf)
+            {
+                return leafNum;
+            }
+            else
+            {
+                int branchNum = size * ConstProperty.RM_Page_RID_SIZE;
+                return leafNum + branchNum;
+            }
         }
 
         override public RID InsertRec(char[] pData)
         {
+            isLeaf = (pData[4] - 48) == 0 ? true: false;
             // Set the child and value num in the pData 
-            int size = CalculateSize(pData.Length,pData[4]-48);
+            int size = CalculateSize(pData.Length);
 
             IsValid(size);
 
@@ -110,12 +127,14 @@ namespace Database.IndexManage
 
             SetSlotPointer(ph, slotNum, pData, size);
 
+            int positonSize = isLeaf == true ? size : -size;
+
             bitmap.Set((UInt32)slotNum); // slot s is no longer free
             pHdr.numFreeSlots--;
             if (pHdr.numFreeSlots == 0)
             {
-                hdr.dic[size] = pHdr.pf_ph.nextFree;
-                hdr.firstFree = hdr.dic[size];
+                hdr.dic[positonSize] = pHdr.pf_ph.nextFree;
+                hdr.firstFree = hdr.dic[positonSize];
                 pHdr.pf_ph.nextFree = (int)ConstProperty.Page_statics.PF_PAGE_USED;
             }
             pHdr.freeSlotMap = bitmap.To_char_buf(bitmap.numChars());
@@ -177,6 +196,8 @@ namespace Database.IndexManage
 
         public Tuple<int, IX_PageHdr> GetNextFreePage(int degreesSize)
         {
+            int positonDegree = isLeaf == true ? degreesSize : -degreesSize;
+
             int pageNum = -3;
             PF_PageHandle ph;
 
@@ -188,9 +209,9 @@ namespace Database.IndexManage
             }
 
             // 对应的
-            if (hdr.dic[degreesSize] != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
+            if (hdr.dic[positonDegree] != (int)ConstProperty.Page_statics.PF_PAGE_LIST_END)
             {
-                ph = pfHandle.GetThisPage(hdr.dic[degreesSize]);
+                ph = pfHandle.GetThisPage(hdr.dic[positonDegree]);
                 if (pHdr.numSlots == pHdr.numFreeSlots || pHdr.numFreeSlots != GetPageHeader(ph).numFreeSlots)
                 {
                     pHdr = GetPageHeader(ph);
@@ -199,12 +220,13 @@ namespace Database.IndexManage
                 pfHandle.MarkDirty(pageNum);
                 pfHandle.UnpinPage(pageNum);
             }
-            else if (hdr.dic[degreesSize] == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END || pHdr.numFreeSlots == 0)
+            else if (hdr.dic[positonDegree] == (int)ConstProperty.Page_statics.PF_PAGE_LIST_END 
+                || pHdr.numFreeSlots == 0)
             {
                 pfHandle.hdr.numPages = hdr.numPages;
 
                 #region Wrap the dic put into the firstFree and then replace it
-                pfHandle.hdr.firstFree = hdr.dic[degreesSize];
+                pfHandle.hdr.firstFree = hdr.dic[positonDegree];
                 ph = pfHandle.AllocatePage();
                 //hdr.dic[degreesSize] = pfHandle.hdr.firstFree;
                 #endregion
@@ -220,7 +242,7 @@ namespace Database.IndexManage
 
                 pfHandle.UnpinPage(pageNum);
 
-                hdr.dic[degreesSize] = pageNum;
+                hdr.dic[positonDegree] = pageNum;
                 hdr.numPages++;
                 bHdrChanged = true;
             }
@@ -298,11 +320,11 @@ namespace Database.IndexManage
         /// </summary>
         /// <param name="length"></param>
         /// <returns></returns>
-        private int CalculateSize(int length,int flag)
+        private int CalculateSize(int length)
         {
             // TODO defalut TK occupied 4 Bytes
             // Leaf:0
-            if (flag == 0)
+            if (isLeaf)
             {
                 return (length - 3 * ConstProperty.Int_Size - 1) / ConstProperty.Int_Size;
             }

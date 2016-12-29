@@ -61,6 +61,21 @@ namespace Database.IndexManage
         public static interfaceFileHdr ReadIndexFileHdr(PF_FileHandle pfh, Func<string, TK> ConverStringToTK)
         {
             var fs = pfh.fs;
+            return ReadIndexFileHdr(ConverStringToTK, fs);
+        }
+
+        public static interfaceFileHdr ReadIndexFileHdr(string filePath, Func<string, TK> ConverStringToTK)
+        {
+            interfaceFileHdr obj = null;
+            using (FileStream fs = new FileStream(filePath, FileMode.Open))
+            {
+                obj = ReadIndexFileHdr(ConverStringToTK, fs);
+            }
+            return obj;
+        }
+
+        private static interfaceFileHdr ReadIndexFileHdr(Func<string, TK> ConverStringToTK, FileStream fs)
+        {
             try
             {
                 fs.Position = 0;

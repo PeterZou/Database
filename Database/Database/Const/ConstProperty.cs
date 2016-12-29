@@ -45,6 +45,7 @@ namespace Database.Const
         public const int RM_Page_Hdr_SIZE_ExceptBitMap = 3* Int_Size;
 
         public const int Int_Size = sizeof(int);
+        public const int Flg_Size = sizeof(bool);
 
         public const int RM_Page_RID_SIZE = 2 * Int_Size;
         public const int MAXSTRINGLEN = 255;             // maximum length of a
@@ -53,7 +54,7 @@ namespace Database.Const
 
         public enum FileType {File,Record,Index }
 
-        public const int IndexHeaderKey = 2;
+        public const int IndexHeaderKey = 4;
         public const int IndexHeaderValue = 4;
 
         //

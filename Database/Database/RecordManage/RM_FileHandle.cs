@@ -26,7 +26,7 @@ namespace Database.RecordManage
             bHdrChanged = false;
         }
 
-        override public void DeleteRec(RID rid)
+        public void DeleteRec(RID rid)
         {
             IsValid(-1);
             int pageNum = rid.Page;

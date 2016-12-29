@@ -29,7 +29,7 @@ namespace Database.IndexManage
         // V=>ConstProperty.IndexHeaderValue
         // total=>ConstProperty.IndexHeaderKey + ConstProperty.IndexHeaderValue
         public int dicCount;
-        public Dictionary<int, int> dic;
+        public Dictionary<int, int> dic { get; set; }
 
         public IX_FileHdr()
         {

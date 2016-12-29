@@ -16,6 +16,7 @@ namespace DatabaseUnitTest.IndexManageTest
         private Func<int, string> ConverIntToString = p => { string str = Convert.ToString(p); return str; };
         private Func<string, int> ConverStringToInt = p => {int num =0; Int32.TryParse(p,out num); return num; };
         private Func<int> CreatNewTK = () => { return 0; };
+        private Func<int, int> OccupiedNum = p => { return 4; };
 
         private NodeDisk<int> CreateNodeDisk()
         {
@@ -50,12 +51,21 @@ namespace DatabaseUnitTest.IndexManageTest
             
             hdr.root = CreateNodeDisk();
 
-            hdr.dicCount = 4;
+            hdr.dicCount = 13;
             var dic = new Dictionary<int, int>();
-            dic.Add(10, 120);
-            dic.Add(3, 354);
-            dic.Add(0, 384);
-            dic.Add(13, 120);
+            dic.Add(0, -1);
+            dic.Add(1, -1);
+            dic.Add(2, -1);
+            dic.Add(3, -1);
+            dic.Add(4, -1);
+            dic.Add(5, -1);
+            dic.Add(6, -1);
+            dic.Add(-1, -1);
+            dic.Add(-2, -1);
+            dic.Add(-3, -1);
+            dic.Add(-4, -1);
+            dic.Add(-5, -1);
+            dic.Add(-6, -1);
             hdr.dic = dic;
             return hdr;
         }
@@ -80,11 +90,13 @@ namespace DatabaseUnitTest.IndexManageTest
         [TestMethod]
         public void ReadTheIndexFileHdr()
         {
-            //string filePath = @"D:\test.txt";
+            string filePath = @"D:\test.txt";
 
-            //char[] data = new char[122];
+            char[] data = new char[122];
 
-            //var d = IndexManagerUtil<int>.ReadIndexFileHdr(filePath, ConverStringToInt);
+            PF_FileHandle pfh = new PF_FileHandle();
+
+            var d = IndexManagerUtil<int>.ReadIndexFileHdr(filePath, ConverStringToInt);
         }
 
         [TestMethod]
@@ -98,7 +110,8 @@ namespace DatabaseUnitTest.IndexManageTest
         public void CreateAndOpenIndexFileTest()
         {
             PF_Manager pfm = new PF_Manager();
-            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString, ConverStringToInt, CreatNewTK);
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString, 
+                ConverStringToInt, CreatNewTK, OccupiedNum);
 
             ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
 

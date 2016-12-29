@@ -77,8 +77,8 @@ namespace Database
             RID recordRID = default(RID);
             RIDKey<TK> value = new RIDKey<TK>(recordRID, key);
             bPlusTreeProvider.Insert(value);
+            
             //Get the leaf child
-
             var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
             InsertExportToDiskReturn(leafNode);
         }
@@ -135,7 +135,6 @@ namespace Database
             {
                 // import all the tree
                 refSubRoot = ImportToBPlusTreeProvider(node, RIDList, bPlusTreeProvider);
-
             }
             else
             {
@@ -209,6 +208,11 @@ namespace Database
 
         public RID InsertExportToDiskReturn(Node<TK, RIDKey<TK>> node)
         {
+            if (node.Values.Count > 1)
+            {
+                imp.DeleteRec(node.CurrentRID.Rid,node.IsLeaf);
+            }
+
             var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
 
             var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
