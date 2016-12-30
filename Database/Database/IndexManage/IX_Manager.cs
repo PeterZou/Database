@@ -56,7 +56,7 @@ namespace Database.IndexManage
         }
 
         
-        public IX_FileHandle<TK> OpenFile(string fileName)
+        public IX_FileHandle<TK> OpenFile(string fileName,int treeDegree)
         {
             PF_FileHandle pfh = pfm.OpenFile(fileName);
 
@@ -72,7 +72,7 @@ namespace Database.IndexManage
             if (ixi == null) throw new Exception();
 
             IX_IndexHandle<TK> iih = new IX_IndexHandle<TK>(header.totalHeight,header.rootRID,ConverStringToTK,
-                ConverTKToString,CreatNewTK,ixi);
+                ConverTKToString,CreatNewTK,ixi, treeDegree);
             ixi.iih = iih;
 
             ixi.Open(header);

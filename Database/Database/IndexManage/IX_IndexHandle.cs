@@ -32,7 +32,7 @@ namespace Database
 
         private Func<TK> FuncCreatNewTK;
 
-        private int TreeDegree { get; } = 4;
+        private int TreeDegree { get; }
 
         #region constructor
         public IX_IndexHandle()
@@ -40,7 +40,7 @@ namespace Database
 
         public IX_IndexHandle(int maxTreeHeightInMemory, RID rootRID,
             Func<string, TK> converStringToTK, Func<TK, string> converTKToString,
-            Func<TK> creatNewTK, IX_FileHandle<TK> imp)
+            Func<TK> creatNewTK, IX_FileHandle<TK> imp,int treeDegree)
         {
             this.imp = imp;
 
@@ -49,7 +49,7 @@ namespace Database
             this.FuncCreatNewTK = creatNewTK;
             this.FuncConverStringToTK = converStringToTK;
             this.FuncConverTKToString = converTKToString;
-
+            this.TreeDegree = treeDegree;
             GetRootEntry(rootRID);
         }
         #endregion
@@ -84,7 +84,12 @@ namespace Database
             CreateEntry(key, lastSubRoot);
 
             int num = 0;
-            GetSubTreeUntilTop(lastSubRoot, ref num);
+            GetSubTreeUntilTop(lastSubRoot, ref num, key);
+
+            while (Root.Parent != null)
+            {
+                Root = Root.Parent;
+            }
         }
 
         private void CreateEntry(TK key, Node<TK, RIDKey<TK>> lastSubRoot)
@@ -121,33 +126,34 @@ namespace Database
             return lastSubRoot;
         }
 
-        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index)
+        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index,TK key)
         {
             int TotolHeight = Root.Height;
             // Two nums must match
-            if (TopToLeafStoreList.Count != TotolHeight) throw new Exception();
+            //if (TopToLeafStoreList.Count != TotolHeight) throw new Exception();
             // construct a tree
             if (TotolHeight <= MaxTreeHeightInMemory)
             {
-                InsertRepair(Root);
+                InsertRepair(Root,key);
             }
             else
             {
                 index += MaxTreeHeightInMemory;
                 var headTree = TopToLeafStoreList[index];
-                InsertRepair(headTree);
+                InsertRepair(headTree,key);
 
-                GetSubTreeUntilTop(headTree, ref index);
+                GetSubTreeUntilTop(headTree, ref index,key);
             }
         }
 
-        private void InsertRepair(Node<TK, RIDKey<TK>> subRoot)
+        private void InsertRepair(Node<TK, RIDKey<TK>> subRoot, TK key)
         {
             // import all of it
             var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, subRoot);
 
+            var node = bPlusTreeProvider.SearchProperLeafNode(key,null);
             // do not repair the root
-            bPlusTreeProvider.InsertRepair(subRoot, false, InsertExportToDisk);
+            bPlusTreeProvider.InsertRepair(node, false, InsertExportToDisk);
 
             Root = bPlusTreeProvider.Root;
         }
@@ -244,14 +250,31 @@ namespace Database
             RID rid = imp.InsertRec(chars);
 
             // 向上递归
-            if (node.CurrentRID != null)
+            if (node.CurrentRID == null)
+            {
+                node.CurrentRID = new RIDKey<TK>(rid, default(TK));
+            }
+            else
             {
                 node.CurrentRID.Rid = rid;
-
-                if (node.Parent != null)
+            }
+            
+            if (node.Parent != null && node.Parent.ChildrenNodes!= null)
+            {
+                bool flag = true;
+                foreach (var p in node.Parent.ChildrenNodes)
+                {
+                    if (p.CurrentRID == null)
+                    {
+                        flag = false;
+                        break;
+                    }
+                }
+                if(flag == true)
                 {
                     ResetNodeToParentLink(node);
                 }
+                   
             }
 
             // 如果root节点发生变化，重置root节点

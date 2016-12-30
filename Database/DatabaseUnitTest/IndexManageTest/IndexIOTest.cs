@@ -107,15 +107,16 @@ namespace DatabaseUnitTest.IndexManageTest
         }
 
         [TestMethod]
-        public void CreateAndOpenIndexFileTest()
+        public void CreateAndOpenIndexFileTestWithDegree4()
         {
+            int treeDegree = 4;
             PF_Manager pfm = new PF_Manager();
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString, 
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
             ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
 
-            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt");
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             ifh.InsertEntry(1);
             ifh.FlushPages();
             ifh.InsertEntry(2);
@@ -127,19 +128,51 @@ namespace DatabaseUnitTest.IndexManageTest
             // Branch test
             ifh.InsertEntry(6);
             ifh.InsertEntry(7);
+            ifh.InsertEntry(8);
+            ifh.InsertEntry(9);
+            ifh.InsertEntry(10);
+            ifh.InsertEntry(11);
+            ifh.InsertEntry(12);
+            ifh.InsertEntry(13);
+            ifh.InsertEntry(14);
+            ifh.InsertEntry(15);
+            ifh.InsertEntry(16);
+            ifh.InsertEntry(17);
             ifh.FlushPages();
         }
 
         [TestMethod]
-        public void CloseAndReOpenTest()
+        public void CreateAndOpenIndexFileTestWithDegree5()
         {
+            int treeDegree = 5;
             PF_Manager pfm = new PF_Manager();
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt");
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
 
-            ifh.InsertEntry(7);
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+            ifh.InsertEntry(1);
+            ifh.FlushPages();
+            for (int i = 2; i < 15; i++)
+            {
+                ifh.InsertEntry(i);
+            }
+            ifh.InsertEntry(15);
+            ifh.FlushPages();
+        }
+
+        [TestMethod]
+        public void CloseAndReOpenTestWithDegree4()
+        {
+            int treeDegree = 4;
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+
+            ifh.InsertEntry(17);
 
             ifh.FlushPages();
         }
