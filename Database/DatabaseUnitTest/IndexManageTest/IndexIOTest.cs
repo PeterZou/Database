@@ -232,17 +232,52 @@ namespace DatabaseUnitTest.IndexManageTest
             ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+            for (int i = 0; i < 19; i++)
+            {
+                ifh.InsertEntry(2 * i + 1);
+            }
+            ifh.DeleteEntry(27);
+            ifh.DeleteEntry(27);
+            ifh.FlushPages();
+        }
+
+        [TestMethod]
+        public void MergeTest2()
+        {
+            int treeDegree = 5;
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
             {
                 ifh.InsertEntry(2 * i + 1);
             }
-            ifh.DeleteEntry(9);
-            ifh.DeleteEntry(9);
+            ifh.DeleteEntry(5);
+            ifh.FlushPages();
         }
 
         [TestMethod]
-        public void MergeTheLastNodeTest()
+        public void MergeTheLastRootNodeTest()
         {
+            int treeDegree = 5;
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+            for (int i = 1; i < 6; i++)
+            {
+                ifh.InsertEntry(i);
+            }
+            ifh.DeleteEntry(4);
+            ifh.DeleteEntry(5);
+            ifh.FlushPages();
         }
     }
 }

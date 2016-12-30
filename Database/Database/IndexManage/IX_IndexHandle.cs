@@ -308,7 +308,8 @@ namespace Database
                 node.CurrentRID.Rid = rid;
             }
             
-            if (node.Parent != null && node.Parent.ChildrenNodes!= null)
+            if (node.Parent != null && node.Parent.ChildrenNodes!= null 
+                && node.Parent.Values.Count != 0)
             {
                 bool flag = true;
                 foreach (var p in node.Parent.ChildrenNodes)

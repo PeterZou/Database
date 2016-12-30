@@ -524,7 +524,6 @@ namespace Database.IndexManage.BPlusTree
             var parentIndex = 0;
             for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
             var rightSib = parentNode.ChildrenNodes[parentIndex + 1];
-            var leftSib = parentNode.ChildrenNodes[parentIndex];
 
             if (!node.IsLeaf)
             {
@@ -550,10 +549,19 @@ namespace Database.IndexManage.BPlusTree
             #region IO handle
             if (nodeExportToDisk != null)
             {
-                var left = nodeExportToDisk(leftSib);
-                leftSib.CurrentRID = left;
-                var right = nodeExportToDisk(rightSib);
+                var right = nodeExportToDisk(node);
                 rightSib.CurrentRID = right;
+                if (parentNode.Values != null && parentNode.Values.Count != 0)
+                {
+                    var parent = nodeExportToDisk(parentNode);
+                    parentNode.CurrentRID = parent;
+                }
+                else
+                {
+                    // DeleteTheRootID
+                    // MergeTheLastRootNode
+                }
+
             }
             #endregion
 
