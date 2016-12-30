@@ -77,14 +77,29 @@ namespace Database
 
         public void InsertEntry(TK key)
         {
-            // TODO
             GetRootEntry(Root.CurrentRID.Rid);
             var lastSubRoot = GetSubTreeUntilLeaf(key);
 
             CreateEntry(key, lastSubRoot);
 
             int num = 0;
-            GetSubTreeUntilTop(lastSubRoot, ref num, key);
+            GetSubTreeUntilTop(lastSubRoot, ref num, key, InsertRepair);
+
+            while (Root.Parent != null)
+            {
+                Root = Root.Parent;
+            }
+        }
+
+        public void DeleteEntry(TK key)
+        {
+            GetRootEntry(Root.CurrentRID.Rid);
+            var lastSubRoot = GetSubTreeUntilLeaf(key);
+
+            RemoveEntry(key, lastSubRoot);
+
+            int num = 0;
+            GetSubTreeUntilTop(lastSubRoot, ref num, key, RepairAfterDelete);
 
             while (Root.Parent != null)
             {
@@ -107,12 +122,33 @@ namespace Database
             {
                 bPlusTreeProvider.Insert(value);
 
-                InsertExportToDisk(leafNode);
+                NodeExportToDisk(leafNode);
             }
             else
             {
                 leafNode.Property.Add(value);
                 leafNode.Values.Add(key);
+            }
+        }
+
+        private void RemoveEntry(TK key, Node<TK, RIDKey<TK>> lastSubRoot)
+        {
+            // add the entry and export to the disk
+            var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
+
+            //Get the leaf child
+            var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
+            if (leafNode.Values.Count != TreeDegree / 2)
+            {
+                bPlusTreeProvider.Delete(key);
+
+                NodeExportToDisk(leafNode);
+            }
+            else
+            {
+                int index = leafNode.Values.IndexOf(key);
+                leafNode.Values.Remove(key);
+                leafNode.Property.RemoveAt(index);
             }
         }
         #endregion
@@ -126,7 +162,8 @@ namespace Database
             return lastSubRoot;
         }
 
-        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index,TK key)
+        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index,TK key,
+            Action<Node<TK, RIDKey<TK>>, TK> action)
         {
             int TotolHeight = Root.Height;
             // Two nums must match
@@ -134,15 +171,15 @@ namespace Database
             // construct a tree
             if (TotolHeight <= MaxTreeHeightInMemory)
             {
-                InsertRepair(Root,key);
+                action(Root,key);
             }
             else
             {
                 index += MaxTreeHeightInMemory;
                 var headTree = TopToLeafStoreList[index];
-                InsertRepair(headTree,key);
+                action(headTree,key);
 
-                GetSubTreeUntilTop(headTree, ref index,key);
+                GetSubTreeUntilTop(headTree, ref index,key, action);
             }
         }
 
@@ -153,7 +190,19 @@ namespace Database
 
             var node = bPlusTreeProvider.SearchProperLeafNode(key,null);
             // do not repair the root
-            bPlusTreeProvider.InsertRepair(node, false, InsertExportToDisk);
+            bPlusTreeProvider.InsertRepair(node, NodeExportToDisk);
+
+            Root = bPlusTreeProvider.Root;
+        }
+
+        private void RepairAfterDelete(Node<TK, RIDKey<TK>> subRoot, TK key)
+        {
+            // import all of it
+            var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, subRoot);
+
+            var node = bPlusTreeProvider.SearchProperLeafNode(key, null);
+            // do not repair the root
+            bPlusTreeProvider.RepairAfterDelete(node, NodeExportToDisk);
 
             Root = bPlusTreeProvider.Root;
         }
@@ -233,7 +282,7 @@ namespace Database
         #region deltegate to handle this
         // DISK to save
         // TODO which should be saved, async
-        public RIDKey<TK> InsertExportToDisk(Node<TK, RIDKey<TK>> node)
+        public RIDKey<TK> NodeExportToDisk(Node<TK, RIDKey<TK>> node)
         {
             if (node.Values.Count > 0)
             {
@@ -296,7 +345,7 @@ namespace Database
         {
             if (node.Parent != null)
             {
-                InsertExportToDisk(node.Parent);
+                NodeExportToDisk(node.Parent);
 
                 ResetNodeToParentLink(node.Parent);
             }

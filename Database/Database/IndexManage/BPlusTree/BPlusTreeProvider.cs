@@ -28,13 +28,13 @@ namespace Database.IndexManage.BPlusTree
         public void Delete(TK key)
         {
             bBplusTree.Delete(key);
-            bBplusTree.RepairAfterDelete();
+            //bBplusTree.RepairAfterDelete();
         }
 
         public void Insert(TV value)
         {
             bBplusTree.Insert(value);
-            bBplusTree.InsertRepair(true,null,null);
+            //bBplusTree.InsertRepair(null,null);
         }
 
         public void Search(TK key)
@@ -80,16 +80,18 @@ namespace Database.IndexManage.BPlusTree
         /// </summary>
         /// <param name="node"></param>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, 
-            Func<Node<TK, TV>,TV> funcInsertToDisk)
+        public void InsertRepair(Node<TK, TV> node, 
+            Func<Node<TK, TV>,TV> nodeExportToDisk)
         {
-            bBplusTree.InsertRepair(node, isRepairRoot, funcInsertToDisk);
+            bBplusTree.InsertRepair(node, nodeExportToDisk);
             Root = bBplusTree.Root;
         }
 
-        public void RepairAfterDelete(Node<TK, TV> node)
+        public void RepairAfterDelete(Node<TK, TV> node,
+            Func<Node<TK, TV>, TV> nodeExportToDisk)
         {
-            bBplusTree.RepairAfterDelete(node);
+            bBplusTree.RepairAfterDelete(node, nodeExportToDisk);
+            Root = bBplusTree.Root;
         }
     }
 }

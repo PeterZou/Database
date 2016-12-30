@@ -234,19 +234,18 @@ namespace Database.IndexManage.BPlusTree
         /// // 反向调用接口方法
         /// </summary>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(bool isRepairRoot, 
-            Func<Node<TK, TV>,TV> funcInsertToDisk, Action<Node<TK, TV>, TV> ImportCurrentRIDToNode)
+        public void InsertRepair(Func<Node<TK, TV>,TV> nodeExportToDisk, Action<Node<TK, TV>, TV> ImportCurrentRIDToNode)
         {
             if(tmpNode != null)
-                InsertRepair(tmpNode, isRepairRoot, funcInsertToDisk);
+                InsertRepair(tmpNode, nodeExportToDisk);
         }
 
         // 反向调用接口方法
         // StealFromLeft，StealFromRight，Merge都需要重新判断向上的子树
-        public void RepairAfterDelete()
+        public void RepairAfterDelete(Func<Node<TK, TV>, TV> nodeExportToDisk)
         {
             if (tmpNode != null)
-                RepairAfterDelete(tmpNode);
+                RepairAfterDelete(tmpNode, nodeExportToDisk);
         }
 
         /// <summary>
@@ -254,7 +253,7 @@ namespace Database.IndexManage.BPlusTree
         /// </summary>
         /// <param name="node"></param>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(Node<TK, TV> node,bool isRepairRoot, 
+        public void InsertRepair(Node<TK, TV> node,
             Func<Node<TK, TV>,TV> funcnInsertToDisk)
         {
             if (node.Values.Count <= MaxDegree)
@@ -263,18 +262,18 @@ namespace Database.IndexManage.BPlusTree
             }
             else if (node.Parent == null)
             {
-                Root = Split(node, isRepairRoot, funcnInsertToDisk);
+                Root = Split(node, funcnInsertToDisk);
                 return;
             }
             else
             {
-                var newNode = Split(node, isRepairRoot, funcnInsertToDisk);
-                this.InsertRepair(newNode, isRepairRoot, 
+                var newNode = Split(node, funcnInsertToDisk);
+                this.InsertRepair(newNode, 
                     funcnInsertToDisk);
             }
         }
 
-        public void RepairAfterDelete(Node<TK, TV> node)
+        public void RepairAfterDelete(Node<TK, TV> node, Func<Node<TK, TV>, TV> nodeExportToDisk)
         {
             // less than degree
             if (node.Values.Count < MinDegree)
@@ -307,13 +306,13 @@ namespace Database.IndexManage.BPlusTree
                     {
                         // Merge with right sibling
                         var nextNode = Merge(node);
-                        RepairAfterDelete(nextNode.Parent);
+                        RepairAfterDelete(nextNode.Parent, nodeExportToDisk);
                     }
                     else
                     {
                         // Merge with left sibling
                         var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
-                        RepairAfterDelete(nextNode.Parent);
+                        RepairAfterDelete(nextNode.Parent, nodeExportToDisk);
                     }
                 }
             }
@@ -335,8 +334,8 @@ namespace Database.IndexManage.BPlusTree
         }
 
         // implete func
-        public Node<TK, TV> Split(Node<TK, TV> node,bool isRepairRoot, 
-            Func<Node<TK, TV>,TV> funcInsertToDisk)
+        public Node<TK, TV> Split(Node<TK, TV> node, 
+            Func<Node<TK, TV>,TV> nodeExportToDisk)
         {
             var rightNode = node.SetNode(node.IsLeaf);
             var risingNode = node.Values[Degree / 2];
@@ -389,10 +388,12 @@ namespace Database.IndexManage.BPlusTree
 
             var leftNode = node;
 
-            var left = funcInsertToDisk(leftNode);
+            #region IO handle
+            var left = nodeExportToDisk(leftNode);
             leftNode.CurrentRID = left;
-            var right = funcInsertToDisk(rightNode);
+            var right = nodeExportToDisk(rightNode);
             rightNode.CurrentRID = right;
+            #endregion
 
             if (node.Parent != null)
             {
@@ -410,8 +411,11 @@ namespace Database.IndexManage.BPlusTree
                 Root.IsLeaf = false;
                 Root.Height++;
 
-                var parent = funcInsertToDisk(Root);
+                #region IO handle
+                var parent = nodeExportToDisk(Root);
                 Root.CurrentRID = parent;
+                #endregion
+
                 return Root;
             }
         }

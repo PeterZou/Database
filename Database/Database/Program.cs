@@ -21,7 +21,7 @@ namespace Database
                 {
                     var node = new NodeInt(i);
                     bt.Insert(node);
-                    bt.InsertRepair(true,null,null);
+                    bt.InsertRepair(null,null);
                 }
             }
             bt.TraverseForword(bt.Root, bt.TraverseOutput);

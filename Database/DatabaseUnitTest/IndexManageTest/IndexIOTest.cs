@@ -133,11 +133,6 @@ namespace DatabaseUnitTest.IndexManageTest
             ifh.InsertEntry(10);
             ifh.InsertEntry(11);
             ifh.InsertEntry(12);
-            ifh.InsertEntry(13);
-            ifh.InsertEntry(14);
-            ifh.InsertEntry(15);
-            ifh.InsertEntry(16);
-            ifh.InsertEntry(17);
             ifh.FlushPages();
         }
 
@@ -172,6 +167,10 @@ namespace DatabaseUnitTest.IndexManageTest
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
 
+            ifh.InsertEntry(13);
+            ifh.InsertEntry(14);
+            ifh.InsertEntry(15);
+            ifh.InsertEntry(16);
             ifh.InsertEntry(17);
 
             ifh.FlushPages();
