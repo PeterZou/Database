@@ -14,7 +14,7 @@ namespace DatabaseUnitTest.IndexManageTest
     public class IndexIOTest
     {
         private Func<int, string> ConverIntToString = p => { string str = Convert.ToString(p); return str; };
-        private Func<string, int> ConverStringToInt = p => {int num =0; Int32.TryParse(p,out num); return num; };
+        private Func<string, int> ConverStringToInt = p => { int num = 0; Int32.TryParse(p, out num); return num; };
         private Func<int> CreatNewTK = () => { return 0; };
         private Func<int, int> OccupiedNum = p => { return 4; };
 
@@ -111,7 +111,7 @@ namespace DatabaseUnitTest.IndexManageTest
         {
             int treeDegree = 4;
             PF_Manager pfm = new PF_Manager();
-            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString, 
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
             ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
@@ -174,6 +174,75 @@ namespace DatabaseUnitTest.IndexManageTest
             ifh.InsertEntry(17);
 
             ifh.FlushPages();
+        }
+
+        [TestMethod]
+        public void StealFromLeftTest()
+        {
+            int treeDegree = 5;
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+            for (int i = 0; i < 13; i++)
+            {
+                ifh.InsertEntry(2*i+1);
+            }
+            ifh.InsertEntry(2);
+            ifh.InsertEntry(6);
+            ifh.DeleteEntry(5);
+            ifh.DeleteEntry(6);
+            ifh.FlushPages();
+        }
+
+        [TestMethod]
+        public void StealFromRightTest()
+        {
+            int treeDegree = 5;
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+            for (int i = 0; i < 13; i++)
+            {
+                ifh.InsertEntry(2 * i + 1);
+            }
+            ifh.InsertEntry(10);
+            ifh.DeleteEntry(7);
+            ifh.FlushPages();
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        [TestMethod]
+        public void MergeTest()
+        {
+            int treeDegree = 5;
+            PF_Manager pfm = new PF_Manager();
+            IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
+                ConverStringToInt, CreatNewTK, OccupiedNum);
+
+            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+
+            IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
+            for (int i = 0; i < 13; i++)
+            {
+                ifh.InsertEntry(2 * i + 1);
+            }
+            ifh.DeleteEntry(9);
+            ifh.DeleteEntry(9);
+        }
+
+        [TestMethod]
+        public void MergeTheLastNodeTest()
+        {
         }
     }
 }

@@ -52,7 +52,7 @@ namespace Database.IndexManage.BPlusTree
 
         public int MinDegree
         {
-            get { return Degree/2; }
+            get { return (Degree-1) /2; }
         }
 
         public int Degree { set; get; }
@@ -234,7 +234,7 @@ namespace Database.IndexManage.BPlusTree
         /// // 反向调用接口方法
         /// </summary>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(Func<Node<TK, TV>,TV> nodeExportToDisk, Action<Node<TK, TV>, TV> ImportCurrentRIDToNode)
+        public void InsertRepair(Func<Node<TK, TV>,TV> nodeExportToDisk)
         {
             if(tmpNode != null)
                 InsertRepair(tmpNode, nodeExportToDisk);
@@ -294,24 +294,24 @@ namespace Database.IndexManage.BPlusTree
 
                     if (parentIndex > 0 && parentNode.ChildrenNodes[parentIndex - 1].Values.Count > MinDegree)
                     {
-                        StealFromLeft(node, parentIndex);
+                        StealFromLeft(node, parentIndex, nodeExportToDisk);
 
                     }
                     else if (parentIndex < parentNode.Values.Count && parentNode.ChildrenNodes[parentIndex + 1].Values.Count > MinDegree)
                     {
-                        StealFromRight(node, parentIndex);
+                        StealFromRight(node, parentIndex, nodeExportToDisk);
 
                     }
                     else if (parentIndex == 0)
                     {
                         // Merge with right sibling
-                        var nextNode = Merge(node);
+                        var nextNode = Merge(node, nodeExportToDisk);
                         RepairAfterDelete(nextNode.Parent, nodeExportToDisk);
                     }
                     else
                     {
                         // Merge with left sibling
-                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1]);
+                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1], nodeExportToDisk);
                         RepairAfterDelete(nextNode.Parent, nodeExportToDisk);
                     }
                 }
@@ -389,10 +389,13 @@ namespace Database.IndexManage.BPlusTree
             var leftNode = node;
 
             #region IO handle
-            var left = nodeExportToDisk(leftNode);
-            leftNode.CurrentRID = left;
-            var right = nodeExportToDisk(rightNode);
-            rightNode.CurrentRID = right;
+            if (nodeExportToDisk != null)
+            {
+                var left = nodeExportToDisk(leftNode);
+                leftNode.CurrentRID = left;
+                var right = nodeExportToDisk(rightNode);
+                rightNode.CurrentRID = right;
+            }
             #endregion
 
             if (node.Parent != null)
@@ -412,8 +415,11 @@ namespace Database.IndexManage.BPlusTree
                 Root.Height++;
 
                 #region IO handle
-                var parent = nodeExportToDisk(Root);
-                Root.CurrentRID = parent;
+                if (nodeExportToDisk != null)
+                {
+                    var parent = nodeExportToDisk(Root);
+                    Root.CurrentRID = parent;
+                }
                 #endregion
 
                 return Root;
@@ -428,7 +434,7 @@ namespace Database.IndexManage.BPlusTree
 
             if (list != null && list.ToList().Count != 0)
             {
-                var v = list.Last();
+                var v = list.First();
                 index = node.Values.IndexOf(v);
             }
             else
@@ -512,12 +518,13 @@ namespace Database.IndexManage.BPlusTree
             }
         }
 
-        private Node<TK, TV> Merge(Node<TK, TV> node)
+        private Node<TK, TV> Merge(Node<TK, TV> node, Func<Node<TK, TV>, TV> nodeExportToDisk)
         {
             var parentNode = node.Parent;
             var parentIndex = 0;
             for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
             var rightSib = parentNode.ChildrenNodes[parentIndex + 1];
+            var leftSib = parentNode.ChildrenNodes[parentIndex];
 
             if (!node.IsLeaf)
             {
@@ -540,10 +547,20 @@ namespace Database.IndexManage.BPlusTree
             parentNode.ChildrenNodes.RemoveAt(parentIndex+1);
             parentNode.Values.RemoveAt(parentIndex);
 
+            #region IO handle
+            if (nodeExportToDisk != null)
+            {
+                var left = nodeExportToDisk(leftSib);
+                leftSib.CurrentRID = left;
+                var right = nodeExportToDisk(rightSib);
+                rightSib.CurrentRID = right;
+            }
+            #endregion
+
             return node;
         }
 
-        private void StealFromRight(Node<TK, TV> node, int parentIndex)
+        private void StealFromRight(Node<TK, TV> node, int parentIndex,Func<Node<TK, TV>, TV> nodeExportToDisk)
         {
             var parentNode = node.Parent;
             var rightSib = parentNode.ChildrenNodes[parentIndex + 1];
@@ -567,9 +584,21 @@ namespace Database.IndexManage.BPlusTree
                 rightSib.ChildrenNodes.RemoveAt(0);
             }
             rightSib.Values.RemoveAt(0);
+
+            #region IO handle
+            if (nodeExportToDisk != null)
+            {
+                var right = nodeExportToDisk(rightSib);
+                rightSib.CurrentRID = right;
+                var left = nodeExportToDisk(node);
+                node.CurrentRID = left;
+                var parent = nodeExportToDisk(parentNode);
+                parentNode.CurrentRID = parent;
+            }
+            #endregion
         }
 
-        private void StealFromLeft(Node<TK, TV> node, int parentIndex)
+        private void StealFromLeft(Node<TK, TV> node, int parentIndex, Func<Node<TK, TV>, TV> nodeExportToDisk)
         {
             var parentNode = node.Parent;
 
@@ -599,6 +628,18 @@ namespace Database.IndexManage.BPlusTree
             }
 
             leftSib.Values.Remove(leftSib.Values.Last());
+
+            #region IO handle
+            if (nodeExportToDisk != null)
+            {
+                var left = nodeExportToDisk(leftSib);
+                leftSib.CurrentRID = left;
+                var right = nodeExportToDisk(node);
+                node.CurrentRID = right;
+                var parent = nodeExportToDisk(parentNode);
+                parentNode.CurrentRID = parent;
+            }
+            #endregion
         }
 
         public Node<TK, TV> SearchProperLeafNode(TK key,List<Node<TK, TV>> topToLeafStoreList)

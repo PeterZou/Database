@@ -164,7 +164,10 @@ namespace Database.IndexManage
 
         public void DeleteEntry(TK key)
         {
-            throw new NotImplementedException();
+            // need to replace
+            iih.DeleteEntry(key);
+
+            hdr.rootRID = iih.Root.CurrentRID.Rid;
         }
 
         public void InsertEntry(TK key)
