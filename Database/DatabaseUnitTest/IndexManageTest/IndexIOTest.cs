@@ -237,7 +237,6 @@ namespace DatabaseUnitTest.IndexManageTest
                 ifh.InsertEntry(2 * i + 1);
             }
             ifh.DeleteEntry(27);
-            ifh.DeleteEntry(27);
             ifh.FlushPages();
         }
 

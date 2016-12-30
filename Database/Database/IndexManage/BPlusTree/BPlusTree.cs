@@ -242,10 +242,10 @@ namespace Database.IndexManage.BPlusTree
 
         // 反向调用接口方法
         // StealFromLeft，StealFromRight，Merge都需要重新判断向上的子树
-        public void RepairAfterDelete(Func<Node<TK, TV>, TV> nodeExportToDisk)
+        public void RepairAfterDelete(Func<Node<TK, TV>, TV> nodeExportToDisk,Action<Node<TK, TV>> deleteFromDisk)
         {
             if (tmpNode != null)
-                RepairAfterDelete(tmpNode, nodeExportToDisk);
+                RepairAfterDelete(tmpNode, nodeExportToDisk, deleteFromDisk);
         }
 
         /// <summary>
@@ -273,7 +273,8 @@ namespace Database.IndexManage.BPlusTree
             }
         }
 
-        public void RepairAfterDelete(Node<TK, TV> node, Func<Node<TK, TV>, TV> nodeExportToDisk)
+        public void RepairAfterDelete(Node<TK, TV> node, Func<Node<TK, TV>, TV> nodeExportToDisk,
+            Action<Node<TK, TV>> deleteFromDisk)
         {
             // less than degree
             if (node.Values.Count < MinDegree)
@@ -305,14 +306,15 @@ namespace Database.IndexManage.BPlusTree
                     else if (parentIndex == 0)
                     {
                         // Merge with right sibling
-                        var nextNode = Merge(node, nodeExportToDisk);
-                        RepairAfterDelete(nextNode.Parent, nodeExportToDisk);
+                        var nextNode = Merge(node, nodeExportToDisk, deleteFromDisk);
+                        RepairAfterDelete(nextNode.Parent, nodeExportToDisk, deleteFromDisk);
                     }
                     else
                     {
                         // Merge with left sibling
-                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1], nodeExportToDisk);
-                        RepairAfterDelete(nextNode.Parent, nodeExportToDisk);
+                        var nextNode = Merge(parentNode.ChildrenNodes[parentIndex - 1], nodeExportToDisk, 
+                            deleteFromDisk);
+                        RepairAfterDelete(nextNode.Parent, nodeExportToDisk, deleteFromDisk);
                     }
                 }
             }
@@ -518,12 +520,14 @@ namespace Database.IndexManage.BPlusTree
             }
         }
 
-        private Node<TK, TV> Merge(Node<TK, TV> node, Func<Node<TK, TV>, TV> nodeExportToDisk)
+        private Node<TK, TV> Merge(Node<TK, TV> node, Func<Node<TK, TV>, TV> nodeExportToDisk,
+            Action<Node<TK, TV>> deleteFromDisk)
         {
             var parentNode = node.Parent;
             var parentIndex = 0;
             for (parentIndex = 0; parentNode.ChildrenNodes[parentIndex] != node; parentIndex++) ;
             var rightSib = parentNode.ChildrenNodes[parentIndex + 1];
+            var rightSibClone = rightSib.SetNode();
 
             if (!node.IsLeaf)
             {
@@ -551,17 +555,12 @@ namespace Database.IndexManage.BPlusTree
             {
                 var right = nodeExportToDisk(node);
                 rightSib.CurrentRID = right;
+                deleteFromDisk(rightSibClone);
                 if (parentNode.Values != null && parentNode.Values.Count != 0)
                 {
                     var parent = nodeExportToDisk(parentNode);
                     parentNode.CurrentRID = parent;
                 }
-                else
-                {
-                    // DeleteTheRootID
-                    // MergeTheLastRootNode
-                }
-
             }
             #endregion
 

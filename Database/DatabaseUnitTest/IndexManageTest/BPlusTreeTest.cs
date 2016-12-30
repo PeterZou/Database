@@ -64,7 +64,7 @@ namespace DatabaseUnitTest.IndexManageTest
         private void Delete(int i, BPlusTree<int, NodeInt> bt)
         {
             bt.Delete(i);
-            bt.RepairAfterDelete(null);
+            bt.RepairAfterDelete(null,null);
         }
     }
 }

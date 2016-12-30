@@ -202,7 +202,7 @@ namespace Database
 
             var node = bPlusTreeProvider.SearchProperLeafNode(key, null);
             // do not repair the root
-            bPlusTreeProvider.RepairAfterDelete(node, NodeExportToDisk);
+            bPlusTreeProvider.RepairAfterDelete(node, NodeExportToDisk, DeleteFromDisk);
 
             Root = bPlusTreeProvider.Root;
         }
@@ -284,62 +284,71 @@ namespace Database
         // TODO which should be saved, async
         public RIDKey<TK> NodeExportToDisk(Node<TK, RIDKey<TK>> node)
         {
-            if (node.Values.Count > 0)
+            if (node.Values != null)
             {
-                if (node.CurrentRID != null)
+                DeleteFromDisk(node);
+
+                if (node.Values.Count != 0)
                 {
-                    imp.DeleteRec(node.CurrentRID.Rid, node.IsLeaf);
-                }
-            }
+                    var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
 
-            var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
+                    var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
 
-            var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
+                    RID rid = imp.InsertRec(chars);
 
-            RID rid = imp.InsertRec(chars);
-
-            // 向上递归
-            if (node.CurrentRID == null)
-            {
-                node.CurrentRID = new RIDKey<TK>(rid, default(TK));
-            }
-            else
-            {
-                node.CurrentRID.Rid = rid;
-            }
-            
-            if (node.Parent != null && node.Parent.ChildrenNodes!= null 
-                && node.Parent.Values.Count != 0)
-            {
-                bool flag = true;
-                foreach (var p in node.Parent.ChildrenNodes)
-                {
-                    if (p.CurrentRID == null)
+                    // 向上递归
+                    if (node.CurrentRID == null)
                     {
-                        flag = false;
-                        break;
+                        node.CurrentRID = new RIDKey<TK>(rid, default(TK));
                     }
+                    else
+                    {
+                        node.CurrentRID.Rid = rid;
+                    }
+
+                    if (node.Parent != null && node.Parent.ChildrenNodes != null)
+                    {
+                        bool flag = true;
+                        foreach (var p in node.Parent.ChildrenNodes)
+                        {
+                            if (p.CurrentRID == null)
+                            {
+                                flag = false;
+                                break;
+                            }
+                        }
+                        if (flag == true)
+                        {
+                            ResetNodeToParentLink(node);
+                        }
+
+                    }
+
+                    // 如果root节点发生变化，重置root节点
+                    // TODO
+                    if (node.CurrentRID != null)
+                    {
+                        Root = node;
+                        Root.CurrentRID.Rid = rid;
+                        if (node.ChildrenNodes != null)
+                        {
+                            RootRIDList = node.ChildrenNodes.Select(p => p.CurrentRID.Rid).ToList();
+                        }
+                    }
+
+                    return new RIDKey<TK>(rid, default(TK));
                 }
-                if(flag == true)
-                {
-                    ResetNodeToParentLink(node);
-                }
-                   
             }
 
-            // 如果root节点发生变化，重置root节点
-            // TODO
+            return new RIDKey<TK>(new RID(-1,-1), default(TK));
+        }
+
+        public void DeleteFromDisk(Node<TK, RIDKey<TK>> node)
+        {
             if (node.CurrentRID != null)
             {
-                Root = node;
-                Root.CurrentRID.Rid = rid;
-                if (node.ChildrenNodes != null)
-                {
-                    RootRIDList = node.ChildrenNodes.Select(p => p.CurrentRID.Rid).ToList();
-                }
+                imp.DeleteRec(node.CurrentRID.Rid, node.IsLeaf);
             }
-
-            return new RIDKey<TK>(rid, default(TK));
         }
 
         private void ResetNodeToParentLink(Node<TK, RIDKey<TK>> node)

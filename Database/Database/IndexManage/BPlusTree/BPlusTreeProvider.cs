@@ -88,9 +88,9 @@ namespace Database.IndexManage.BPlusTree
         }
 
         public void RepairAfterDelete(Node<TK, TV> node,
-            Func<Node<TK, TV>, TV> nodeExportToDisk)
+            Func<Node<TK, TV>, TV> nodeExportToDisk,Action<Node<TK, TV>> deleteFromDisk)
         {
-            bBplusTree.RepairAfterDelete(node, nodeExportToDisk);
+            bBplusTree.RepairAfterDelete(node, nodeExportToDisk, deleteFromDisk);
             Root = bBplusTree.Root;
         }
     }

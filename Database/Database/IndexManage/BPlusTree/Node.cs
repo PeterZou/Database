@@ -62,5 +62,14 @@ namespace Database.IndexManage.BPlusTree
 
             return node;
         }
+
+        // Just for IO
+        public Node<TK, TV> SetNode()
+        {
+            var node = new Node<TK, TV>();
+            node.IsLeaf = IsLeaf;
+            node.CurrentRID = CurrentRID;
+            return node;
+        }
     }
 }
