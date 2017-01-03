@@ -105,6 +105,12 @@
   <ItemGroup>
     <Content Include="Data\DataStructure.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQL\SQL.csproj">
+      <Project>{98aae392-ae31-4653-a2b2-02926538eb51}</Project>
+      <Name>SQL</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
