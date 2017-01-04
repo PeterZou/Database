@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SQL
+namespace SQL.Iterator
 {
     public interface Iterator
     {
         void Open();
         void Close();
         object GetNext();
-        Iterator[] inputs{get;set;}
     }
 }
