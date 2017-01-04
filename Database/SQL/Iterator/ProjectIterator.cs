@@ -21,7 +21,7 @@ namespace SQL.Iterator
         {
             object obj = Array.GetNext();
 
-            return null;
+            return func(obj);
         }
 
         public void Open()

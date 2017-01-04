@@ -8,6 +8,12 @@ namespace SQL.Iterator
 {
     public class UnionIterator : Iterator
     {
+        Iterator Array1 { get; set; }
+
+        Iterator Array2 { get; set; }
+
+        Iterator Array3 { get; set; }
+
         public void Close()
         {
             throw new NotImplementedException();
@@ -15,12 +21,19 @@ namespace SQL.Iterator
 
         public object GetNext()
         {
-            throw new NotImplementedException();
+            var temp = Array1.GetNext();
+
+            while (temp != null)
+            {
+                temp = Array1.GetNext();
+            }
+
+            return Array3;
         }
 
         public void Open()
         {
-            throw new NotImplementedException();
+            Array1.Open();
         }
     }
 }

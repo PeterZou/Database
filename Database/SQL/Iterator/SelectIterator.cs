@@ -8,7 +8,7 @@ namespace SQL.Iterator
 {
     public class SelectIterator : Iterator
     {
-        Iterator record;
+        Iterator Array { get; set; }
         public void Close()
         {
             throw new NotImplementedException();
@@ -21,7 +21,7 @@ namespace SQL.Iterator
 
         public void Open()
         {
-            throw new NotImplementedException();
+            Array.Open();
         }
     }
 }
