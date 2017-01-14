@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Database.SQLOperation
+namespace Database.SQLOperation.data
 {
     // abstraction to hide details of offsets and type conversions
     public class DataTuple
