@@ -40,7 +40,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Iterator.cs" />
+    <Compile Include="Iterator\GetRecordIterator.cs" />
+    <Compile Include="Iterator\Iterator.cs" />
+    <Compile Include="Iterator\ProjectIterator.cs" />
+    <Compile Include="Iterator\SelectIterator.cs" />
+    <Compile Include="Iterator\UnionIterator.cs" />
     <Compile Include="Simulation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
