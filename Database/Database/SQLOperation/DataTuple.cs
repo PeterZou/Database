@@ -26,7 +26,7 @@ namespace Database.SQLOperation
             this.rid = new RID(-1, -1);
         }
 
-        public void SetAttr()
+        public void SetAttr(List<DataAttrInfo> attrs)
         {
             throw new NotImplementedException();
         }

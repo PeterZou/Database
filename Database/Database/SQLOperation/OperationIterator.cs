@@ -19,11 +19,14 @@ namespace Database.SQLOperation
         protected string sortRel;
         protected string sortAttr;
 
-        protected abstract string explain();
-        protected abstract void Open();
-        protected abstract object GetNext();
-        protected abstract void Close();
-        protected abstract void Eof();
+        public abstract string explain();
+        public abstract void Open();
+        public abstract object GetNext();
+        public abstract void Close();
+        public abstract void Eof();
+
+        public OperationIterator()
+        { }
 
         public OperationIterator(bool bIterOpen, string indent, bool bSorted, bool desc)
         {
@@ -44,7 +47,7 @@ namespace Database.SQLOperation
         {
             int l = 0;
             for (int i = 0; i < attrs.Count; i++)
-                l += a[i].attrLength;
+                l += attrs[i].attrLength;
             return l;
         }
     }
