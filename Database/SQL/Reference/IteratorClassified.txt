@@ -1,0 +1,7 @@
+﻿1.one tuple, one operation
+	select,project
+2.all relation, one operation
+	distinct,group by,sorting
+3.all relation, two operation
+	or,and,not
+	product,join 

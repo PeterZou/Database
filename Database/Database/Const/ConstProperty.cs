@@ -78,5 +78,15 @@ namespace Database.Const
         {
             NO_HINT                                     // default value
         };
+
+        //
+        // Aggregation functions for group by
+        //
+        public enum AggFun
+        {
+            NO_F,
+            MIN_F, MAX_F, COUNT_F,
+            SUM_F, AVG_F           // numeric args only
+        };
     }
 }

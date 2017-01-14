@@ -78,6 +78,7 @@
     <Compile Include="IndexManage\IX_Manager.cs" />
     <Compile Include="IndexManage\IX_PageHdr.cs" />
     <Compile Include="Interface\FileHandle.cs" />
+    <Compile Include="Interface\IOperationIterator.cs" />
     <Compile Include="Interface\PageHdr.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
@@ -95,6 +96,10 @@
     <Compile Include="RecordManage\RM_Manager.cs" />
     <Compile Include="RecordManage\RM_PageHdr.cs" />
     <Compile Include="RecordManage\RM_Record.cs" />
+    <Compile Include="SQLOperation\DataAttrInfo.cs" />
+    <Compile Include="SQLOperation\DataTuple.cs" />
+    <Compile Include="SQLOperation\FileScan.cs" />
+    <Compile Include="SQLOperation\OperationIterator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -111,6 +116,7 @@
       <Name>SQL</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
