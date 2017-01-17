@@ -46,5 +46,17 @@ namespace Database.SQLOperation.data
         {
             return 2* Const.ConstProperty.MAXSTRINGLEN + 5 * sizeof(int);
         }
+
+        public static char[] DataAttrInfoToChar(DataAttrInfo info)
+        {
+
+            return null;
+        }
+
+        public static DataAttrInfo[] CharToDataAttrInfo(char[] data)
+        {
+
+            return null;
+        }
     }
 }

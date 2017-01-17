@@ -31,13 +31,8 @@ namespace Database.IndexManage
             this.OccupiedNum = occupiedNum;
         }
 
-        public void CreateFile(string fileName, int recordSize, ConstProperty.AttrType indexType)
+        public void CreateFile(string fileName, ConstProperty.AttrType indexType)
         {
-            if ((recordSize >= ConstProperty.PF_PAGE_SIZE
-                - ConstProperty.RM_Page_Hdr_SIZE_ExceptBitMap)
-                || recordSize < 0)
-                throw new Exception();
-
             pfm.CreateFile(fileName);
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);

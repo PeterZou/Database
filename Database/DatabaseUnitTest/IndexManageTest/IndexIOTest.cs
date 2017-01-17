@@ -114,7 +114,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             ifh.InsertEntry(1);
@@ -144,7 +144,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             ifh.InsertEntry(1);
@@ -184,7 +184,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
@@ -206,7 +206,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
@@ -229,7 +229,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 19; i++)
@@ -248,7 +248,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
@@ -267,7 +267,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_Manager<int> ixm = new IX_Manager<int>(pfm, ConverIntToString,
                 ConverStringToInt, CreatNewTK, OccupiedNum);
 
-            ixm.CreateFile(@"D:\IndexFile.txt", 30, ConstProperty.AttrType.INT);
+            ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 1; i < 6; i++)

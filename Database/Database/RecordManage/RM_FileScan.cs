@@ -26,7 +26,7 @@ namespace Database.RecordManage
             int attrLength,
             int attrOffset,
             ConstProperty.CompOp compOp,
-            char[] value,
+            string value,
             ConstProperty.ClientHint pinHint
             )
         {

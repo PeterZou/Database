@@ -14,14 +14,14 @@ namespace Database.RecordManage
         private int attrLength;
         private int attrOffset;
         public ConstProperty.CompOp compOp;
-        private char[] value;
+        private string value;
         private ConstProperty.ClientHint pinHint;
 
         public Predicate(ConstProperty.AttrType attrType,
                 int attrLength,
                 int attrOffset,
                 ConstProperty.CompOp compOp,
-                char[] value,
+                string value,
                 ConstProperty.ClientHint pinHint)
         {
             this.attrType = attrType;
