@@ -22,6 +22,8 @@ namespace Database.SystemManage
         char[] cwd;
         Dictionary<string, string> parameters;
 
+        private int TreeDegree { get; set; }
+
         public SM_Manager(IX_Manager<TK> ixm, RM_Manager rmm)
         {
             this.ixm = ixm;
@@ -302,8 +304,7 @@ namespace Database.SystemManage
             // TODO
 
             // now create index entries
-            int treeDegree = 10;
-            var ixh = ixm.OpenFile(relName, treeDegree);
+            var ixh = ixm.OpenFile(relName, TreeDegree);
             RM_FileHandle rfh = rmm.OpenFile(relName);
 
             var tuple2 = GetFromTable(relName);
@@ -479,7 +480,68 @@ namespace Database.SystemManage
                           int buflen,
                           string buf)
         {
-            throw new NotImplementedException();
+            var invalid = IsValid();
+            if (invalid) throw new Exception();
+
+            if (relName == null || relName.Length != 0)
+            {
+                throw new Exception();
+            }
+
+            RM_FileHandle rfh = rmm.OpenFile(relName);
+            int attrCount = -1;
+            var tuple = GetFromTable(relName);
+            attrCount = tuple.Item1;
+            List<DataAttrInfo> attributes = new List<DataAttrInfo>();
+            attributes = tuple.Item2.ToList();
+
+            var indexes = new IX_FileHandle<TK>[attrCount];
+
+            int size = 0;
+            for (int i = 0; i < attrCount; i++)
+            {
+                size += attributes[i].attrLength;
+                if (attributes[i].indexNo != -1)
+                {
+                    indexes[i] = ixm.OpenFile(relName,TreeDegree);
+                }
+            }
+
+            if (size != buflen) throw new NullReferenceException();
+            var rid = rfh.InsertRec(buf.ToArray());
+
+            // TODO
+            //for (int i = 0; i < attrCount; i++)
+            //{
+            //    if (attributes[i].indexNo != -1)
+            //    {
+            //        // cerr << "SM loadRecord index - inserting {" << *(char*)(buf +
+            //        // attributes[i].offset) << "} " << rid << endl;
+            //        char* ptr = const_cast<char*>(buf + attributes[i].offset);
+            //        rc = indexes[i].InsertEntry(ptr,
+            //                                    rid);
+            //        if (rc != 0) return rc;
+            //    }
+            //}
+
+            var tuple2 = GetRelFromCat(relName);
+            var r = tuple2.Item2;
+            rid = tuple2.Item1;
+
+            r.numRecords += 1;
+            r.numPages = rfh.GetNumPages();
+            // TODO
+            RM_Record rec = new RM_Record();
+            relfh.UpdateRec(rec);
+            rmm.CloseFile(rfh);
+
+            for (int i = 0; i < attrCount; i++)
+            {
+                if (attributes[i].indexNo != -1)
+                {
+                    ixm.CloseFile(indexes[i].iih);
+                }
+            }
         }
 
         public void Load(
