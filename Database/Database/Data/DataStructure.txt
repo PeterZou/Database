@@ -7,7 +7,9 @@ length(4)+isLeaf(1)+capacity(4)+height(4)+keyList(TK*capacity)+childRidList(8*ca
 // else if
 //   the key of dicCount is negative, it is represent a branch node
 // as the number of branch nodes is always smaller than that of leaf nodes
-firstFree(4) + numPages(4) + extRecordSize(4) + totalHeight(4) + indexType(1) + root(NodeDisk<TK>) + dicCount(4) + dic(dicCount*8)
-firstFree(4) + numPages(4) + extRecordSize(4) + totalHeight(4) + indexType(1) + rootRID(8) + dicCount(4) + dic(dicCount*8)
+firstFree(4) + numPages(4) + extRecordSize(4) + totalHeight(4) + indexType(1) 
++ root(NodeDisk<TK>) + dicCount(4) + dic(dicCount*8) + leftRID + rightRID
+firstFree(4) + numPages(4) + extRecordSize(4) + totalHeight(4) + indexType(1) 
++ rootRID(8) + dicCount(4) + dic(dicCount*8)
 
 3.IX_PageHdr

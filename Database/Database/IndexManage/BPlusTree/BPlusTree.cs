@@ -369,6 +369,10 @@ namespace Database.IndexManage.BPlusTree
                     node.Values.GetRange(rightSplit, node.Values.Count - rightSplit));
 
                 node.Values.RemoveRange(rightSplit, node.Values.Count - rightSplit);
+
+                rightNode.PreviousNode = node;
+                rightNode.NextNode = node.NextNode;
+                node.NextNode = rightNode;
             }
             else
             {
@@ -546,6 +550,8 @@ namespace Database.IndexManage.BPlusTree
             {
                 var fromParentIndex = node.Values.Count;
                 node.Values.AddRange(rightSib.Values);
+
+                node.NextNode = rightSib.NextNode;
             }
             parentNode.ChildrenNodes.RemoveAt(parentIndex+1);
             parentNode.Values.RemoveAt(parentIndex);
@@ -617,10 +623,6 @@ namespace Database.IndexManage.BPlusTree
             {
                 node.Values[0] = leftSib.Values.Last();
             }
-            else
-            {
-                node.Values[0] = parentNode.Values[parentIndex - 1];
-            }
             parentNode.Values[parentIndex - 1] = leftSib.Values.Last();
 
             if (!node.IsLeaf)
@@ -632,6 +634,10 @@ namespace Database.IndexManage.BPlusTree
                 leftSib.ChildrenNodes[index] = null;
 
                 node.ChildrenNodes[0].Parent = node;
+            }
+            else
+            {
+                node.PreviousNode = leftSib.PreviousNode;
             }
 
             leftSib.Values.Remove(leftSib.Values.Last());
@@ -672,6 +678,33 @@ namespace Database.IndexManage.BPlusTree
             {
                 selectedNode = searchNode;
             }
+        }
+
+        public void GetFirstLeafNode(Node<TK,TV> node,ref Node<TK, TV> firstNode)
+        {
+            if (node.IsLeaf)
+            {
+                firstNode = node;
+            }
+            else
+            {
+                GetFirstLeafNode(node.ChildrenNodes[0], ref firstNode);
+            }
+        }
+
+        public List<Node<TK,TV>> GetAllLeafNode()
+        {
+            Node<TK, TV> firstNode = null;
+            GetFirstLeafNode(Root, ref firstNode);
+            List<Node<TK, TV>> list = new List<Node<TK, TV>>();
+            if (firstNode.IsLeaf == false) throw new Exception();
+            var next = firstNode;
+            while (next != null)
+            {
+                list.Add(next);
+                next = next.NextNode;
+            }
+            return list;
         }
     }
 }

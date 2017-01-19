@@ -23,6 +23,11 @@ namespace Database.IndexManage.BPlusTree
         public List<TK> Values { set; get; }
         public List<Node<TK, TV>> ChildrenNodes { set; get; }
 
+        #region leaf node
+        public Node<TK, TV> NextNode { get; set; }
+        public Node<TK, TV> PreviousNode { get; set; }
+        #endregion
+
         public Node()
         {
             this.IsLeaf = true;
@@ -30,6 +35,8 @@ namespace Database.IndexManage.BPlusTree
             this.Height = 0;
             this.Property = new List<TV>();
             this.Values = new List<TK>();
+            this.NextNode = null;
+            this.PreviousNode = null;
         }
 
         // must be a leaf node or root node
@@ -42,6 +49,8 @@ namespace Database.IndexManage.BPlusTree
             this.Parent = parent;
             this.Values = new List<TK>();
             this.Values.Add(property.Key);
+            this.NextNode = NextNode;
+            this.PreviousNode = PreviousNode;
         }
 
         // delegate to set the new RID
@@ -69,6 +78,7 @@ namespace Database.IndexManage.BPlusTree
             var node = new Node<TK, TV>();
             node.IsLeaf = IsLeaf;
             node.CurrentRID = CurrentRID;
+
             return node;
         }
     }

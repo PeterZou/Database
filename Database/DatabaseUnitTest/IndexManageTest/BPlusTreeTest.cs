@@ -52,6 +52,7 @@ namespace DatabaseUnitTest.IndexManageTest
             }
             bt.TraverseForword(bt.Root, bt.TraverseOutput);
             Delete(5, bt);
+            var list2 = bt.GetAllLeafNode();
             bt.TraverseForword(bt.Root, bt.TraverseOutput);
         }
 
