@@ -95,7 +95,9 @@ namespace Database.IndexManage
             // TODO defalut TK occupied 4 Bytes
             if (isLeaf)
             {
-                return leafNum + size * OccupiedNum(default(TK));
+                return leafNum +
+                    size * (OccupiedNum(default(TK)) + ConstProperty.RM_Page_RID_SIZE) +
+                    2 * ConstProperty.RM_Page_RID_SIZE;
             }
             else
             {
@@ -170,7 +172,7 @@ namespace Database.IndexManage
             hdr.rootRID = iih.Root.CurrentRID.Rid;
         }
 
-        public void InsertEntry(TK key)
+        public void InsertEntry(RIDKey<TK> key)
         {
             // need to replace
             iih.InsertEntry(key);
@@ -196,7 +198,7 @@ namespace Database.IndexManage
             if (bitmap.Test((UInt32)slotNum)) throw new Exception();
 
             // TODO
-            isLeaf = IsLeafByPageHeader(pHdr.numSlots);
+            isLeaf = IsLeafByPageHeader();
             char[] data = GetSlotPointer(ph, slotNum, pHdr.size);
 
             var rec = new RM_Record();
@@ -204,12 +206,17 @@ namespace Database.IndexManage
             return rec;
         }
 
-        private bool IsLeafByPageHeader(int slotNum)
+        private bool IsLeafByPageHeader()
         {
-            var virtualPageSize = 
-                IndexManagerUtil<TK>.GetNodeDiskLengthWithChild(pHdr.size, slotNum);
+            int headerNum = (pHdr.To_buf().Length - 16) * 3 + 16;
+            int num = ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size;
+            int recordNum = IndexManagerUtil<TK>.GetNodeDiskLength() +
+                num * pHdr.size + 2 * ConstProperty.RM_Page_RID_SIZE;
+            var virtualPageSize = headerNum + recordNum * pHdr.numSlots;
+            var virtualOneMorePageSize = headerNum + recordNum * (pHdr.numSlots + 1);
 
-            return virtualPageSize >= ConstProperty.PF_PAGE_SIZE ? true : false;
+            return virtualPageSize <= ConstProperty.PF_PAGE_SIZE &&
+                virtualOneMorePageSize > ConstProperty.PF_PAGE_SIZE ? true : false;
         }
 
         public int GetNumPages() { return hdr.numPages; }
@@ -346,11 +353,11 @@ namespace Database.IndexManage
             // Leaf:0
             if (isLeaf)
             {
-                return (length - 3 * ConstProperty.Int_Size - 1) / ConstProperty.Int_Size;
+                return (length - 3 * ConstProperty.Int_Size - 2 * ConstProperty.RM_Page_RID_SIZE - 1) / (ConstProperty.Int_Size + ConstProperty.RM_Page_RID_SIZE);
             }
             else
             {
-                return (length - 3 * ConstProperty.Int_Size-1- ConstProperty.RM_Page_RID_SIZE) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size)+1;
+                return (length - 3 * ConstProperty.Int_Size - 1 - ConstProperty.RM_Page_RID_SIZE) / (ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size) + 1;
             }
         }
     }

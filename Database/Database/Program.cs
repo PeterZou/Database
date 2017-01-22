@@ -11,21 +11,7 @@ namespace Database
     {
         static void Main(string[] args)
         {
-            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(4);
-
-            var list = new List<NodeInt>();
-
-            for (int i = 1; i <= 6; i++)
-            {
-                if (i != 9999)
-                {
-                    var node = new NodeInt(i);
-                    bt.Insert(node);
-                    bt.InsertRepair(null,null);
-                }
-            }
-            bt.TraverseForword(bt.Root, bt.TraverseOutput);
-
+            
             Console.ReadKey();
         }
     }

@@ -4,20 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Database.IndexManage.BPlusTree;
+using Database.RecordManage;
 
 namespace Database.IndexManage.IndexValue
 {
-    public class NodeStringInt : INode<int>
+    public class NodeRIDInt : INode<int>
     {
-        private string nn = "TV";
+        private RID rid;
 
-        public NodeStringInt(int key) : base(key)
+        public NodeRIDInt(int key, RID rid) : base(key)
         {
+            this.rid = rid;
         }
 
         public override string ToString()
         {
-            return nn + "num is " + base.Key;
+            return "RID is: " + this.rid + "num is " + base.Key;
         }
     }
 }

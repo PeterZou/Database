@@ -21,7 +21,7 @@ namespace DatabaseUnitTest.IndexManageTest
         private NodeDisk<int> CreateNodeDisk()
         {
             NodeDisk<int> node = new NodeDisk<int>();
-            node.length = 81;
+            node.length = 97;
             node.isLeaf = 0;
             node.capacity = 5;
             node.height = 2;
@@ -34,6 +34,8 @@ namespace DatabaseUnitTest.IndexManageTest
                 new RID(9,10),
                 new RID(11,12)
             };
+            node.leftRID = new RID(-1, -1);
+            node.rightRID = new RID(-2, -2);
 
             return node;
         }
@@ -68,6 +70,11 @@ namespace DatabaseUnitTest.IndexManageTest
             dic.Add(-6, -1);
             hdr.dic = dic;
             return hdr;
+        }
+
+        private RIDKey<int> CreateRIDKey(int i)
+        {
+            return new RIDKey<int>(new RID(i, i), i);
         }
 
         [TestMethod]
@@ -117,22 +124,22 @@ namespace DatabaseUnitTest.IndexManageTest
             ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
-            ifh.InsertEntry(1);
-            ifh.FlushPages();
-            ifh.InsertEntry(2);
 
-            ifh.InsertEntry(3);
-            ifh.InsertEntry(4);
-            ifh.InsertEntry(5);
+            ifh.InsertEntry(CreateRIDKey(1));
+            ifh.FlushPages();
+            ifh.InsertEntry(CreateRIDKey(2));
+            ifh.InsertEntry(CreateRIDKey(3));
+            ifh.InsertEntry(CreateRIDKey(4));
+            ifh.InsertEntry(CreateRIDKey(5));
 
             // Branch test
-            ifh.InsertEntry(6);
-            ifh.InsertEntry(7);
-            ifh.InsertEntry(8);
-            ifh.InsertEntry(9);
-            ifh.InsertEntry(10);
-            ifh.InsertEntry(11);
-            ifh.InsertEntry(12);
+            ifh.InsertEntry(CreateRIDKey(6));
+            ifh.InsertEntry(CreateRIDKey(7));
+            ifh.InsertEntry(CreateRIDKey(8));
+            ifh.InsertEntry(CreateRIDKey(9));
+            ifh.InsertEntry(CreateRIDKey(10));
+            ifh.InsertEntry(CreateRIDKey(11));
+            ifh.InsertEntry(CreateRIDKey(12));
             ifh.FlushPages();
         }
 
@@ -147,13 +154,13 @@ namespace DatabaseUnitTest.IndexManageTest
             ixm.CreateFile(@"D:\IndexFile.txt", ConstProperty.AttrType.INT);
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
-            ifh.InsertEntry(1);
+            ifh.InsertEntry(CreateRIDKey(1));
             ifh.FlushPages();
             for (int i = 2; i < 15; i++)
             {
-                ifh.InsertEntry(i);
+                ifh.InsertEntry(CreateRIDKey(i));
             }
-            ifh.InsertEntry(15);
+            ifh.InsertEntry(CreateRIDKey(15));
             ifh.FlushPages();
         }
 
@@ -167,11 +174,11 @@ namespace DatabaseUnitTest.IndexManageTest
 
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
 
-            ifh.InsertEntry(13);
-            ifh.InsertEntry(14);
-            ifh.InsertEntry(15);
-            ifh.InsertEntry(16);
-            ifh.InsertEntry(17);
+            ifh.InsertEntry(CreateRIDKey(13));
+            ifh.InsertEntry(CreateRIDKey(14));
+            ifh.InsertEntry(CreateRIDKey(15));
+            ifh.InsertEntry(CreateRIDKey(16));
+            ifh.InsertEntry(CreateRIDKey(17));
 
             ifh.FlushPages();
         }
@@ -189,10 +196,10 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
             {
-                ifh.InsertEntry(2*i+1);
+                ifh.InsertEntry(CreateRIDKey(2 * i + 1));
             }
-            ifh.InsertEntry(2);
-            ifh.InsertEntry(6);
+            ifh.InsertEntry(CreateRIDKey(2));
+            ifh.InsertEntry(CreateRIDKey(6));
             ifh.DeleteEntry(5);
             ifh.DeleteEntry(6);
             ifh.FlushPages();
@@ -211,9 +218,9 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
             {
-                ifh.InsertEntry(2 * i + 1);
+                ifh.InsertEntry(CreateRIDKey(2 * i + 1));
             }
-            ifh.InsertEntry(10);
+            ifh.InsertEntry(CreateRIDKey(10));
             ifh.DeleteEntry(7);
             ifh.FlushPages();
         }
@@ -234,7 +241,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 19; i++)
             {
-                ifh.InsertEntry(2 * i + 1);
+                ifh.InsertEntry(CreateRIDKey(2 * i + 1));
             }
             ifh.DeleteEntry(27);
             ifh.FlushPages();
@@ -253,7 +260,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 0; i < 13; i++)
             {
-                ifh.InsertEntry(2 * i + 1);
+                ifh.InsertEntry(CreateRIDKey(2 * i + 1));
             }
             ifh.DeleteEntry(5);
             ifh.FlushPages();
@@ -272,7 +279,7 @@ namespace DatabaseUnitTest.IndexManageTest
             IX_FileHandle<int> ifh = ixm.OpenFile(@"D:\IndexFile.txt", treeDegree);
             for (int i = 1; i < 6; i++)
             {
-                ifh.InsertEntry(i);
+                ifh.InsertEntry(CreateRIDKey(i));
             }
             ifh.DeleteEntry(4);
             ifh.DeleteEntry(5);

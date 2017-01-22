@@ -129,20 +129,5 @@ namespace Database.IndexManage
             hdr.dic = dic;
             return hdr;
         }
-
-        private NodeDisk<TK> CreateNodeDisk(int length)
-        {
-            NodeDisk<TK> node = new NodeDisk<TK>();
-            // 节点容量
-            node.length = length;
-            node.isLeaf = 0;
-            node.capacity = 0;
-            // 当前节点所在的高度（相对于子节点开始）
-            node.height = 0;
-            node.keyList = new List<TK> {};
-            node.childRidList = new List<RID> {};
-
-            return node;
-        }
     }
 }

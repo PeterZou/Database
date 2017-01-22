@@ -24,8 +24,8 @@ namespace Database.IndexManage.BPlusTree
         public List<Node<TK, TV>> ChildrenNodes { set; get; }
 
         #region leaf node
-        public Node<TK, TV> NextNode { get; set; }
-        public Node<TK, TV> PreviousNode { get; set; }
+        public TV NextNode { get; set; }
+        public TV PreviousNode { get; set; }
         #endregion
 
         public Node()

@@ -75,15 +75,15 @@ namespace Database
 
         }
 
-        public void InsertEntry(TK key)
+        public void InsertEntry(RIDKey<TK> key)
         {
             GetRootEntry(Root.CurrentRID.Rid);
-            var lastSubRoot = GetSubTreeUntilLeaf(key);
+            var lastSubRoot = GetSubTreeUntilLeaf(key.Key);
 
-            CreateEntry(key, lastSubRoot);
+            CreateEntry(key.Key, lastSubRoot);
 
             int num = 0;
-            GetSubTreeUntilTop(lastSubRoot, ref num, key, InsertRepair);
+            GetSubTreeUntilTop(lastSubRoot, ref num, key.Key, InsertRepair);
 
             while (Root.Parent != null)
             {

@@ -370,9 +370,9 @@ namespace Database.IndexManage.BPlusTree
 
                 node.Values.RemoveRange(rightSplit, node.Values.Count - rightSplit);
 
-                rightNode.PreviousNode = node;
-                rightNode.NextNode = node.NextNode;
-                node.NextNode = rightNode;
+                rightNode.PreviousNode = node.CurrentRID;
+                rightNode.NextNode = node.CurrentRID;
+                node.NextNode = rightNode.CurrentRID;
             }
             else
             {
@@ -702,7 +702,8 @@ namespace Database.IndexManage.BPlusTree
             while (next != null)
             {
                 list.Add(next);
-                next = next.NextNode;
+                Search(Root, next.NextNode.Key);
+                next = SeachNode;
             }
             return list;
         }

@@ -8,6 +8,7 @@ using Database.IndexManage.BPlusTree;
 using Database.IndexManage.IndexValue;
 using System.Diagnostics;
 using log4net.Config;
+using Database.RecordManage;
 
 namespace DatabaseUnitTest.IndexManageTest
 {
@@ -17,21 +18,46 @@ namespace DatabaseUnitTest.IndexManageTest
         [TestMethod]
         public void SearchAndAdd()
         {
-            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(4);
+            BPlusTree<int, NodeStringInt> bt = new BPlusTree<int, NodeStringInt>(4);
 
-            var list = new List<NodeInt>();
+            var list = new List<NodeStringInt>();
 
             for (int i = 1; i <= 7; i++)
             {
                 if (i != 9999)
                 {
-                    var node = new NodeInt(i);
+                    var node = new NodeStringInt(i);
                     bt.Insert(node);
-                    bt.InsertRepair(null);
+                    bt.InsertRepair(null, null);
                 }
             }
             bt.TraverseForword(bt.Root, bt.TraverseOutput);
-            bt.Insert(new NodeInt(9999));
+            bt.Insert(new NodeStringInt(9999));
+            bt.Search(546484);
+            var v = bt.SearchNode;
+            Assert.AreEqual(v, 546484);
+        }
+
+        [TestMethod]
+        public void SearchAndAddRID()
+        {
+            BPlusTree<int, NodeRIDInt> bt = new BPlusTree<int, NodeRIDInt>(4);
+
+            var list = new List<NodeStringInt>();
+
+            for (int i = 1; i <= 7; i++)
+            {
+                if (i != 9999)
+                {
+                    RID rid1 = new RID(i, i);
+                    var node = new NodeRIDInt(i, rid1);
+                    bt.Insert(node);
+                    bt.InsertRepair(null, null);
+                }
+            }
+            bt.TraverseForword(bt.Root, bt.TraverseOutput);
+            RID rid = new RID(9999, 9999);
+            bt.Insert(new NodeRIDInt(9999, rid));
             bt.Search(546484);
             var v = bt.SearchNode;
             Assert.AreEqual(v, 546484);
@@ -42,9 +68,9 @@ namespace DatabaseUnitTest.IndexManageTest
         {
             XmlConfigurator.Configure();
 
-            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(4);
+            BPlusTree<int, NodeStringInt> bt = new BPlusTree<int, NodeStringInt>(4);
 
-            var list = new List<NodeInt>();
+            var list = new List<NodeStringInt>();
 
             for (int i = 0; i <= 10; i++)
             {
@@ -56,16 +82,16 @@ namespace DatabaseUnitTest.IndexManageTest
             bt.TraverseForword(bt.Root, bt.TraverseOutput);
         }
 
-        private void Insert(int i, BPlusTree<int, NodeInt> bt)
+        private void Insert(int i, BPlusTree<int, NodeStringInt> bt)
         {
-            bt.Insert(new NodeInt(i));
-            bt.InsertRepair(null);
+            bt.Insert(new NodeStringInt(i));
+            bt.InsertRepair(null, null);
         }
 
-        private void Delete(int i, BPlusTree<int, NodeInt> bt)
+        private void Delete(int i, BPlusTree<int, NodeStringInt> bt)
         {
             bt.Delete(i);
-            bt.RepairAfterDelete(null,null);
+            bt.RepairAfterDelete(null, null, null);
         }
     }
 }
