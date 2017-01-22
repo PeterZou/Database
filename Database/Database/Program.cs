@@ -11,15 +11,15 @@ namespace Database
     {
         static void Main(string[] args)
         {
-            BPlusTree<int, NodeStringInt> bt = new BPlusTree<int, NodeStringInt>(4);
+            BPlusTree<int, NodeInt> bt = new BPlusTree<int, NodeInt>(4);
 
-            var list = new List<NodeStringInt>();
+            var list = new List<NodeInt>();
 
             for (int i = 1; i <= 6; i++)
             {
                 if (i != 9999)
                 {
-                    var node = new NodeStringInt(i);
+                    var node = new NodeInt(i);
                     bt.Insert(node);
                     bt.InsertRepair(null,null);
                 }

@@ -95,9 +95,7 @@ namespace Database.IndexManage
             // TODO defalut TK occupied 4 Bytes
             if (isLeaf)
             {
-                return leafNum + 
-                    size * (OccupiedNum(default(TK)) + ConstProperty.RM_Page_RID_SIZE) +
-                    2* ConstProperty.RM_Page_RID_SIZE;
+                return leafNum + size * OccupiedNum(default(TK));
             }
             else
             {
@@ -109,15 +107,18 @@ namespace Database.IndexManage
 
         override public RID InsertRec(char[] pData)
         {
-            Tuple<Tuple<RIDKey<TK>, PF_PageHandle>,int> tuple = FindFreeSlot(pData);
+            isLeaf = (pData[4] - 48) == 0 ? true: false;
+            // Set the child and value num in the pData 
+            int size = CalculateSize(pData.Length);
 
-            return AfterInsert(pData, tuple.Item2, tuple.Item1);
-        }
+            IsValid(size);
 
-        public RID AfterInsert(char[] pData, int size, Tuple<RIDKey<TK>, PF_PageHandle> tuple)
-        {
+            if (pData == null || pData.Length == 0) throw new Exception();
+
+            var tuple = GetNextFreeSlot(size);
+
             PF_PageHandle ph = tuple.Item2;
-            RID rid = tuple.Item1.Rid;
+            RID rid = tuple.Item1;
             int pageNum = rid.Page;
             int slotNum = rid.Slot;
 
@@ -146,21 +147,6 @@ namespace Database.IndexManage
             return rid;
         }
 
-        public Tuple<Tuple<RIDKey<TK>, PF_PageHandle>,int> FindFreeSlot(char[] pData)
-        {
-            int size;
-            isLeaf = (pData[4] - 48) == 0 ? true : false;
-            // Set the child and value num in the pData 
-            size = CalculateSize(pData.Length);
-            IsValid(size);
-
-            if (pData == null || pData.Length == 0) throw new Exception();
-            var res = GetNextFreeSlot(size);
-            return new Tuple<Tuple<RIDKey<TK>, PF_PageHandle>, int>(
-                new Tuple<RIDKey<TK>, PF_PageHandle>(new RIDKey<TK>(res.Item1, default(TK)), res.Item2
-                ), size);
-        }
-
         override public int CalcOffset(int slot, int size)
         {
             IsValid(size);
@@ -184,7 +170,7 @@ namespace Database.IndexManage
             hdr.rootRID = iih.Root.CurrentRID.Rid;
         }
 
-        public void InsertEntry(RIDKey<TK> key)
+        public void InsertEntry(TK key)
         {
             // need to replace
             iih.InsertEntry(key);
@@ -210,7 +196,7 @@ namespace Database.IndexManage
             if (bitmap.Test((UInt32)slotNum)) throw new Exception();
 
             // TODO
-            isLeaf = IsLeafByPageHeader();
+            isLeaf = IsLeafByPageHeader(pHdr.numSlots);
             char[] data = GetSlotPointer(ph, slotNum, pHdr.size);
 
             var rec = new RM_Record();
@@ -218,17 +204,12 @@ namespace Database.IndexManage
             return rec;
         }
 
-        private bool IsLeafByPageHeader()
+        private bool IsLeafByPageHeader(int slotNum)
         {
-            int headerNum = (pHdr.To_buf().Length - 16)*3+16;
-            int num = ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size;
-            int recordNum = IndexManagerUtil<TK>.GetNodeDiskLength() + 
-                num * pHdr.size + 2 * ConstProperty.RM_Page_RID_SIZE;
-            var virtualPageSize = headerNum + recordNum * pHdr.numSlots;
-            var virtualOneMorePageSize = headerNum + recordNum * (pHdr.numSlots + 1);
+            var virtualPageSize = 
+                IndexManagerUtil<TK>.GetNodeDiskLengthWithChild(pHdr.size, slotNum);
 
-            return virtualPageSize <= ConstProperty.PF_PAGE_SIZE&&
-                virtualOneMorePageSize > ConstProperty.PF_PAGE_SIZE ? true : false;
+            return virtualPageSize >= ConstProperty.PF_PAGE_SIZE ? true : false;
         }
 
         public int GetNumPages() { return hdr.numPages; }
@@ -365,7 +346,7 @@ namespace Database.IndexManage
             // Leaf:0
             if (isLeaf)
             {
-                return (length - 3 * ConstProperty.Int_Size-2* ConstProperty.RM_Page_RID_SIZE - 1) / (ConstProperty.Int_Size + ConstProperty.RM_Page_RID_SIZE);
+                return (length - 3 * ConstProperty.Int_Size - 1) / ConstProperty.Int_Size;
             }
             else
             {

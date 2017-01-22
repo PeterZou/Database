@@ -7,11 +7,11 @@ using Database.IndexManage.BPlusTree;
 
 namespace Database.IndexManage.IndexValue
 {
-    public class NodeStringInt : INode<int>
+    public class NodeInt : INode<int>
     {
         private string nn = "TV";
 
-        public NodeStringInt(int key) :base(key)
+        public NodeInt(int key) :base(key)
         {
         }
 

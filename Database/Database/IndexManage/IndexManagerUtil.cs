@@ -118,46 +118,14 @@ namespace Database.IndexManage
             // TODO
             if (nl.childRidList != null && nl.childRidList.Count != 0)
             {
-                if (nl.isLeaf == 0)
+                for (int i = 0; i < nl.capacity + 1; i++)
                 {
-                    for (int i = 0; i < nl.capacity; i++)
-                    {
-                        FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Page,
-                            (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
+                    FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Page,
+                        (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
 
-                        FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Slot,
-                            (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1 + ConstProperty.Int_Size,
-                            ConstProperty.Int_Size);
-                    }
+                    FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Slot,
+                        (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1 + ConstProperty.Int_Size, ConstProperty.Int_Size);
                 }
-                else
-                {
-                    for (int i = 0; i < nl.capacity + 1; i++)
-                    {
-                        FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Page,
-                            (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1, ConstProperty.Int_Size);
-
-                        FileManagerUtil.ReplaceTheNextFree(data, nl.childRidList[i].Slot,
-                            (3 + nl.capacity + 2 * i) * ConstProperty.Int_Size + 1 + ConstProperty.Int_Size, 
-                            ConstProperty.Int_Size);
-                    }
-                }
-            }
-
-            if (nl.isLeaf == 0)
-            {
-                FileManagerUtil.ReplaceTheNextFree(data, nl.leftRID.Page,
-                    (3 + nl.capacity + 2 * nl.childRidList.Count) * ConstProperty.Int_Size + 1,
-                    ConstProperty.Int_Size);
-                FileManagerUtil.ReplaceTheNextFree(data, nl.leftRID.Slot,
-                    (3 + nl.capacity + 2 * nl.childRidList.Count+1) * ConstProperty.Int_Size + 1,
-                    ConstProperty.Int_Size);
-                FileManagerUtil.ReplaceTheNextFree(data, nl.rightRID.Page,
-                    (3 + nl.capacity + 2 * nl.childRidList.Count + 2) * ConstProperty.Int_Size + 1,
-                    ConstProperty.Int_Size);
-                FileManagerUtil.ReplaceTheNextFree(data, nl.rightRID.Slot,
-                    (3 + nl.capacity + 2 * nl.childRidList.Count + 3) * ConstProperty.Int_Size + 1,
-                    ConstProperty.Int_Size);
             }
             
             return data;
@@ -181,49 +149,17 @@ namespace Database.IndexManage
             }
 
             node.childRidList = new List<RID>();
-            if (node.capacity != 0)
+            if (node.capacity != 0 && node.isLeaf == 1)
             {
-                if (node.isLeaf == 0)
+                for (int i = 0; i < node.capacity + 1; i++)
                 {
-                    for (int i = 0; i < node.capacity; i++)
-                    {
-                        int num = (2 + node.capacity + 2 * i) * ConstProperty.Int_Size + 1;
-                        int pageNum = Convert.ToInt32(dataStr.Substring(
-                            num, ConstProperty.Int_Size));
-                        int slotNum = Convert.ToInt32(dataStr.Substring(
-                            num + ConstProperty.Int_Size, ConstProperty.Int_Size));
-                        node.childRidList.Add(new RID(pageNum, slotNum));
-                    }
+                    int num = (2 + node.capacity + 2*i) * ConstProperty.Int_Size + 1;
+                    int pageNum = Convert.ToInt32(dataStr.Substring(
+                        num, ConstProperty.Int_Size));
+                    int slotNum = Convert.ToInt32(dataStr.Substring(
+                        num+ ConstProperty.Int_Size, ConstProperty.Int_Size));
+                    node.childRidList.Add(new RID(pageNum, slotNum));
                 }
-                else
-                {
-                    for (int i = 0; i < node.capacity + 1; i++)
-                    {
-                        int num = (2 + node.capacity + 2 * i) * ConstProperty.Int_Size + 1;
-                        int pageNum = Convert.ToInt32(dataStr.Substring(
-                            num, ConstProperty.Int_Size));
-                        int slotNum = Convert.ToInt32(dataStr.Substring(
-                            num + ConstProperty.Int_Size, ConstProperty.Int_Size));
-                        node.childRidList.Add(new RID(pageNum, slotNum));
-                    }
-                }
-            }
-
-            if (node.isLeaf == 0)
-            {
-                int num = (2 + node.capacity + 2 * node.capacity) * ConstProperty.Int_Size + 1;
-                int pageNum = Convert.ToInt32(dataStr.Substring(
-                    num, ConstProperty.Int_Size));
-                int slotNum = Convert.ToInt32(dataStr.Substring(
-                    num + ConstProperty.Int_Size, ConstProperty.Int_Size));
-                node.leftRID = new RID(pageNum, slotNum);
-
-                num = (2 + node.capacity + 2 * node.capacity + 2) * ConstProperty.Int_Size + 1;
-                pageNum = Convert.ToInt32(dataStr.Substring(
-                    num, ConstProperty.Int_Size));
-                slotNum = Convert.ToInt32(dataStr.Substring(
-                    num + ConstProperty.Int_Size, ConstProperty.Int_Size));
-                node.rightRID = new RID(pageNum, slotNum);
             }
             
             return node;
@@ -238,6 +174,12 @@ namespace Database.IndexManage
             return length;
         }
 
+        public static int GetNodeDiskLengthWithChild(int size,int slotNum)
+        {
+            int num = ConstProperty.RM_Page_RID_SIZE + ConstProperty.Int_Size;
+            return (GetNodeDiskLength() + (size - 1) * (num) + ConstProperty.RM_Page_RID_SIZE) * slotNum;
+        }
+
         public static int GetNodeDiskLength(NodeDisk<TK> nl)
         {
             int length = 0;
@@ -246,19 +188,7 @@ namespace Database.IndexManage
 
             // TODO Set TK is int
             length += nl.capacity * ConstProperty.Int_Size;
-            
-
-            if (nl.isLeaf == 0)
-            {
-                if (nl.childRidList != null)
-                    length += nl.capacity * ConstProperty.RM_Page_RID_SIZE;
-                length += 2 * ConstProperty.RM_Page_RID_SIZE;
-            }
-            else
-            {
-                if (nl.childRidList != null)
-                    length += nl.capacity * ConstProperty.RM_Page_RID_SIZE + ConstProperty.RM_Page_RID_SIZE;
-            }
+            if(nl.childRidList != null)length += nl.capacity * ConstProperty.RM_Page_RID_SIZE + ConstProperty.RM_Page_RID_SIZE;
             return length;
         }
 
@@ -358,9 +288,6 @@ namespace Database.IndexManage
                 {
                     node.Property.Add(new RIDKey<TK>(default(RID), nodeDisk.keyList[i]));
                 }
-
-                node.PreviousNode = new RIDKey<TK>(nodeDisk.leftRID,default(TK));
-                node.NextNode = new RIDKey<TK>(nodeDisk.rightRID, default(TK));
             }
             else
             {
@@ -395,7 +322,7 @@ namespace Database.IndexManage
             nl.keyList = node.Values.ToList();
 
             // non-leaf node
-            if (node.Property == null || node.Property.Count == 0)
+            if (node.Property == null || node.Property.Count ==0)
             {
                 nl.childRidList = new List<RID>();
                 foreach (var v in node.ChildrenNodes)
@@ -405,31 +332,6 @@ namespace Database.IndexManage
                         nl.childRidList.Add(v.CurrentRID.Rid);
                     }
 
-                }
-            }
-            else
-            {
-                nl.childRidList = new List<RID>();
-                foreach (var v in node.Property)
-                {
-                    nl.childRidList.Add(v.Rid);
-                }
-
-                if (node.PreviousNode != null)
-                {
-                    nl.leftRID = node.PreviousNode.Rid;
-                }
-                else
-                {
-                    nl.leftRID = new RID(-1, -1);
-                }
-                if (node.NextNode != null)
-                {
-                    nl.rightRID = node.NextNode.Rid;
-                }
-                else
-                {
-                    nl.rightRID = new RID(-1, -1);
                 }
             }
 

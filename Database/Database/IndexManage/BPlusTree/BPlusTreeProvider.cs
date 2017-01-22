@@ -1,5 +1,4 @@
-﻿using Database.FileManage;
-using Database.RecordManage;
+﻿using Database.RecordManage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,20 +80,17 @@ namespace Database.IndexManage.BPlusTree
         /// </summary>
         /// <param name="node"></param>
         /// <param name="isRepairRoot">是否修正根节点</param>
-        public void InsertRepair(Node<TK, TV> node,
-            Func<Node<TK, TV>, Tuple<Tuple<TV, PF_PageHandle>, int>> FindFreeSlot,
-            Func<Node<TK, TV>, int, Tuple<TV, PF_PageHandle>, TV> nodeExportToDisk)
+        public void InsertRepair(Node<TK, TV> node, 
+            Func<Node<TK, TV>,TV> nodeExportToDisk)
         {
-            bBplusTree.InsertRepair(node, FindFreeSlot,nodeExportToDisk);
+            bBplusTree.InsertRepair(node, nodeExportToDisk);
             Root = bBplusTree.Root;
         }
 
-        public void RepairAfterDelete(Node<TK, TV> node, 
-            Func<Node<TK, TV>, Tuple<Tuple<TV, PF_PageHandle>, int>> FindFreeSlot,
-            Func<Node<TK, TV>, int, Tuple<TV, PF_PageHandle>, TV> nodeExportToDisk, 
-            Action<Node<TK, TV>> deleteFromDisk)
+        public void RepairAfterDelete(Node<TK, TV> node,
+            Func<Node<TK, TV>, TV> nodeExportToDisk,Action<Node<TK, TV>> deleteFromDisk)
         {
-            bBplusTree.RepairAfterDelete(node, FindFreeSlot,nodeExportToDisk, deleteFromDisk);
+            bBplusTree.RepairAfterDelete(node, nodeExportToDisk, deleteFromDisk);
             Root = bBplusTree.Root;
         }
     }

@@ -13,21 +13,19 @@ namespace Database.IndexManage.BPlusTree
         public int Height { get; set; }
 
         // once get, will not change
-        // Only the leaf node has this property
         public TV CurrentRID { get; set; }
+
+        // Record RID only the leaf node has this property
+        public List<TV> Property { get; set; }
 
         public bool IsLeaf { set; get; }
         public Node<TK, TV> Parent { set; get; }
         public List<TK> Values { set; get; }
-
-        // Only the branch node has this property
         public List<Node<TK, TV>> ChildrenNodes { set; get; }
-        // Only the leaf node has this property
-        public List<TV> Property { get; set; }
 
         #region leaf node
-        public TV NextNode { get; set; }
-        public TV PreviousNode { get; set; }
+        public Node<TK, TV> NextNode { get; set; }
+        public Node<TK, TV> PreviousNode { get; set; }
         #endregion
 
         public Node()
