@@ -1,4 +1,5 @@
 ﻿using Database.Const;
+using Database.FileManage;
 using Database.IndexManage;
 using Database.IndexManage.BPlusTree;
 using Database.IndexManage.IndexValue;
@@ -75,15 +76,15 @@ namespace Database
 
         }
 
-        public void InsertEntry(TK key)
+        public void InsertEntry(RIDKey<TK> key)
         {
             GetRootEntry(Root.CurrentRID.Rid);
-            var lastSubRoot = GetSubTreeUntilLeaf(key);
+            var lastSubRoot = GetSubTreeUntilLeaf(key.Key);
 
             CreateEntry(key, lastSubRoot);
 
             int num = 0;
-            GetSubTreeUntilTop(lastSubRoot, ref num, key, InsertRepair);
+            GetSubTreeUntilTop(lastSubRoot, ref num, key.Key, InsertRepair);
 
             while (Root.Parent != null)
             {
@@ -107,27 +108,26 @@ namespace Database
             }
         }
 
-        private void CreateEntry(TK key, Node<TK, RIDKey<TK>> lastSubRoot)
+        private void CreateEntry(RIDKey<TK> addNode, Node<TK, RIDKey<TK>> lastSubRoot)
         {
             // add the entry and export to the disk
             var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
 
             // TODO Record RID,ought to be imported by record manage, default rid for now
-            RID recordRID = default(RID);
-            RIDKey<TK> value = new RIDKey<TK>(recordRID, key);
+            RIDKey<TK> value = addNode;
 
             //Get the leaf child
-            var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
+            var leafNode = bPlusTreeProvider.SearchProperLeafNode(addNode.Key, null);
             if (leafNode.Values.Count != TreeDegree - 1)
             {
                 bPlusTreeProvider.Insert(value);
-
-                NodeExportToDisk(leafNode);
+                var res = FindFreeSlot(leafNode);
+                NodeExportToDisk(leafNode,res.Item2, res.Item1);
             }
             else
             {
                 leafNode.Property.Add(value);
-                leafNode.Values.Add(key);
+                leafNode.Values.Add(addNode.Key);
             }
         }
 
@@ -141,8 +141,8 @@ namespace Database
             if (leafNode.Values.Count != TreeDegree / 2)
             {
                 bPlusTreeProvider.Delete(key);
-
-                NodeExportToDisk(leafNode);
+                var res = FindFreeSlot(leafNode);
+                NodeExportToDisk(leafNode, res.Item2, res.Item1);
             }
             else
             {
@@ -190,7 +190,7 @@ namespace Database
 
             var node = bPlusTreeProvider.SearchProperLeafNode(key,null);
             // do not repair the root
-            bPlusTreeProvider.InsertRepair(node, NodeExportToDisk);
+            bPlusTreeProvider.InsertRepair(node, FindFreeSlot, NodeExportToDisk);
 
             Root = bPlusTreeProvider.Root;
         }
@@ -202,7 +202,7 @@ namespace Database
 
             var node = bPlusTreeProvider.SearchProperLeafNode(key, null);
             // do not repair the root
-            bPlusTreeProvider.RepairAfterDelete(node, NodeExportToDisk, DeleteFromDisk);
+            bPlusTreeProvider.RepairAfterDelete(node, FindFreeSlot, NodeExportToDisk, DeleteFromDisk);
 
             Root = bPlusTreeProvider.Root;
         }
@@ -280,9 +280,19 @@ namespace Database
         #endregion
 
         #region deltegate to handle this
+        public Tuple<Tuple<RIDKey<TK>, PF_PageHandle>,int> FindFreeSlot(Node<TK, RIDKey<TK>> node)
+        {
+            var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
+
+            var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
+
+            return imp.FindFreeSlot(chars);
+        }
+
         // DISK to save
         // TODO which should be saved, async
-        public RIDKey<TK> NodeExportToDisk(Node<TK, RIDKey<TK>> node)
+        public RIDKey<TK> NodeExportToDisk(Node<TK, RIDKey<TK>> node,
+            int size, Tuple<RIDKey<TK>, PF_PageHandle> tuple)
         {
             if (node.Values != null)
             {
@@ -293,8 +303,7 @@ namespace Database
                     var nodeDisk = IndexManagerUtil<TK>.ConvertNodeToNodeDisk(node);
 
                     var chars = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeDisk, FuncConverTKToString);
-
-                    RID rid = imp.InsertRec(chars);
+                    RID rid = imp.AfterInsert(chars,size,tuple);
 
                     // 向上递归
                     if (node.CurrentRID == null)
@@ -355,7 +364,8 @@ namespace Database
         {
             if (node.Parent != null)
             {
-                NodeExportToDisk(node.Parent);
+                var res = FindFreeSlot(node.Parent);
+                NodeExportToDisk(node.Parent, res.Item2, res.Item1);
 
                 ResetNodeToParentLink(node.Parent);
             }

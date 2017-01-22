@@ -22,5 +22,10 @@ namespace Database.IndexManage.IndexValue
         public List<TK> keyList;
 
         public List<RID> childRidList;
+
+        // leaf node
+        // default(-1,-1)
+        public RID leftRID;
+        public RID rightRID;
     }
 }
