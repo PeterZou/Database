@@ -336,11 +336,43 @@ namespace Database
                         }
                     }
 
+                    if (node.IsLeaf && node.NextNode!= null && node.PreviousNode != null)
+                    {
+                        ResetSlibings(node, true);
+                        ResetSlibings(node, false);
+                    }
+                    
                     return new RIDKey<TK>(rid, default(TK));
                 }
             }
 
             return new RIDKey<TK>(new RID(-1,-1), default(TK));
+        }
+
+        private void ResetSlibings(Node<TK, RIDKey<TK>> node, bool isLeft)
+        {
+            RID tmpRID; 
+            if (isLeft)
+                tmpRID = node.PreviousNode.Rid;
+            else
+                tmpRID = node.NextNode.Rid;
+            if (tmpRID.Page != -1 && tmpRID.Slot != -1)
+            {
+                var rec = imp.GetRec(tmpRID);
+                var nodeInDisk = IndexManagerUtil<TK>.SetCharToNodeDisk(rec.data,
+                    rec.data.Length,
+                    FuncConverStringToTK);
+
+                if (isLeft)
+                    nodeInDisk.rightRID = node.CurrentRID.Rid;
+                else
+                    nodeInDisk.leftRID = node.CurrentRID.Rid;
+                // Update
+                rec.data = IndexManagerUtil<TK>.SetNodeDiskToChar(nodeInDisk,
+                    imp.ConverTKToString);
+
+                imp.UpdateRec(rec);
+            }
         }
 
         public void DeleteFromDisk(Node<TK, RIDKey<TK>> node)

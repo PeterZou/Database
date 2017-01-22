@@ -180,6 +180,31 @@ namespace Database.IndexManage
             hdr.rootRID = iih.Root.CurrentRID.Rid;
         }
 
+        public void UpdateRec(RM_Record rec)
+        {
+            IsValid(-1);
+            RID rid = rec.GetRid();
+            int pageNum = rid.Page;
+            int slotNum = rid.Slot;
+            if (!IsValidRID(rid)) throw new Exception();
+
+            PF_PageHandle ph;
+            ph = pfHandle.GetThisPage(pageNum);
+            pfHandle.MarkDirty(pageNum);
+            pfHandle.UnpinPage(pageNum);
+            pHdr = GetPageHeader(ph);
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(-1));
+
+            // already free
+            if (bitmap.Test((UInt32)slotNum)) throw new Exception();
+
+            char[] recData = rec.GetData();
+
+            SetSlotPointer(ph, slotNum, recData);
+
+            SetPageHeader(ph, pHdr);
+        }
+
         public RM_Record GetRec(RID rid)
         {
             if (!IsValidRID(rid)) return null;

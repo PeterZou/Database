@@ -369,10 +369,6 @@ namespace Database.IndexManage.BPlusTree
                     node.Values.GetRange(rightSplit, node.Values.Count - rightSplit));
 
                 node.Values.RemoveRange(rightSplit, node.Values.Count - rightSplit);
-
-                rightNode.PreviousNode = node.CurrentRID;
-                rightNode.NextNode = node.CurrentRID;
-                node.NextNode = rightNode.CurrentRID;
             }
             else
             {
@@ -401,6 +397,16 @@ namespace Database.IndexManage.BPlusTree
                 leftNode.CurrentRID = left;
                 var right = nodeExportToDisk(rightNode);
                 rightNode.CurrentRID = right;
+
+                if (node.IsLeaf == true)
+                {
+                    // TODO IO in two times
+                    rightNode.PreviousNode = leftNode.CurrentRID;
+                    rightNode.NextNode = leftNode.NextNode;
+                    leftNode.NextNode = rightNode.CurrentRID;
+                    nodeExportToDisk(leftNode);
+                    nodeExportToDisk(rightNode);
+                }
             }
             #endregion
 
@@ -559,6 +565,8 @@ namespace Database.IndexManage.BPlusTree
             #region IO handle
             if (nodeExportToDisk != null)
             {
+                node.NextNode = rightSib.NextNode;
+
                 var right = nodeExportToDisk(node);
                 rightSib.CurrentRID = right;
                 deleteFromDisk(rightSibClone);
