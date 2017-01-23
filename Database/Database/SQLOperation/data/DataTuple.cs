@@ -35,7 +35,12 @@ namespace Database.SQLOperation.data
             FileManagerUtil.ReplaceTheNextFree(data, buf, 0, Length);
         }
 
-        public void SetAttr(List<DataAttrInfo> attrs)
+        public char[] GetData()
+        {
+            return data;
+        }
+
+    public void SetAttr(List<DataAttrInfo> attrs)
         {
             throw new NotImplementedException();
         }

@@ -11,19 +11,23 @@ namespace Database.SQLOperation
     abstract public class OperationIterator : IOperationIterator
     { 
         protected bool bIterOpen;
-        protected List<DataAttrInfo> attrs;
+        public List<DataAttrInfo> attrs;
         
         protected string indent;
         // ordering attributes
-        protected bool bSorted;
-        protected bool desc;
-        protected string sortRel;
-        protected string sortAttr;
+        public bool bSorted;
+        public bool desc;
+        public string sortRel;
+        public string sortAttr;
 
-        public abstract void Open();
-        public abstract void GetNext(DataTuple dataTuple);
-        public abstract void Close();
-        public abstract void Eof();
+        public virtual void Open()
+        { }
+        public virtual void GetNext(DataTuple dataTuple)
+        { }
+        public virtual void Close()
+        { }
+        public virtual void Eof()
+        { }
 
         public OperationIterator()
         { }
