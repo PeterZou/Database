@@ -193,14 +193,14 @@ namespace Database.IndexManage
             pfHandle.MarkDirty(pageNum);
             pfHandle.UnpinPage(pageNum);
             pHdr = GetPageHeader(ph);
-            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(-1));
+            var bitmap = new Bitmap(pHdr.freeSlotMap, GetNumSlots(pHdr.size));
 
             // already free
             if (bitmap.Test((UInt32)slotNum)) throw new Exception();
 
             char[] recData = rec.GetData();
 
-            SetSlotPointer(ph, slotNum, recData);
+            SetSlotPointer(ph, slotNum, recData,pHdr.size);
 
             SetPageHeader(ph, pHdr);
         }

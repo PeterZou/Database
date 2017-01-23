@@ -489,6 +489,7 @@ namespace Database.IndexManage.BPlusTree
             else if (node.IsLeaf && key.CompareTo(node.Values[i]) == 0)
             {
                 node.Values.RemoveAt(i);
+                node.Property.RemoveAt(i);
 
                 // Bit of a hack -- if we remove the smallest element in a leaf, then find the *next* smallest element
                 //  (somewhat tricky if the leaf is now empty!), go up our parent stack, and fix index keys
@@ -556,6 +557,7 @@ namespace Database.IndexManage.BPlusTree
             {
                 var fromParentIndex = node.Values.Count;
                 node.Values.AddRange(rightSib.Values);
+                node.Property.AddRange(rightSib.Property);
 
                 node.NextNode = rightSib.NextNode;
             }
