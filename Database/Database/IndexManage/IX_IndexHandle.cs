@@ -80,7 +80,7 @@ namespace Database
             GetRootEntry(Root.CurrentRID.Rid);
             var lastSubRoot = GetSubTreeUntilLeaf(key.Key);
 
-            CreateEntry(key.Key, lastSubRoot);
+            CreateEntry(key, lastSubRoot);
 
             int num = 0;
             GetSubTreeUntilTop(lastSubRoot, ref num, key.Key, InsertRepair);
@@ -107,27 +107,25 @@ namespace Database
             }
         }
 
-        private void CreateEntry(TK key, Node<TK, RIDKey<TK>> lastSubRoot)
+        private void CreateEntry(RIDKey<TK> key, Node<TK, RIDKey<TK>> lastSubRoot)
         {
             // add the entry and export to the disk
             var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
 
             // TODO Record RID,ought to be imported by record manage, default rid for now
-            RID recordRID = default(RID);
-            RIDKey<TK> value = new RIDKey<TK>(recordRID, key);
 
             //Get the leaf child
-            var leafNode = bPlusTreeProvider.SearchProperLeafNode(key, null);
+            var leafNode = bPlusTreeProvider.SearchProperLeafNode(key.Key, null);
             if (leafNode.Values.Count != TreeDegree - 1)
             {
-                bPlusTreeProvider.Insert(value);
+                bPlusTreeProvider.Insert(key);
 
                 NodeExportToDisk(leafNode);
             }
             else
             {
-                leafNode.Property.Add(value);
-                leafNode.Values.Add(key);
+                leafNode.Property.Add(key);
+                leafNode.Values.Add(key.Key);
             }
         }
 
@@ -162,7 +160,7 @@ namespace Database
             return lastSubRoot;
         }
 
-        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index,TK key,
+        private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index, TK key,
             Action<Node<TK, RIDKey<TK>>, TK> action)
         {
             int TotolHeight = Root.Height;

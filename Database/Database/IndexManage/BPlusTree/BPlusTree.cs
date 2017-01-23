@@ -591,6 +591,7 @@ namespace Database.IndexManage.BPlusTree
             if (node.IsLeaf)
             {
                 node.Values.Add(rightSib.Values[0]);
+                node.Property.Add(rightSib.Property[0]);
                 parentNode.Values[parentIndex] = rightSib.Values[1];
             }
             else
@@ -607,10 +608,14 @@ namespace Database.IndexManage.BPlusTree
                 rightSib.ChildrenNodes.RemoveAt(0);
             }
             rightSib.Values.RemoveAt(0);
+            rightSib.Property.RemoveAt(0);
 
             #region IO handle
             if (nodeExportToDisk != null)
             {
+                node.NextNode = rightSib.CurrentRID;
+                rightSib.PreviousNode = node.CurrentRID;
+
                 var right = nodeExportToDisk(rightSib);
                 rightSib.CurrentRID = right;
                 var left = nodeExportToDisk(node);
@@ -626,12 +631,14 @@ namespace Database.IndexManage.BPlusTree
             var parentNode = node.Parent;
 
             node.Values.Insert(0, default(TK));
+            node.Property.Insert(0, default(TV));
 
             var leftSib = parentNode.ChildrenNodes[parentIndex - 1];
 
             if (node.IsLeaf)
             {
                 node.Values[0] = leftSib.Values.Last();
+                node.Property[0] = leftSib.Property.Last();
             }
             parentNode.Values[parentIndex - 1] = leftSib.Values.Last();
 
@@ -645,16 +652,16 @@ namespace Database.IndexManage.BPlusTree
 
                 node.ChildrenNodes[0].Parent = node;
             }
-            else
-            {
-                node.PreviousNode = leftSib.PreviousNode;
-            }
 
             leftSib.Values.Remove(leftSib.Values.Last());
+            leftSib.Property.Remove(leftSib.Property.Last());
 
             #region IO handle
             if (nodeExportToDisk != null)
             {
+                leftSib.NextNode = node.CurrentRID;
+                node.PreviousNode = leftSib.CurrentRID;
+
                 var left = nodeExportToDisk(leftSib);
                 leftSib.CurrentRID = left;
                 var right = nodeExportToDisk(node);

@@ -352,11 +352,13 @@ namespace Database.IndexManage
             if (nodeDisk.isLeaf == 0)
             {
                 node.IsLeaf = true;
-
+                if (nodeDisk.capacity != nodeDisk.childRidList.Count) throw new Exception();
                 // put the property to the leaf
                 for (int i = 0; i < nodeDisk.capacity; i++)
                 {
-                    node.Property.Add(new RIDKey<TK>(default(RID), nodeDisk.keyList[i]));
+                    node.Property.Add(
+                        new RIDKey<TK>(nodeDisk.childRidList[i], nodeDisk.keyList[i])
+                        );
                 }
 
                 node.PreviousNode = new RIDKey<TK>(nodeDisk.leftRID, default(TK));
