@@ -559,7 +559,7 @@ namespace Database.SystemManage
             return ret ? true :false;
         }
 
-        private Tuple<int, DataAttrInfo[]> GetFromTable(string relName)
+        public Tuple<int, DataAttrInfo[]> GetFromTable(string relName)
         {
             var invalid = IsValid();
             if (invalid) throw new Exception();

@@ -97,6 +97,7 @@
     <Compile Include="RecordManage\RM_Manager.cs" />
     <Compile Include="RecordManage\RM_PageHdr.cs" />
     <Compile Include="RecordManage\RM_Record.cs" />
+    <Compile Include="SQLOperation\data\Parser.cs" />
     <Compile Include="SQLOperation\data\DataAttrInfo.cs" />
     <Compile Include="SQLOperation\data\DataRelInfo.cs" />
     <Compile Include="SQLOperation\data\DataTuple.cs" />

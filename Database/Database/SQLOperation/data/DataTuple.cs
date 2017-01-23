@@ -1,4 +1,5 @@
-﻿using Database.RecordManage;
+﻿using Database.FileManage;
+using Database.RecordManage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,14 @@ namespace Database.SQLOperation.data
             this.data = new List<char>().ToArray();
             this.dataAttrInfo = new List<DataAttrInfo>();
             this.rid = new RID(-1, -1);
+        }
+
+        public RID GetRid() { return rid; }
+        public void SetRid(RID r) { rid = r; }
+
+        public void Set(char[] buf)
+        {
+            FileManagerUtil.ReplaceTheNextFree(data, buf, 0, Length);
         }
 
         public void SetAttr(List<DataAttrInfo> attrs)

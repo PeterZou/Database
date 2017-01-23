@@ -42,14 +42,14 @@ namespace Database.RecordManage
                 )
                 throw new Exception();
 
-            if (attrLength >= ConstProperty.PF_PAGE_SIZE - ConstProperty.RM_Page_RID_SIZE 
+            if (attrLength >= ConstProperty.PF_PAGE_SIZE - ConstProperty.RM_Page_RID_SIZE
                 || attrLength <= 0)
                 throw new Exception();
 
             if (
-                (attrType == ConstProperty.AttrType.INT && attrLength != sizeof(int)) 
+                (attrType == ConstProperty.AttrType.INT && attrLength != sizeof(int))
                 || (attrType == ConstProperty.AttrType.FLOAT && attrLength != sizeof(float))
-                || (attrType == ConstProperty.AttrType.STRING && attrLength <= 0 
+                || (attrType == ConstProperty.AttrType.STRING && attrLength <= 0
                     || attrLength > ConstProperty.MAXSTRINGLEN))
                 throw new Exception();
 
@@ -113,5 +113,9 @@ namespace Database.RecordManage
             bOpen = false;
             current = new RID(1, -1);
         }
+
+        public bool IsOpen() { return (bOpen && prmh != null && pred != null); }
+
+        public void resetState() { current = ConstProperty.RootRID; }
     }
 }

@@ -20,9 +20,8 @@ namespace Database.SQLOperation
         protected string sortRel;
         protected string sortAttr;
 
-        public abstract string explain();
         public abstract void Open();
-        public abstract object GetNext();
+        public abstract void GetNext(DataTuple dataTuple);
         public abstract void Close();
         public abstract void Eof();
 
