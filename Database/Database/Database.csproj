@@ -102,6 +102,7 @@
     <Compile Include="SQLOperation\data\DataAttrInfo.cs" />
     <Compile Include="SQLOperation\data\DataRelInfo.cs" />
     <Compile Include="SQLOperation\data\DataTuple.cs" />
+    <Compile Include="SQLOperation\data\TupleCmp.cs" />
     <Compile Include="SQLOperation\FileScan.cs" />
     <Compile Include="SQLOperation\IndexScan.cs" />
     <Compile Include="SQLOperation\OperationIterator.cs" />
