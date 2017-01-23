@@ -13,7 +13,9 @@ namespace Database.SQLOperation
     {
         TupleCmp cmp;
         OperationIterator lhsIt;
-        Dictionary<TupleCmp, DataTuple> dic = new Dictionary<TupleCmp, DataTuple>();
+        List<DataTuple> list = new List<DataTuple>();
+        List<DataTuple> reverseList = new List<DataTuple>();
+        int index;
 
         public Sort(
             OperationIterator lhsIt,
@@ -57,6 +59,8 @@ namespace Database.SQLOperation
             {
                 throw new Exception();
             }
+
+            index = -1;
         }
 
         public override void Open()
@@ -64,17 +68,35 @@ namespace Database.SQLOperation
             if (bIterOpen) throw new Exception();
             lhsIt.Open();
             var t = lhsIt.GetTuple();
-            while (t!= null)
+            while (t != null)
             {
-                TupleCmp cm = new TupleCmp();
-                dic.Add(cm, t);
+                list.AddCus(t, cmp);
                 lhsIt.GetNext(t);
             }
+
+            SetReverseList();
         }
+
+        private void SetReverseList()
+        {
+            DataTuple[] array = new DataTuple[list.Count];
+            list.CopyTo(array);
+            array.Reverse();
+            reverseList = array.ToList();
+        }
+
         public override void GetNext(DataTuple dataTuple)
         {
             if (!bIterOpen) throw new Exception();
-            throw new NotImplementedException();
+            if (desc)
+            {
+                dataTuple = list[index];
+            }
+            else
+            {
+                dataTuple = reverseList[index];
+            }
+            index++;
         }
         public override void Close()
         {
@@ -82,7 +104,7 @@ namespace Database.SQLOperation
                 throw new Exception();
 
             lhsIt.Close();
-            dic.Clear();
+            list.Clear();
 
             bIterOpen = false;
         }

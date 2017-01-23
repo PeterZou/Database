@@ -32,5 +32,10 @@ namespace Database.SQLOperation.data
             this.p = new Predicate(AttrType.INT, 4, 0, c, null, ClientHint.NO_HINT);
             this.sortKeyOffset = 0;
         }
+
+        public bool Compare(DataTuple left, DataTuple right)
+        {
+            return p.Eval(left.data,right.data,c);
+        }
     }
 }

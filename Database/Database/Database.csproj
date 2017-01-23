@@ -81,6 +81,7 @@
     <Compile Include="Interface\FileHandle.cs" />
     <Compile Include="Interface\IOperationIterator.cs" />
     <Compile Include="Interface\PageHdr.cs" />
+    <Compile Include="ListExtendsion.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RecordManagerUtil.cs" />
