@@ -100,5 +100,10 @@ namespace Database.IndexManage.BPlusTree
             bBplusTree.GetFirstLeafNode(Root, ref firstNode);
             return firstNode;
         }
+
+        public Node<TK, TV> GetLastLeafNode()
+        {
+            return bBplusTree.GetAllLeafNode().Last();
+        }
     }
 }

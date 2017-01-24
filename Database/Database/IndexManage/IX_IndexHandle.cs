@@ -160,6 +160,14 @@ namespace Database
             return lastSubRoot;
         }
 
+        private Node<TK, RIDKey<TK>> GetSubTreeUntilSpecialNode(bool isSmallest)
+        {
+            TopToLeafStoreList.Clear();
+            Node<TK, RIDKey<TK>> lastSubRoot = null;
+            GetSubTreeUntilSpecialNode(Root, RootRIDList, ref lastSubRoot, isSmallest);
+            return lastSubRoot;
+        }
+
         private void GetSubTreeUntilTop(Node<TK, RIDKey<TK>> subRootNode, ref int index, TK key,
             Action<Node<TK, RIDKey<TK>>, TK> action)
         {
@@ -226,6 +234,31 @@ namespace Database
             }
         }
 
+        private void GetSubTreeUntilSpecialNode(Node<TK, RIDKey<TK>> node, List<RID> RIDList,
+           ref Node<TK, RIDKey<TK>> refSubRoot,bool isSamllest)
+        {
+            var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, node);
+            if (node.Height <= MaxTreeHeightInMemory)
+            {
+                // import all the tree
+                refSubRoot = ImportToBPlusTreeProvider(node, RIDList, bPlusTreeProvider);
+            }
+            else
+            {
+                // import all the tree and search the leaf
+                var treeHead = ImportToBPlusTreeProvider(node, RIDList, bPlusTreeProvider);
+                var subRoot = new Node<TK, RIDKey<TK>>();
+                if (isSamllest)
+                { subRoot = bPlusTreeProvider.GetFirstLeafNode(); }
+                else
+                { subRoot = bPlusTreeProvider.GetLastLeafNode(); }
+                
+                // Recusive
+                // Head
+                GetSubTreeUntilSpecialNode(subRoot, RIDList, ref refSubRoot, isSamllest);
+            }
+        }
+
         private Node<TK, RIDKey<TK>> ImportToBPlusTreeProvider(Node<TK, RIDKey<TK>> node,
             List<RID> RIDList, BPlusTreeProvider<TK, RIDKey<TK>> bPlusTreeProvider)
         {
@@ -280,15 +313,34 @@ namespace Database
         {
             GetRootEntry(Root.CurrentRID.Rid);
 
-            // key of int,float must have a value of positive,string must start after ""
-            var lastSubRoot = GetSubTreeUntilLeaf(default(TK));
+            var lastSubRoot = GetSubTreeUntilSpecialNode(true);
             var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
             return bPlusTreeProvider.GetFirstLeafNode();
         }
 
         public Node<TK, RIDKey<TK>> FindLargestLeaf()
         {
-            throw new Exception();
+            GetRootEntry(Root.CurrentRID.Rid);
+
+            var lastSubRoot = GetSubTreeUntilSpecialNode(false);
+            var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
+            return bPlusTreeProvider.GetLastLeafNode();
+        }
+
+        public Node<TK, RIDKey<TK>> FindNextLeafNode(Node<TK, RIDKey<TK>> leafNode)
+        {
+            var leafNodeRID = leafNode.NextNode.Rid;
+
+            //Just import leaf node
+            return ImportOneNode(leafNodeRID, null);
+        }
+
+        public Node<TK, RIDKey<TK>> FindPreviousLeafNode(Node<TK, RIDKey<TK>> leafNode)
+        {
+            var leafNodeRID = leafNode.PreviousNode.Rid;
+
+            //Just import leaf node
+            return ImportOneNode(leafNodeRID, null);
         }
         #endregion
 

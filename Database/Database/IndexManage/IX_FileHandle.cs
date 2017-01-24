@@ -366,6 +366,16 @@ namespace Database.IndexManage
             return iih.FindLargestLeaf();
         }
 
+        public Node<TK, RIDKey<TK>> FindNextLeafNode(Node<TK, RIDKey<TK>> leafNode)
+        {
+            return iih.FindNextLeafNode(leafNode);
+        }
+
+        public Node<TK, RIDKey<TK>> FindPreviousLeafNode(Node<TK, RIDKey<TK>> leafNode)
+        {
+            return iih.FindPreviousLeafNode(leafNode);
+        }
+
         public void FlushPages()
         {
             if (!bFileOpen) throw new Exception();
