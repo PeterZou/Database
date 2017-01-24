@@ -356,6 +356,16 @@ namespace Database.IndexManage
             if ((pfHandle == null) || !bFileOpen) throw new Exception();
         }
 
+        public Node<TK, RIDKey<TK>> FindSmallestLeaf()
+        {
+            return iih.FindSmallestLeaf();
+        }
+
+        public Node<TK, RIDKey<TK>> FindLargestLeaf()
+        {
+            return iih.FindLargestLeaf();
+        }
+
         public void FlushPages()
         {
             if (!bFileOpen) throw new Exception();

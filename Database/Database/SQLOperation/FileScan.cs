@@ -133,6 +133,10 @@ namespace Database.SQLOperation
                     dataTuple.SetRid(recrid);
                     found = true;
                 }
+                else
+                {
+                    dataTuple = null;
+                }
             }
         }
 

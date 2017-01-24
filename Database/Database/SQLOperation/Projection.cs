@@ -66,13 +66,7 @@ namespace Database.SQLOperation
             var buf = dataTuple.GetData();
             var lbuf = ltuple.GetData();
 
-            for (int i = 0; i < attrs.Count; i++)
-            {
-                for (int j = attrs[i].offset; j < attrs[i].attrLength; j++)
-                {
-                    buf[j] = lbuf[j];
-                }
-            }
+            SQLOperationUtil.SetChars(buf, lbuf, attrs, lattrs);
         }
     }
 }

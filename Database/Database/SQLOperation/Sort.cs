@@ -37,7 +37,7 @@ namespace Database.SQLOperation
 
             bSorted = true;
             this.desc = desc_;
-            attrs = new DataAttrInfo[lhsIt.attrs.Count].ToList();
+            attrs = new List<DataAttrInfo>();
             List<DataAttrInfo> cattrs = lhsIt.attrs;
             for (int i = 0; i < attrs.Count; i++)
             {
@@ -77,26 +77,26 @@ namespace Database.SQLOperation
             SetReverseList();
         }
 
-        private void SetReverseList()
-        {
-            DataTuple[] array = new DataTuple[list.Count];
-            list.CopyTo(array);
-            array.Reverse();
-            reverseList = array.ToList();
-        }
-
         public override void GetNext(DataTuple dataTuple)
         {
             if (!bIterOpen) throw new Exception();
-            if (desc)
+
+            if (index >= list.Count)
             {
-                dataTuple = list[index];
+                dataTuple = null;
             }
             else
             {
-                dataTuple = reverseList[index];
+                if (desc)
+                {
+                    dataTuple = list[index];
+                }
+                else
+                {
+                    dataTuple = reverseList[index];
+                }
+                index++;
             }
-            index++;
         }
         public override void Close()
         {
@@ -107,6 +107,14 @@ namespace Database.SQLOperation
             list.Clear();
 
             bIterOpen = false;
+        }
+
+        private void SetReverseList()
+        {
+            DataTuple[] array = new DataTuple[list.Count];
+            list.CopyTo(array);
+            array.Reverse();
+            reverseList = array.ToList();
         }
     }
 }

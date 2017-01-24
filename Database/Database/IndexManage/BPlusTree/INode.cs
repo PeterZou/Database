@@ -14,5 +14,9 @@ namespace Database.IndexManage.BPlusTree
         {
             this.Key = key;
         }
+
+        protected INode()
+        {
+        }
     }
 }

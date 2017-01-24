@@ -88,5 +88,7 @@ namespace Database.Const
             MIN_F, MAX_F, COUNT_F,
             SUM_F, AVG_F           // numeric args only
         };
+
+        public const int MinNum = -10000;
     }
 }

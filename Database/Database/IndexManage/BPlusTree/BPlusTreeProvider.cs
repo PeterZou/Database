@@ -93,5 +93,12 @@ namespace Database.IndexManage.BPlusTree
             bBplusTree.RepairAfterDelete(node, nodeExportToDisk, deleteFromDisk);
             Root = bBplusTree.Root;
         }
+
+        public Node<TK, TV> GetFirstLeafNode()
+        {
+            Node<TK, TV> firstNode = new Node<TK, TV>();
+            bBplusTree.GetFirstLeafNode(Root, ref firstNode);
+            return firstNode;
+        }
     }
 }

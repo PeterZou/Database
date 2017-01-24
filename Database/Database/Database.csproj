@@ -76,6 +76,7 @@
     <Compile Include="IndexManage\IX_FileHandle.cs" />
     <Compile Include="IndexManage\IX_IndexHandle.cs" />
     <Compile Include="IndexManage\IX_FileHdr.cs" />
+    <Compile Include="IndexManage\IX_IndexScan.cs" />
     <Compile Include="IndexManage\IX_Manager.cs" />
     <Compile Include="IndexManage\IX_PageHdr.cs" />
     <Compile Include="Interface\FileHandle.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="SQLOperation\data\DataRelInfo.cs" />
     <Compile Include="SQLOperation\data\DataTuple.cs" />
     <Compile Include="SQLOperation\data\TupleCmp.cs" />
+    <Compile Include="SQLOperation\data\SQLOperationUtil.cs" />
     <Compile Include="SQLOperation\FileScan.cs" />
     <Compile Include="SQLOperation\IndexScan.cs" />
     <Compile Include="SQLOperation\OperationIterator.cs" />

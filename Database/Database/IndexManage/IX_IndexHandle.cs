@@ -275,6 +275,21 @@ namespace Database
 
             return node;
         }
+
+        public Node<TK, RIDKey<TK>> FindSmallestLeaf()
+        {
+            GetRootEntry(Root.CurrentRID.Rid);
+
+            // key of int,float must have a value of positive,string must start after ""
+            var lastSubRoot = GetSubTreeUntilLeaf(default(TK));
+            var bPlusTreeProvider = BPlusTreeProvider<TK, RIDKey<TK>>.CreatBPlusTree(TreeDegree, lastSubRoot);
+            return bPlusTreeProvider.GetFirstLeafNode();
+        }
+
+        public Node<TK, RIDKey<TK>> FindLargestLeaf()
+        {
+            throw new Exception();
+        }
         #endregion
 
         #region deltegate to handle this
@@ -390,10 +405,6 @@ namespace Database
                 ResetNodeToParentLink(node.Parent);
             }
         }
-        #endregion
-
-        #region method to use in this class
-        
         #endregion
     }
 }
