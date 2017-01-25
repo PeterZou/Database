@@ -40,7 +40,27 @@ namespace Database.SQLOperation.data
             return data;
         }
 
-    public void SetAttr(List<DataAttrInfo> attrs)
+        public char[] GetData(char[] attrName)
+        {
+            for (int i = 0; i < dataAttrInfo.Count; i++)
+            {
+                if (dataAttrInfo[i].attrName.Equals(attrName) == true)
+                {
+                    List<char> value = new List<char>();
+
+                    for (int j = dataAttrInfo[i].offset; j < dataAttrInfo[i].attrLength; j++)
+                    {
+                        value.Add(data[j]);
+                    }
+
+                    return value.ToArray();
+                }
+            }
+
+            throw new NullReferenceException();
+        }
+
+        public void SetAttr(List<DataAttrInfo> attrs)
         {
             throw new NotImplementedException();
         }

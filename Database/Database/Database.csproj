@@ -109,6 +109,9 @@
     <Compile Include="SQLOperation\data\SQLOperationUtil.cs" />
     <Compile Include="SQLOperation\FileScan.cs" />
     <Compile Include="SQLOperation\IndexScan.cs" />
+    <Compile Include="SQLOperation\NestedBlockJoin.cs" />
+    <Compile Include="SQLOperation\NestedLoopIndexJoin.cs" />
+    <Compile Include="SQLOperation\NestedLoopJoin.cs" />
     <Compile Include="SQLOperation\OperationIterator.cs" />
     <Compile Include="SQLOperation\Projection.cs" />
     <Compile Include="SQLOperation\Sort.cs" />
@@ -124,12 +127,8 @@
     <Content Include="Data\DataStructure.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SQL\SQL.csproj">
-      <Project>{98aae392-ae31-4653-a2b2-02926538eb51}</Project>
-      <Name>SQL</Name>
-    </ProjectReference>
+    <Folder Include="QueryManage\" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
