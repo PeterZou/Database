@@ -100,6 +100,7 @@
     <Compile Include="RecordManage\RM_PageHdr.cs" />
     <Compile Include="RecordManage\RM_Record.cs" />
     <Compile Include="SQLOperation\Agg.cs" />
+    <Compile Include="SQLOperation\BaseOperationIterator.cs" />
     <Compile Include="SQLOperation\data\Parser.cs" />
     <Compile Include="SQLOperation\data\DataAttrInfo.cs" />
     <Compile Include="SQLOperation\data\DataRelInfo.cs" />

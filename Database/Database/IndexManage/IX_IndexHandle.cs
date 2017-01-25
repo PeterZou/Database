@@ -26,7 +26,7 @@ namespace Database
         // 内存中能够展开的最大高度
         private int MaxTreeHeightInMemory { get; }
 
-        private Func<string, TK> FuncConverStringToTK;
+        public Func<string, TK> FuncConverStringToTK;
 
         public Func<TK, string> FuncConverTKToString;
 
@@ -333,6 +333,21 @@ namespace Database
 
             //Just import leaf node
             return ImportOneNode(leafNodeRID, null);
+        }
+
+        public Node<TK, RIDKey<TK>> FindNextLeafForceNode(Node<TK, RIDKey<TK>> leafNode,TK key)
+        {
+            var leafNodeRID = leafNode.NextNode.Rid;
+            var node = ImportOneNode(leafNodeRID, null);
+            var lastNode = new Node<TK, RIDKey<TK>>();
+            while (node.Values.IndexOf(key) >0)
+            {
+                lastNode = node.SetNode(node.IsLeaf); ;
+                leafNodeRID = leafNode.NextNode.Rid;
+                node = ImportOneNode(leafNodeRID, null);
+            }
+
+            return lastNode;
         }
 
         public Node<TK, RIDKey<TK>> FindPreviousLeafNode(Node<TK, RIDKey<TK>> leafNode)

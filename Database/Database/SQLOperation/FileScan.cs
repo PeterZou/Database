@@ -11,16 +11,10 @@ using System.Threading.Tasks;
 
 namespace Database.SQLOperation
 {
-    public class FileScan<TK> : OperationIterator
+    public class FileScan<TK> : BaseOperationIterator<TK>
         where TK : IComparable<TK>
     {
         RM_FileScan rfs;
-        RM_Manager prmm;
-        SM_Manager<TK> psmm;
-        string relName;
-        RM_FileHandle rmh;
-        int nOFilters;
-        Condition[] oFilters;
 
         public FileScan(
             RM_Manager rmm,
@@ -28,21 +22,16 @@ namespace Database.SQLOperation
             string relName,
             Condition cond,
             int nOutFilters,
-            Condition[] outFilters) : base()
+            Condition[] outFilters) : base(rmm,smm,relName,cond,nOutFilters, outFilters)
         {
-            this.prmm = rmm;
-            this.psmm = smm;
-            this.relName = relName;
-            this.nOFilters = nOutFilters;
-            
-            var tuple = psmm.GetFromTable(relName);
+            var tuple = smm.GetFromTable(relName);
             attrs = tuple.Item2.ToList();
 
-            var tuple2 = psmm.GetAttrFromCat(relName, new string(cond.lhsAttr.attrName));
+            var tuple2 = smm.GetAttrFromCat(relName, new string(cond.lhsAttr.attrName));
             DataAttrInfo condAttr = tuple2.Item2;
 
             rfs = new RM_FileScan();
-            rmh = prmm.OpenFile(relName);
+
             rfs.OpenScan(rmh,
                     condAttr.attrType,
                     condAttr.attrLength,
@@ -50,12 +39,6 @@ namespace Database.SQLOperation
                     cond.op,
                     new string(cond.rhsValue.value),
                     Const.ConstProperty.ClientHint.NO_HINT);
-
-            oFilters = new Condition[nOFilters];
-            for (int i = 0; i < nOFilters; i++)
-            {
-                oFilters[i] = outFilters[i]; // shallow copy
-            }
         }
 
         private void IsValid()
@@ -95,48 +78,7 @@ namespace Database.SQLOperation
                 char[] buf = rec.GetData();
                 var recrid = rec.GetRid();
 
-                bool recordIn = true;
-                for (int i = 0; i < nOFilters; i++)
-                {
-                    Condition cond = oFilters[i];
-                    var tuple = psmm.GetAttrFromCat(relName, new string(cond.lhsAttr.attrName));
-                    DataAttrInfo condAttr = tuple.Item2;
-                    RID r = tuple.Item1;
-
-                    Predicate p = new Predicate(
-                        condAttr.attrType,
-                        condAttr.attrLength,
-                        condAttr.offset,
-                        cond.op,
-                        new string(cond.rhsValue.value),
-                        Const.ConstProperty.ClientHint.NO_HINT
-                        );
-
-                    char[] rhs = cond.rhsValue.value;
-                    if (cond.bRhsIsAttr == true)
-                    {
-                        var tuple2 = psmm.GetAttrFromCat(relName, new string(cond.lhsAttr.attrName));
-                        DataAttrInfo rhsAttr = tuple2.Item2;
-                        FileManagerUtil.ReplaceTheNextFree(rhs, buf, rhsAttr.offset, rhs.Length);
-                    }
-
-                    if (!p.Eval(buf, rhs, cond.op))
-                    {
-                        recordIn = false;
-                        break;
-                    }
-                }
-
-                if (recordIn)
-                {
-                    dataTuple.Set(buf);
-                    dataTuple.SetRid(recrid);
-                    found = true;
-                }
-                else
-                {
-                    dataTuple = null;
-                }
+                GetDatatuple(dataTuple, found, buf, recrid);
             }
         }
 

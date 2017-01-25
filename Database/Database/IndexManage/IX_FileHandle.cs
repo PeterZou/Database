@@ -371,9 +371,23 @@ namespace Database.IndexManage
             return iih.FindNextLeafNode(leafNode);
         }
 
+        // hack for indexscan::OpOptimize
+        // FindLeaf() does not really return rightmost node that has a key. This happens
+        // when there are duplicates that span multiple btree nodes.
+        // The strict rightmost guarantee is mainly required for
+        public Node<TK, RIDKey<TK>> FindNextLeafForceNode(Node<TK, RIDKey<TK>> leafNode, TK key)
+        {
+            return iih.FindNextLeafForceNode(leafNode, key);
+        }
+
         public Node<TK, RIDKey<TK>> FindPreviousLeafNode(Node<TK, RIDKey<TK>> leafNode)
         {
             return iih.FindPreviousLeafNode(leafNode);
+        }
+
+        public Node<TK, RIDKey<TK>> ImportOneLeafNode(RID rid)
+        {
+            return iih.ImportOneNode(rid, null);
         }
 
         public void FlushPages()

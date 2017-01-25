@@ -28,16 +28,86 @@ namespace Database.IndexManage
         Node<TK, RIDKey<TK>> lastNode;
         TK value;
 
-        public void OpenScan()
-        { }
+        public IX_IndexScan()
+        {
+            currPos = -1;
+            currRid = new RID(-1, -1);
+            c = CompOp.EQ_OP;
+            bOpen = false;
+            desc = false;
+            eof = false;
+        }
+
+        public bool IsOpen() { return (bOpen && pred != null && pifh != null); }
+
+        public void OpenScan(
+                IX_FileHandle<TK> fileHandle,
+                CompOp compOp,
+                TK value_,
+                ClientHint pinHint,
+                bool desc)
+        {
+            if (bOpen) throw new Exception();
+
+            if ((compOp < CompOp.NO_OP) ||
+                compOp > CompOp.GE_OP)
+                throw new Exception();
+
+
+            pifh = fileHandle;
+            if (pifh == null) throw new Exception();
+
+            bOpen = true;
+            if (desc)
+                this.desc = true;
+            foundOne = false;
+
+            AttrType attrType = SetAttrType();
+
+            pred = new Predicate(attrType,
+                                 pifh.OccupiedNum(default(TK)),
+                                 0,
+                                 compOp,
+                                 pifh.ConverTKToString(value_),
+                                 pinHint);
+
+
+            c = compOp;
+            if (value_ != null)
+            {
+                value = value_; // TODO deep copy ?
+                OpOptimize();
+            }
+        }
+
+        private static AttrType SetAttrType()
+        {
+            var attrType = (AttrType)0;
+            if (default(TK) is int)
+            {
+                attrType = AttrType.INT;
+            }
+            else if (default(TK) is float)
+            {
+                attrType = AttrType.FLOAT;
+            }
+            else
+            {
+                attrType = AttrType.STRING;
+            }
+
+            return attrType;
+        }
 
         // Passes back the key scanned and number of scanned items so
         // far (whether the predicate matched or not.
-        Tuple<RID, TK,int> GetNextEntry()
+        public Tuple<RID, TK,int> GetNextEntry()
         {
             int numScanned = -1;
             RIDKey<TK> value = new RIDKey<TK>();
             bool currDeleted = false;
+
+            if (eof) return null;
 
             currDeleted = SetCurrNode(currDeleted);
 
@@ -78,7 +148,8 @@ namespace Database.IndexManage
                         {
                             if (foundOne)
                             {
-                                if (EarlyExitOptimize(key))
+                                EarlyExitOptimize(key);
+                                if (eof)
                                     return null;
                             }
                         }
@@ -118,7 +189,8 @@ namespace Database.IndexManage
                         {
                             if (foundOne)
                             {
-                                if (EarlyExitOptimize(key))
+                                EarlyExitOptimize(key);
+                                if (eof)
                                     return null;
                             }
                         }
@@ -173,6 +245,7 @@ namespace Database.IndexManage
         private bool SetCurrNode(bool currDeleted)
         {
             if (!bOpen) throw new Exception();
+
             // first time in
             if (currNode == null && currPos == -1)
             {
@@ -209,39 +282,124 @@ namespace Database.IndexManage
             return currDeleted;
         }
 
-        private bool EarlyExitOptimize(TK key)
+        private void EarlyExitOptimize(TK key)
         {
             if (!bOpen) throw new Exception();
 
             if (value == null)
-                return true; //nothing to optimize
+                return; //nothing to optimize
             // no opt possible
             if (c == CompOp.NE_OP || c == CompOp.NO_OP)
-                return true;
-
+                return;
             if (currNode != null)
             {
                 int cmp = key.CompareTo(value);
                 if (c == CompOp.EQ_OP && cmp != 0)
                 {
                     eof = true;
-                    return true;
                 }
-                if ((c == CompOp.LT_OP || c == CompOp.LE_OP) && cmp > 0 && !desc)
+                else if ((c == CompOp.LT_OP || c == CompOp.LE_OP) && cmp > 0 && !desc)
                 {
                     eof = true;
-                    return true;
                 }
-                if ((c == CompOp.GT_OP || c == CompOp.GE_OP) && cmp < 0 && desc)
+                else if ((c == CompOp.GT_OP || c == CompOp.GE_OP) && cmp < 0 && desc)
                 {
                     eof = true;
-                    return true;
                 }
+                return;
             }
-            return true;
+            return;
         }
 
         private void OpOptimize()
-        { }
+        {
+            if (!bOpen) throw new Exception();
+
+            if (value == null)
+                return; //nothing to optimize
+
+            // no opt possible
+            if (c == CompOp.NE_OP)
+                return;
+
+            // hack for indexscan::OpOptimize
+            // FindLeaf() does not really return rightmost node that has a key. This happens
+            // when there are duplicates that span multiple btree nodes.
+            // The strict rightmost guarantee is mainly required for
+            // What if have a duplicated value ,so turn right to a new value
+            currNode = pifh.FindNextLeafForceNode(currNode,value);
+            currPos = currNode.Values.IndexOf(value);
+
+            if (desc == true)
+            {
+                // find rightmost version of a value and go left from there.
+                if (c == CompOp.LE_OP || c == CompOp.LT_OP)
+                {
+                    lastNode = null;
+                    currPos = currPos + 1; // go one past
+                }
+
+                if (c == CompOp.EQ_OP)
+                {
+                    if (currPos == -1)
+                    {// key does not exist
+                        eof = true;
+                        return;
+                    }
+                    // reset cause you could miss first value
+                    lastNode = null;
+                    currPos = currPos + 1; // go one past
+                }
+
+                // find rightmost version of value lesser than and go left from there.
+                if (c == CompOp.GE_OP)
+                {
+                    lastNode = null;
+                    currNode = null;
+                    currPos = -1;
+                }
+
+                if (c == CompOp.GT_OP)
+                {
+                    lastNode = pifh.ImportOneLeafNode(currNode.CurrentRID.Rid);
+                    currNode = null;
+                    currPos = -1;
+                }
+            }
+            else
+            {
+                if ((c == CompOp.LE_OP || c == CompOp.LT_OP))
+                {
+                    lastNode = pifh.ImportOneLeafNode(currNode.CurrentRID.Rid);
+                    currNode = null;
+                    currPos = -1;
+                }
+                if ((c == CompOp.GT_OP))
+                {
+                    lastNode = null;
+                    // currNode = pixh->FetchNode(currNode->GetPageRID());
+                    // currNode->Print(cerr);
+                    // cerr << "GT curr was " << currNode->GetPageRID() << endl;
+                }
+                if ((c == CompOp.GE_OP))
+                {
+                    currNode = null;
+                    currPos = -1;
+                    lastNode = null;
+                }
+                if ((c == CompOp.EQ_OP))
+                {
+                    if (currPos == -1)
+                    { // key does not exist
+                        eof = true;
+                        return;
+                    }
+                    lastNode = pifh.ImportOneLeafNode(currNode.CurrentRID.Rid);
+                    currNode = null;
+                    currPos = -1;
+                }
+            }
+            return;
+        }
     }
 }
