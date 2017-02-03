@@ -15,6 +15,7 @@ namespace Database.IndexManage
         where TK : IComparable<TK>
     {
         PF_Manager pfm;
+        public int treeHeight;
 
         private Func<TK, string> ConverTKToString;
         private Func<string, TK> ConverStringToTK;
@@ -22,8 +23,9 @@ namespace Database.IndexManage
         private Func<TK, int> OccupiedNum;
 
         public IX_Manager(PF_Manager pfm, Func<TK, string> ConverTKToString, 
-            Func<string, TK> ConverStringToTK, Func<TK> CreatNewTK, Func<TK, int> occupiedNum)
+            Func<string, TK> ConverStringToTK, Func<TK> CreatNewTK, Func<TK, int> occupiedNum,int treeHeight =6)
         {
+            this.treeHeight = treeHeight;
             this.pfm = pfm;
             this.ConverStringToTK = ConverStringToTK;
             this.ConverTKToString = ConverTKToString;
@@ -37,7 +39,7 @@ namespace Database.IndexManage
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);
 
-            var hdr = CreatIndexFileHdr(pfh, IndexManagerUtil<int>.GetNodeDiskLength(), 30,6,1);
+            var hdr = CreatIndexFileHdr(pfh, IndexManagerUtil<int>.GetNodeDiskLength(), 30,treeHeight,1);
             char[] data = IndexManagerUtil<TK>.IndexFileHdrToCharArray(hdr, ConverTKToString);
 
             FileManagerUtil.WriteFileHdr(data, 0, pfm.fs);
