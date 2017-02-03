@@ -117,5 +117,10 @@ namespace Database.RecordManage
         public bool IsOpen() { return (bOpen && prmh != null && pred != null); }
 
         public void resetState() { current = ConstProperty.RootRID; }
+
+        public int GetNumSlotsPerPage()
+        {
+            return prmh.GetNumSlots(-1);
+        }
     }
 }

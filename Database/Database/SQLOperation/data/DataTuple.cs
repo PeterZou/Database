@@ -40,6 +40,11 @@ namespace Database.SQLOperation.data
             return data;
         }
 
+        public object GetData(string value, Func<string, object> funcConverStringToValue)
+        {
+            return funcConverStringToValue(value);
+        }
+
         public char[] GetData(char[] attrName)
         {
             for (int i = 0; i < dataAttrInfo.Count; i++)

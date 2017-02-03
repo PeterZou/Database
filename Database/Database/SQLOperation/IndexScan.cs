@@ -18,8 +18,8 @@ namespace Database.SQLOperation
     {
         IX_IndexScan<TK> ifs;
         IX_Manager<TK> pixm;
-        string indexAttrName;
-        IX_FileHandle<TK> ifh;
+        public string indexAttrName;
+        public IX_FileHandle<TK> ifh;
         CompOp c;
 
         public IndexScan(SM_Manager<TK> smm,

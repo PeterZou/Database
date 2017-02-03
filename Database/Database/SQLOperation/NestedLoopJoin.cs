@@ -11,10 +11,10 @@ namespace Database.SQLOperation
 {
     public class NestedLoopJoin : OperationIterator
     {
-        OperationIterator lhsIt;
-        OperationIterator rhsIt;
-        DataTuple left;
-        DataTuple right;
+        public OperationIterator lhsIt;
+        public OperationIterator rhsIt;
+        public DataTuple left;
+        public DataTuple right;
         int nOFilters;
         Condition[] oFilters; // join keys
         DataAttrInfo[] lKeys; // attrinfo of join key in the left iterator
@@ -29,6 +29,9 @@ namespace Database.SQLOperation
             int nOutFilters = 0
                  )
         {
+            left = new DataTuple(lhsIt.attrs.Count, lhsIt.DataTupleLength());
+            right = new DataTuple(rhsIt.attrs.Count, rhsIt.DataTupleLength());
+
             this.lhsIt = lhsIt;
             this.rhsIt = rhsIt;
             lhsIt.GetNext(this.left);
@@ -179,7 +182,7 @@ namespace Database.SQLOperation
             bIterOpen = false;
         }
 
-        private void EvalJoin(DataTuple t, bool joined, DataTuple l, DataTuple r)
+        protected void EvalJoin(DataTuple t, bool joined, DataTuple l, DataTuple r)
         {
             bool recordIn = true;
             for (int i = 0; i < nOFilters; i++)

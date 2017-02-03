@@ -626,5 +626,19 @@ namespace Database.SystemManage
             }
             return new Tuple<int, DataAttrInfo[]>(attrCount, attributes);
         }
+
+        public int GetNumPages(string relName)
+        {
+            var tuple = GetRelFromCat(relName);
+            DataRelInfo r = tuple.Item2;
+            return r.numPages;
+        }
+
+        public int GetNumRecords(string relName)
+        {
+            var tuple = GetRelFromCat(relName);
+            DataRelInfo r = tuple.Item2;
+            return r.numRecords;
+        }
     }
 }

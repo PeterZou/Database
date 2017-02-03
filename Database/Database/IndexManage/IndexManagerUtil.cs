@@ -271,7 +271,6 @@ namespace Database.IndexManage
             char[] indexType = new char[1];
             char[] lengthChar = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
             char[] dicCount = new char[ConstProperty.PF_FILE_HDR_NumPages_SIZE];
-            int length = 0;
 
             sr.Read(extRecordSize, 0, ConstProperty.PF_FILE_HDR_NumPages_SIZE);
             Int32.TryParse(new string(extRecordSize), out pf_fh.extRecordSize);

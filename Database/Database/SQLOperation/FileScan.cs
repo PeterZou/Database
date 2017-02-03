@@ -91,5 +91,17 @@ namespace Database.SQLOperation
 
             bIterOpen = true;
         }
+
+        public int GetNumPages()
+        {
+            return psmm.GetNumPages(relName);
+        }
+        public int GetNumSlotsPerPage() { return rfs.GetNumSlotsPerPage(); }
+        public int GetNumRecords() { return psmm.GetNumRecords(relName); }
+
+        public void GotoPage(int p)
+        {
+            rfs.GotoPage(p);
+        }
     }
 }

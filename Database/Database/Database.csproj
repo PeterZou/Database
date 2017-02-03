@@ -101,6 +101,7 @@
     <Compile Include="RecordManage\RM_Record.cs" />
     <Compile Include="SQLOperation\Agg.cs" />
     <Compile Include="SQLOperation\BaseOperationIterator.cs" />
+    <Compile Include="SQLOperation\data\DataTupleT.cs" />
     <Compile Include="SQLOperation\data\Parser.cs" />
     <Compile Include="SQLOperation\data\DataAttrInfo.cs" />
     <Compile Include="SQLOperation\data\DataRelInfo.cs" />
@@ -109,6 +110,7 @@
     <Compile Include="SQLOperation\data\SQLOperationUtil.cs" />
     <Compile Include="SQLOperation\FileScan.cs" />
     <Compile Include="SQLOperation\IndexScan.cs" />
+    <Compile Include="SQLOperation\MergeJoin.cs" />
     <Compile Include="SQLOperation\NestedBlockJoin.cs" />
     <Compile Include="SQLOperation\NestedLoopIndexJoin.cs" />
     <Compile Include="SQLOperation\NestedLoopJoin.cs" />
