@@ -18,6 +18,7 @@ namespace Database.SQLOperation
         public int blockSize = Const.ConstProperty.PF_BUFFER_SIZE-3;
 
         List<int> blockNums = new List<int>();
+        int blockNumIndex = 0;
 
         public NestedBlockJoin(
             FileScan<TK> lhsIt,      // access for left i/p to join -R
@@ -71,11 +72,11 @@ namespace Database.SQLOperation
 
                 while (right != null)
                 {
-                    vector<int>::iterator next = blockIt;
+                    int next = blockNumIndex;
                     next++;
                     int nextp = -1;
-                    if (next != blocks.end())
-                        nextp = *next;
+                    if (next != blockNums.Count-1)
+                        nextp = next;
 
                     lhsIt.GetNext(left);
                     while (left !=null && left.GetRid().Page != nextp)
@@ -97,21 +98,20 @@ namespace Database.SQLOperation
                     lhsIt.Open();
                     FileScan<TK> lfs1 = lhsIt as FileScan<TK>;
                     if (lfs1 == null) throw new NullReferenceException();
-                    lfs1.GotoPage(*blockIt);
+                    lfs1.GotoPage(blockNumIndex);
                     lhsIt.GetNext(left);
                 }
 
-                blockIt++;
-                if (blockIt == blocks.end())
+                blockNumIndex++;
+                if (blockNumIndex == blockNums.Count-1)
                     break;
-                // cout << "block " << *blockIt << endl;
 
                 // advance to right block start
                 lhsIt.Close();
                 lhsIt.Open();
                 FileScan<TK> lfs = lhsIt as FileScan<TK>;
                 if (lfs == null) throw new NullReferenceException();
-                lfs.GotoPage(*blockIt);
+                lfs.GotoPage(blockNumIndex);
                 lhsIt.GetNext(left);
 
                 rhsIt.Close();

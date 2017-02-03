@@ -17,8 +17,8 @@ namespace Database.SQLOperation
         public DataTuple right;
         int nOFilters;
         Condition[] oFilters; // join keys
-        DataAttrInfo[] lKeys; // attrinfo of join key in the left iterator
-        DataAttrInfo[] rKeys; // attrinfo of join key in the right iterator
+        public DataAttrInfo[] lKeys; // attrinfo of join key in the left iterator
+        public DataAttrInfo[] rKeys; // attrinfo of join key in the right iterator
 
         public NestedLoopJoin(
             OperationIterator lhsIt,      // access for left i/p to join -R

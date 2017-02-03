@@ -27,8 +27,37 @@ namespace Database.SQLOperation.data
             this.rid = new RID(-1, -1);
         }
 
+        public DataTuple(DataTuple other)
+        {
+            this.Count = other.Count;
+            this.Length = other.Length;
+            this.data = other.data;
+            this.dataAttrInfo = other.dataAttrInfo;
+            this.rid = other.rid;
+        }
+
         public RID GetRid() { return rid; }
         public void SetRid(RID r) { rid = r; }
+
+        public char[] Get(char[] attrName)
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                string str1 = new string(attrName);
+                string str2 = new string(dataAttrInfo[i].attrName);
+                if (str1.Equals(str2))
+                {
+                    List<char> value = new List<char>();
+                    for (int j = dataAttrInfo[i].offset; j < dataAttrInfo[i].attrLength; j++)
+                    {
+                        value.Add(data[j]);
+                    }
+                    return value.ToArray();
+                }
+            }
+
+            throw new NullReferenceException();
+        }
 
         public void Set(char[] buf)
         {
