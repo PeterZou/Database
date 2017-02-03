@@ -552,7 +552,7 @@ namespace Database.SystemManage
         }
         #endregion
 
-        private bool IsValid()
+        public bool IsValid()
         {
             bool ret = true;
             ret = ret && bDBOpen;

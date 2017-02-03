@@ -83,6 +83,9 @@
     <Compile Include="Interface\IOperationIterator.cs" />
     <Compile Include="Interface\PageHdr.cs" />
     <Compile Include="ListExtendsion.cs" />
+    <Compile Include="QueryManage\Npageslt.cs" />
+    <Compile Include="QueryManage\Nrecslt.cs" />
+    <Compile Include="QueryManage\QL_Manager.cs" />
     <Compile Include="RecordManage\CompOpType.cs" />
     <Compile Include="RecordManage\Predicate.cs" />
     <Compile Include="RecordManage\RecordManagerUtil.cs" />
@@ -128,9 +131,7 @@
   <ItemGroup>
     <Content Include="Data\DataStructure.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="QueryManage\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
