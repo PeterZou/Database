@@ -109,7 +109,6 @@
     <Compile Include="SQLOperation\data\SQLOperationUtil.cs" />
     <Compile Include="SQLOperation\FileScan.cs" />
     <Compile Include="SQLOperation\IndexScan.cs" />
-    <Compile Include="SQLOperation\NestedBlockJoin.cs" />
     <Compile Include="SQLOperation\NestedLoopIndexJoin.cs" />
     <Compile Include="SQLOperation\NestedLoopJoin.cs" />
     <Compile Include="SQLOperation\OperationIterator.cs" />
