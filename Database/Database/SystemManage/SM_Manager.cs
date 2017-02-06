@@ -627,6 +627,29 @@ namespace Database.SystemManage
             return new Tuple<int, DataAttrInfo[]>(attrCount, attributes);
         }
 
+        // ra.relName must be NULL when we start off and should be free()d by the user
+        public void FindRelForAttr(RelAttr ra, int nRelations, string[] possibleRelations)
+        {
+            IsValid();
+            if (ra.relName != null) return;
+            bool found = false;
+            for (int i = 0; i < nRelations; i++)
+            {
+               var tuple = GetAttrFromCat(possibleRelations[i], new string(ra.attrName));
+                DataAttrInfo a = tuple.Item2;
+                RID rid=tuple.Item1;
+
+                if (!found)
+                {
+                    found = true;
+                    ra.relName = possibleRelations[i].ToArray();
+                    break;
+                }
+
+                if (found == false) throw new Exception();
+            }
+        }
+
         public int GetNumPages(string relName)
         {
             var tuple = GetRelFromCat(relName);

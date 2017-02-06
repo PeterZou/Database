@@ -32,6 +32,58 @@ namespace Database.QueryManage
             throw new NotImplementedException();
         }
 
+        private Condition[] GetCondsForSingleRelation(
+            int nConditions,
+            Condition[] conditions,
+            string relName)
+        {
+            List<Condition> retConds = new List<Condition>();
+
+            for (int j = 0; j < nConditions; j++)
+            {
+                if (conditions[j].bRhsIsAttr == true)
+                    continue;
+                if (conditions[j].lhsAttr.relName.Equals(relName) == true)
+                {
+                    retConds.Add(conditions[j]);
+                }
+            }
+            return retConds.ToArray();
+        }
+
+        private Condition[] GetCondsForTwoRelations(
+            int nConditions,
+            Condition[] conditions,
+            int nRelsSoFar,
+            string[] relations,
+            string relName2
+            )
+        {
+            List<Condition> retConds = new List<Condition>();
+
+            for (int i = 0; i < nRelsSoFar; i++)
+            {
+                string relName1 = relations[i];
+                for (int j = 0; j < nConditions; j++)
+                {
+                    if (conditions[j].bRhsIsAttr == false)
+                        continue;
+                    if (conditions[j].lhsAttr.relName.Equals(relName1) == true &&
+                        conditions[j].rhsAttr.relName.Equals(relName2) == true)
+                    {
+                        retConds.Add(conditions[j]);
+                    }
+                    if (conditions[j].lhsAttr.relName.Equals(relName2) == true
+                       && conditions[j].rhsAttr.relName.Equals(relName1) == true)
+                    {
+                        retConds.Add(conditions[j]);
+                    }
+                }
+            }
+
+            return retConds.ToArray();
+        }
+
         // Users will call - RC invalid = IsValid(); if(invalid) return invalid; 
         private bool IsValid()
         {
@@ -61,7 +113,92 @@ namespace Database.QueryManage
             int order, RelAttr orderAttr,
             bool group, RelAttr groupAttr)
         {
-            throw new NotImplementedException();
+            if (order != 0)
+            {
+                // find the orderAttr
+                smm.FindRelForAttr(orderAttr, nRelations, relations);
+            }
+
+            if (group)
+            {
+                newit = GetSortIterator(newit, nRelations, relations, order, groupAttr);
+
+                AggRelAttr[] extraAttrs = new AggRelAttr[nSelAttrs];
+                for (int i = 0; i < nSelAttrs; i++)
+                {
+                    extraAttrs[i] = selAttrs[i];
+                }
+                int nExtraSelAttrs = nSelAttrs;
+
+                if (order != 0)
+                {
+                    // add the sort column as a projection just in case
+                    newit = GetProjectionIterator(nSelAttrs, selAttrs, orderAttr, newit);
+                }
+
+                newit = new Agg(newit, groupAttr, nExtraSelAttrs, extraAttrs);
+            }
+
+            if (order != 0)
+            {
+                newit = GetSortIterator(newit, nRelations, relations, order, groupAttr);
+            }
+
+            newit = new Projection(newit, nSelAttrs, selAttrs);
+        }
+
+        private OperationIterator GetSortIterator(OperationIterator newit, 
+            int nRelations, string[] relations, int order, RelAttr groupAttr)
+        {
+            bool desc = (order == -1) ? true : false;
+
+            smm.FindRelForAttr(groupAttr, nRelations, relations);
+
+            DataAttrInfo d = new DataAttrInfo();
+            List<DataAttrInfo> pattr = newit.attrs;
+            for (int i = 0; i < newit.attrs.Count; i++)
+            {
+                if (pattr[i].relName.Equals(groupAttr.relName) == true &&
+                    pattr[i].attrName.Equals(groupAttr.attrName) == true)
+                    d = pattr[i];
+            }
+
+            if (newit.bSorted &&
+                newit.desc == desc &&
+                newit.sortRel.Equals(new string(groupAttr.relName)) == true &&
+                newit.sortAttr.Equals(new string(groupAttr.attrName)) == true)
+            {
+            }
+            else
+            {
+                newit = new Sort(newit, d.attrType, d.attrLength, d.offset, desc);
+            }
+
+            return newit;
+        }
+
+        private OperationIterator GetProjectionIterator(int nSelAttrs, AggRelAttr[] selAttrs, RelAttr orderAttr,
+            OperationIterator it)
+        {
+            int nExtraSelAttrs = nSelAttrs + 1;
+            var extraAttrs = new AggRelAttr[nExtraSelAttrs];
+            AggRelAttr[] extraAttrsNoF = new AggRelAttr[nExtraSelAttrs];
+
+            for (int i = 0; i < nExtraSelAttrs - 1; i++)
+            {
+                extraAttrs[i] = selAttrs[i];
+                extraAttrsNoF[i] = selAttrs[i];
+                extraAttrsNoF[i].func = Const.ConstProperty.AggFun.NO_F;
+            }
+
+            extraAttrs[nExtraSelAttrs - 1].relName = orderAttr.relName;
+            extraAttrs[nExtraSelAttrs - 1].attrName = orderAttr.attrName;
+            extraAttrs[nExtraSelAttrs - 1].func = Const.ConstProperty.AggFun.NO_F;
+            extraAttrsNoF[nExtraSelAttrs - 1] = extraAttrs[nExtraSelAttrs - 1];
+
+            var newit = new Projection(it, nExtraSelAttrs, extraAttrsNoF);
+
+            return newit;
         }
 
         private OperationIterator GetLeafIterator(
