@@ -17,5 +17,17 @@ namespace Database.SQLOperation.data
         {
             return ConvertStringToT(value);
         }
+
+        public T GetData(int attrOffset, int attrLength, Func<string, T> ConvertStringToT)
+        {
+            char[] value = new char[attrLength];
+
+            for (int i = 0; i < attrLength; i++)
+            {
+                value[i] = data[i + attrOffset];
+            }
+
+            return ConvertStringToT(new string(value));
+        }
     }
 }

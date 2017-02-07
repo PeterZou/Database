@@ -225,9 +225,6 @@ namespace DatabaseUnitTest.IndexManageTest
             ifh.FlushPages();
         }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
         [TestMethod]
         public void MergeTest()
         {

@@ -64,14 +64,27 @@ namespace Database.SQLOperation.data
             FileManagerUtil.ReplaceTheNextFree(data, buf, 0, Length);
         }
 
+        public void Set(int attrOffset, char[] value)
+        {
+            int attrLength = 0;
+            for (int i = 0; i < Count; i++)
+            {
+                if (dataAttrInfo[i].offset == attrOffset)
+                {
+                    attrLength = dataAttrInfo[i].attrLength;
+                }
+            }
+            if (value.Length != attrLength) throw new Exception();
+
+            for (int i = 0; i < attrLength; i++)
+            {
+                data[i + attrOffset] = value[i];
+            }
+        }
+
         public char[] GetData()
         {
             return data;
-        }
-
-        public object GetData(string value, Func<string, object> funcConverStringToValue)
-        {
-            return funcConverStringToValue(value);
         }
 
         public char[] GetData(char[] attrName)

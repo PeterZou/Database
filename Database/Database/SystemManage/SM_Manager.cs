@@ -20,7 +20,7 @@ namespace Database.SystemManage
         RM_FileHandle relfh;
         RM_FileHandle attrfh;
         char[] cwd;
-        Dictionary<string, string> parameters;
+        Dictionary<string, string> parameters = new Dictionary<string, string>();
 
         private int TreeDegree { get; set; }
 
@@ -510,17 +510,13 @@ namespace Database.SystemManage
             if (size != buflen) throw new NullReferenceException();
             var rid = rfh.InsertRec(buf.ToArray());
 
-            // TODO
+            //TODO
             //for (int i = 0; i < attrCount; i++)
             //{
             //    if (attributes[i].indexNo != -1)
             //    {
-            //        // cerr << "SM loadRecord index - inserting {" << *(char*)(buf +
-            //        // attributes[i].offset) << "} " << rid << endl;
             //        char* ptr = const_cast<char*>(buf + attributes[i].offset);
-            //        rc = indexes[i].InsertEntry(ptr,
-            //                                    rid);
-            //        if (rc != 0) return rc;
+            //        rindexes[i].InsertEntry(ptr,rid);
             //    }
             //}
 
@@ -662,6 +658,29 @@ namespace Database.SystemManage
             var tuple = GetRelFromCat(relName);
             DataRelInfo r = tuple.Item2;
             return r.numRecords;
+        }
+
+        public string Get(string paramName)
+        {
+            IsValid();
+
+            foreach (var p in parameters.Keys)
+            {
+                if (p.Equals(paramName))
+                {
+                    return parameters[p];
+                }
+            }
+            throw new Exception();
+        }
+
+        public bool IsAttrIndexed(string relName,string attrName)
+        {
+            IsValid();
+            var tuple = GetAttrFromCat(relName, attrName);
+            DataAttrInfo a = tuple.Item2;
+
+            return a.indexNo != -1 ? true : false;
         }
     }
 }
