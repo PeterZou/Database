@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Database.IndexManage.IndexValue;
 
 namespace Database.SystemManage
 {
@@ -24,8 +25,13 @@ namespace Database.SystemManage
 
         private int TreeDegree { get; set; }
 
-        public SM_Manager(IX_Manager<TK> ixm, RM_Manager rmm)
+        Func<string, TK> ConvertStringToTK { get; set; }
+        Func<TK, int> OccupiedNum { get; set; }
+
+        public SM_Manager(IX_Manager<TK> ixm, RM_Manager rmm, Func<string, TK> convertStringToTK, Func<TK, int> occupiedNum)
         {
+            this.OccupiedNum = occupiedNum;
+            this.ConvertStringToTK = convertStringToTK;
             this.ixm = ixm;
             this.rmm = rmm;
         }
@@ -118,9 +124,8 @@ namespace Database.SystemManage
             rfs.OpenScan(
                 relfh,
                 ConstProperty.AttrType.STRING,
-                ConstProperty.MAXSTRINGLEN + 1, 
-                // TODO
-                0, 
+                ConstProperty.MAXSTRINGLEN + 1,
+                DataRelInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -143,6 +148,8 @@ namespace Database.SystemManage
             return new Tuple<RID, DataRelInfo>(rid, rel);
         }
 
+        
+
         // Get the first matching row for relName, attrName
         // contents are returned in attr
         // location of record is returned in rid
@@ -162,8 +169,7 @@ namespace Database.SystemManage
                 attrfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataAttrInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -212,8 +218,7 @@ namespace Database.SystemManage
                 relfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataRelInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -246,8 +251,7 @@ namespace Database.SystemManage
                 attrfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataAttrInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -297,11 +301,12 @@ namespace Database.SystemManage
                 throw new Exception();
 
             attr.indexNo = attr.offset;
-            // TODO
             ixm.CreateFile(relName, ConstProperty.AttrType.INT);
 
             // update attrcat
-            // TODO
+            RM_Record rec = new RM_Record();
+            rec.Set(DataAttrInfo.DataAttrInfoToChar(attr), DataAttrInfo.size(), rid);
+            attrfh.UpdateRec(rec);
 
             // now create index entries
             var ixh = ixm.OpenFile(relName, TreeDegree);
@@ -322,13 +327,15 @@ namespace Database.SystemManage
                 ConstProperty.ClientHint.NO_HINT
                 );
 
-            RM_Record rec = rfs.GetNextRec(); 
+            rec = rfs.GetNextRec(); 
             while (rec != null)
             {
                 var pdata = rec.GetData();
                 rid = rec.GetRid();
-                // TODO
-                //ixh.InsertEntry();
+
+                char[] array = GetData(new string(pdata));
+                TK data = ConvertStringToTK(new string(array));
+                ixh.InsertEntry(new RIDKey<TK>(rid, data));
             }
 
             rfs.CloseScan();
@@ -351,8 +358,7 @@ namespace Database.SystemManage
                 attrfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataAttrInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -361,9 +367,11 @@ namespace Database.SystemManage
             var rec = rfs.GetNextRec();
             List<DataAttrInfo> infoList =
                 new List<DataAttrInfo>();
+
+            char[] data = null;
             while (rec != null)
             {
-                var data = rec.GetData();
+                data = rec.GetData();
                 infoList = DataAttrInfo.CharToDataAttrInfo(data).ToList();
 
                 if (infoList != null && infoList.Count != 0)
@@ -381,8 +389,12 @@ namespace Database.SystemManage
             var rid = rec.GetRid();
             ixm.DestroyFile(relName);
 
-            // update attrcat
-            // TODO
+            if (data != null)
+            {
+                // update attrcat
+                rec.Set(data, DataAttrInfo.size(), rid);
+                attrfh.UpdateRec(rec);
+            }
         }
 
         public void DropIndexFromAttrCatAlone(
@@ -400,8 +412,7 @@ namespace Database.SystemManage
                 attrfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataAttrInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -410,9 +421,10 @@ namespace Database.SystemManage
             var rec = rfs.GetNextRec();
             List<DataAttrInfo> infoList =
                 new List<DataAttrInfo>();
+            char[] data = null;
             while (rec != null)
             {
-                var data = rec.GetData();
+                data = rec.GetData();
                 infoList = DataAttrInfo.CharToDataAttrInfo(data).ToList();
 
                 if (infoList != null && infoList.Count != 0)
@@ -427,7 +439,12 @@ namespace Database.SystemManage
             rfs.CloseScan();
 
             // update attrcat
-            // TODO
+            if (data != null)
+            {
+                var rid = rec.GetRid();
+                rec.Set(data, DataAttrInfo.size(), rid);
+                attrfh.UpdateRec(rec);
+            }
         }
 
         public void ResetIndexFromAttrCatAlone(
@@ -445,8 +462,7 @@ namespace Database.SystemManage
                 attrfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataAttrInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -455,9 +471,10 @@ namespace Database.SystemManage
             var rec = rfs.GetNextRec();
             List<DataAttrInfo> infoList =
                 new List<DataAttrInfo>();
+            char[] data = null;
             while (rec != null)
             {
-                var data = rec.GetData();
+                data = rec.GetData();
                 infoList = DataAttrInfo.CharToDataAttrInfo(data).ToList();
 
                 if (infoList != null && infoList.Count != 0)
@@ -471,7 +488,12 @@ namespace Database.SystemManage
             }
             rfs.CloseScan();
             // update attrcat
-            // TODO
+            if (data != null)
+            {
+                var rid = rec.GetRid();
+                rec.Set(data, DataAttrInfo.size(), rid);
+                attrfh.UpdateRec(rec);
+            }
         }
         #endregion
 
@@ -503,22 +525,23 @@ namespace Database.SystemManage
                 size += attributes[i].attrLength;
                 if (attributes[i].indexNo != -1)
                 {
-                    indexes[i] = ixm.OpenFile(relName,TreeDegree);
+                    indexes[i] = ixm.OpenFile(relName, TreeDegree);
                 }
             }
 
             if (size != buflen) throw new NullReferenceException();
             var rid = rfh.InsertRec(buf.ToArray());
 
-            //TODO
-            //for (int i = 0; i < attrCount; i++)
-            //{
-            //    if (attributes[i].indexNo != -1)
-            //    {
-            //        char* ptr = const_cast<char*>(buf + attributes[i].offset);
-            //        rindexes[i].InsertEntry(ptr,rid);
-            //    }
-            //}
+            char[] array = GetData(buf);
+
+            for (int i = 0; i < attrCount; i++)
+            {
+                if (attributes[i].indexNo != -1)
+                {
+                    TK data = ConvertStringToTK(new string(array));
+                    indexes[i].InsertEntry(new RIDKey<TK>(rid, data));
+                }
+            }
 
             var tuple2 = GetRelFromCat(relName);
             var r = tuple2.Item2;
@@ -526,8 +549,9 @@ namespace Database.SystemManage
 
             r.numRecords += 1;
             r.numPages = rfh.GetNumPages();
-            // TODO
             RM_Record rec = new RM_Record();
+            rec.Set(DataRelInfo.DataRelInfoToChar(r), DataAttrInfo.size(), rid);
+
             relfh.UpdateRec(rec);
             rmm.CloseFile(rfh);
 
@@ -538,6 +562,18 @@ namespace Database.SystemManage
                     ixm.CloseFile(indexes[i].iih);
                 }
             }
+        }
+
+        private char[] GetData(string buf)
+        {
+            char[] array = new char[OccupiedNum(default(TK))];
+
+            for (int i = 0; i < OccupiedNum(default(TK)); i++)
+            {
+                array[i] = buf[i];
+            }
+
+            return array;
         }
 
         public void Load(
@@ -568,8 +604,7 @@ namespace Database.SystemManage
                 relfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataRelInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT
@@ -597,8 +632,7 @@ namespace Database.SystemManage
                 attrfh,
                 ConstProperty.AttrType.STRING,
                 ConstProperty.MAXSTRINGLEN + 1,
-                // TODO
-                0,
+                DataAttrInfo.GetAttrOffset(relName),
                 ConstProperty.CompOp.EQ_OP,
                 relName,
                 ConstProperty.ClientHint.NO_HINT

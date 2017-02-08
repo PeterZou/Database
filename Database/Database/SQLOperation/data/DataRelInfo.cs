@@ -40,5 +40,14 @@ namespace Database.SQLOperation.data
 
             return null;
         }
+
+        public static int GetAttrOffset(string attr)
+        {
+            if (attr.Equals("relName"))
+            {
+                return 4 * sizeof(int);
+            }
+            throw new Exception();
+        }
     }
 }
