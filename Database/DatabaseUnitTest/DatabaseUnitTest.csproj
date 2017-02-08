@@ -61,6 +61,7 @@
     <Compile Include="IndexManageTest\BPlusTreeTest.cs" />
     <Compile Include="IndexManageTest\IndexIOTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryManageTest\QLManageTest.cs" />
     <Compile Include="RecordManageTest\RecordTest.cs" />
     <Compile Include="TestConst.cs" />
   </ItemGroup>

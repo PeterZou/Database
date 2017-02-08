@@ -33,8 +33,9 @@ namespace Database.IndexManage
             this.OccupiedNum = occupiedNum;
         }
 
-        public void CreateFile(string fileName, ConstProperty.AttrType indexType)
+        public void CreateFile(string fileName, ConstProperty.AttrType indexType, int treeHeight = 6)
         {
+            this.treeHeight = treeHeight;
             pfm.CreateFile(fileName);
 
             PF_FileHandle pfh = pfm.OpenFile(fileName);
